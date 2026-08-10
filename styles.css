@@ -1,0 +1,15 @@
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0b1227;color:white;font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;touch-action:none}
+body{display:flex;align-items:center;justify-content:center}
+#app{position:relative;width:100vw;height:100vh;background:#101b36;overflow:hidden}
+#game{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges;background:#92d5ef}
+#touchUI{position:absolute;inset:0;pointer-events:none}
+#stickBase{position:absolute;left:max(22px,env(safe-area-inset-left));bottom:max(20px,env(safe-area-inset-bottom));width:118px;height:118px;border-radius:50%;background:rgba(255,255,255,.18);border:3px solid rgba(255,255,255,.35);pointer-events:auto}
+#stickKnob{position:absolute;left:34px;top:34px;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.72);box-shadow:0 3px 12px rgba(0,0,0,.25)}
+#actionBtn{position:absolute;right:max(28px,env(safe-area-inset-right));bottom:max(28px,env(safe-area-inset-bottom));width:82px;height:82px;border-radius:50%;border:4px solid rgba(255,255,255,.48);background:rgba(65,115,220,.78);color:#fff;font-weight:900;font-size:34px;pointer-events:auto;box-shadow:0 4px 12px rgba(0,0,0,.28)}
+.hidden{display:none!important}
+#rotateNotice{display:none;position:absolute;inset:0;z-index:20;background:rgba(7,12,29,.9);align-items:center;justify-content:center;flex-direction:column;gap:12px;text-align:center;font-size:18px;padding:30px}
+#rotateNotice div{font-size:48px}
+@media (orientation:portrait) and (max-width:900px){
+  #rotateNotice{display:flex}
+}

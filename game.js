@@ -55,6 +55,11 @@ let battle = null;
 let battleMessage = '';
 let battleMenu = 'main';
 let battleCooldown = 0;
+let caveHero={x:150,y:760,speed:230};
+let caveBoss={x:1540,y:300,alive:true,hp:95,maxHP:95};
+let caveBattle=false;
+let caveCrystalTaken=false;
+
 let menuPage = 'status';
 
 const prologue = [
@@ -257,6 +262,11 @@ function drawPirate(x,y,s=1,variant=0){
 }
 
 function drawWildMonster(mon){
+  if(mon.kind==='magmaTurtle'){
+    drawCaveBoss(mon.x||690,mon.y||250,1.55);
+    return;
+  }
+
   if(!mon || !mon.alive) return;
   if(mon.kind==='appleSquirrel') drawAppleSquirrel(mon.x,mon.y,1.25);
   else if(mon.kind==='peachGlider') drawPeachGlider(mon.x,mon.y,1.25);
@@ -317,7 +327,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.12',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.13',480,121,18,'center','#eef8ff');
   ctx.fillStyle='rgba(10,23,48,.73)';ctx.fillRect(310,466,340,52);text('タップ / Enter で はじめる',480,492,21,'center');
 }
 function speakerName(who){
@@ -597,7 +607,17 @@ function enemyTurn(){
   battle.turn='player';
 }
 function finishBattle(){
-  const mon=monsters.find(m=>m.id===battle.monsterId);
+  if(battle && battle.monsterId===99){
+    caveBoss.alive=false;caveBoss.hp=0;
+    const expGain=35;
+    const leveled=gainExp(expGain);
+    battle=null;scene='cave';touchUI.classList.remove('hidden');
+    caveHero.x=1450;caveHero.y=350;
+    flashText=leveled?`マグマガメ撃破！ Lv.${progress.level}　SP+1`:'マグマガメ撃破！ 炎晶石への道が開いた';
+    flashTimer=3.0;
+    return;
+  }
+  const mon=battle.monsterId===99?{id:99,name:'マグマガメ',kind:'magmaTurtle'}:monsters.find(m=>m.id===battle.monsterId);
   if(mon){
     mon.alive=false;
     mon.respawn=12.0;
@@ -622,6 +642,64 @@ function drawSarubieArrival(){
   }
   const item=sarubieArrivalDialog[Math.min(dialogIndex,sarubieArrivalDialog.length-1)];
   drawDialog(item[0],item[1]);
+}
+
+
+function drawCaveBoss(x,y,s=1){
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+  ellipse(0,31,24,7,'rgba(0,0,0,.25)');
+  // cute magma tortoise-like guardian
+  ellipse(0,4,28,23,'#8a4938');
+  ellipse(0,0,23,18,'#d66a3d');
+  rect(-18,-7,10,8,'#ffb04c');rect(7,-7,10,8,'#ffb04c');
+  ellipse(-25,8,8,8,'#b85a3d');ellipse(25,8,8,8,'#b85a3d');
+  ellipse(-15,25,8,6,'#744338');ellipse(15,25,8,6,'#744338');
+  rect(-8,0,5,5,'#25314a');rect(4,0,5,5,'#25314a');
+  text('🔥',0,-24,22,'center');
+  ctx.restore();
+}
+function drawCave(){
+  camera.x=Math.max(0,Math.min(1800-W,caveHero.x-W*.5));
+  camera.y=Math.max(0,Math.min(1000-H,caveHero.y-H*.5));
+  ctx.save();ctx.translate(-camera.x,-camera.y);
+  rect(0,0,1800,1000,'#302d35');
+  // simple, readable cave floor
+  rect(70,90,1660,820,'#51464a');
+  // walls
+  for(let x=70;x<1730;x+=90){ellipse(x,95,52,35,'#292832');ellipse(x,900,52,35,'#292832');}
+  for(let y=120;y<900;y+=80){ellipse(75,y,42,48,'#292832');ellipse(1725,y,42,48,'#292832');}
+  // winding but not maze-like route markers
+  for(let x=250;x<1450;x+=230) ellipse(x,520+(x%460?80:-80),28,18,'#403a40');
+  // lava cracks
+  for(let x=480;x<1380;x+=280){
+    ctx.strokeStyle='#e46c38';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(x,220);ctx.lineTo(x+35,260);ctx.lineTo(x+12,300);ctx.stroke();
+  }
+  // crystal altar
+  outlineRect(1510,160,105,70,'#6b5b57','#b98754',2);
+  if(!caveCrystalTaken){
+    ctx.fillStyle='#ff8a45';ctx.beginPath();ctx.moveTo(1562,120);ctx.lineTo(1582,170);ctx.lineTo(1562,202);ctx.lineTo(1542,170);ctx.closePath();ctx.fill();
+    text('炎晶石',1562,95,17,'center','#ffd39d');
+  }
+  if(caveBoss.alive) drawCaveBoss(caveBoss.x,caveBoss.y,1.45);
+
+  drawHeroFox(caveHero.x,caveHero.y,1.15);
+  drawSuzumaru(caveHero.x-48,caveHero.y+20,1.05);
+  ctx.restore();
+
+  const ht=hudTop();
+  ctx.fillStyle='rgba(9,22,35,.88)';ctx.fillRect(18,ht,390,46);
+  text(caveBoss.alive?'目的：洞窟の奥で炎晶石を探す':'目的：炎晶石を手に入れる',35,ht+23,17);
+}
+function startCaveBossBattle(){
+  caveBattle=true;
+  battle={
+    heroHP:progress.maxHP,heroMP:progress.maxMP,
+    enemyHP:caveBoss.hp,enemyMaxHP:caveBoss.maxHP,
+    monsterId:99,monsterName:'マグマガメ',
+    turn:'player',guard:false
+  };
+  battleMenu='main';battleMessage='炎晶石を守るマグマガメが現れた！';
+  scene='battle';touchUI.classList.add('hidden');
 }
 
 function drawMenu(){
@@ -674,9 +752,9 @@ function menuTap(x,y){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.12 ここまで',480,112,42,'center');
+  text('Ver.0.13 ここまで',480,112,42,'center');
   text(`${heroName}の冒険は、ここから本格的に始まる。`,480,365,22,'center','#d8efff');
-  text('次は：火山麓の洞窟 ＋ 炎晶石探しへ',480,405,20,'center','#d8efff');
+  text('次は：炎晶石を持ち帰り、鎮めの儀式へ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
 }
 function update(dt){
@@ -736,6 +814,23 @@ function update(dt){
       dialogIndex=0;
       touchUI.classList.add('hidden');
     }
+  } else if(scene==='cave'){
+    let dx=0,dy=0;
+    if(keys.ArrowLeft||keys.a)dx--;
+    if(keys.ArrowRight||keys.d)dx++;
+    if(keys.ArrowUp||keys.w)dy--;
+    if(keys.ArrowDown||keys.s)dy++;
+    dx+=touchVector.x;dy+=touchVector.y;
+    const l=Math.hypot(dx,dy);
+    if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);caveHero.x+=dx*caveHero.speed*dt;caveHero.y+=dy*caveHero.speed*dt;}
+    caveHero.x=Math.max(120,Math.min(1660,caveHero.x));
+    caveHero.y=Math.max(150,Math.min(850,caveHero.y));
+    if(caveBoss.alive && Math.hypot(caveHero.x-caveBoss.x,caveHero.y-caveBoss.y)<85) startCaveBossBattle();
+    if(!caveBoss.alive && !caveCrystalTaken && Math.hypot(caveHero.x-1562,caveHero.y-170)<95){
+      caveCrystalTaken=true;
+      flashText='炎晶石を手に入れた！';flashTimer=3.0;
+      scene='end';touchUI.classList.add('hidden');
+    }
   } else if(scene==='battle'){
     if(battleCooldown>0){
       battleCooldown-=dt;
@@ -792,7 +887,11 @@ function pressAction(){
   if(scene==='sarubieArrival'){
     dialogIndex++;
     if(dialogIndex>=sarubieArrivalDialog.length){
-      scene='end';dialogIndex=0;
+      scene='cave';
+      dialogIndex=0;
+      caveHero.x=150;caveHero.y=760;
+      touchUI.classList.remove('hidden');
+      flashText='火山麓の洞窟';flashTimer=2.0;
     }
     return;
   }
@@ -816,8 +915,9 @@ function frame(now){
   else if(scene==='battle')drawBattle();
   else if(scene==='menu')drawMenu();
   else if(scene==='sarubieArrival')drawSarubieArrival();
+  else if(scene==='cave')drawCave();
   else drawEnd();
-  if(flashTimer>0 && ['road2','world'].includes(scene)){
+  if(flashTimer>0 && ['road2','world','cave'].includes(scene)){
     ctx.fillStyle='rgba(0,0,0,.58)';ctx.fillRect(305,85,350,58);text(flashText,480,114,20,'center');
   }
   requestAnimationFrame(frame);

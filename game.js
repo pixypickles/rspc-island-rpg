@@ -21,6 +21,32 @@ let flashTimer = 0;
 let villageEventStarted = false;
 let heroName = localStorage.getItem('risupekuHeroName') || 'リク';
 
+let progress = JSON.parse(localStorage.getItem('risupekuProgress') || 'null') || {
+  level:1, exp:0, sp:0,
+  maxHP:42, maxMP:24, atk:8, def:5,
+  learned:{ waterHeal:true, icePebble:true, iceSlash:false }
+};
+function saveProgress(){
+  localStorage.setItem('risupekuProgress', JSON.stringify(progress));
+}
+function expNeeded(level){ return 22 + (level-1)*18; }
+function gainExp(amount){
+  progress.exp += amount;
+  let leveled = false;
+  while(progress.exp >= expNeeded(progress.level)){
+    progress.exp -= expNeeded(progress.level);
+    progress.level++;
+    progress.sp++;
+    progress.maxHP += 6;
+    progress.maxMP += 3;
+    progress.atk += 2;
+    progress.def += 1;
+    leveled = true;
+  }
+  saveProgress();
+  return leveled;
+}
+
 const dash = {x:1960,y:180,speed:178};
 const hero = {x:360,y:300,speed:175};
 const camera = {x:0,y:0};
@@ -29,6 +55,7 @@ let battle = null;
 let battleMessage = '';
 let battleMenu = 'main';
 let battleCooldown = 0;
+let menuPage = 'status';
 
 const prologue = [
   ['narrator','島の外での巡業を終えた「ちぇすたぴサーカス団」は、故郷・りすぺく島へ帰ろうとしていた。'],
@@ -96,6 +123,33 @@ function text(t,x,y,size=24,align='left',color='#fff',weight=700){
 }
 function ellipse(x,y,rx,ry,color){ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill();}
 
+
+function drawElderFox(x,y,s=1){
+  ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.scale(s,s);
+  ellipse(0,34,19,6,'rgba(23,38,56,.22)');
+  // tail
+  ctx.fillStyle='#f5f7f8';ctx.beginPath();ctx.moveTo(14,8);ctx.quadraticCurveTo(38,7,34,27);ctx.quadraticCurveTo(28,38,12,28);ctx.closePath();ctx.fill();
+  // ears
+  ctx.fillStyle='#f4f5f5';
+  ctx.beginPath();ctx.moveTo(-16,-25);ctx.lineTo(-7,-43);ctx.lineTo(-2,-21);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(16,-25);ctx.lineTo(7,-43);ctx.lineTo(2,-21);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#d8d5d2';
+  ctx.beginPath();ctx.moveTo(-12,-27);ctx.lineTo(-8,-37);ctx.lineTo(-5,-24);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(12,-27);ctx.lineTo(8,-37);ctx.lineTo(5,-24);ctx.closePath();ctx.fill();
+  // head
+  ellipse(0,-13,18,17,'#fbfbfb');ellipse(0,-4,10,8,'#f2f2f2');
+  // eyebrows + eyes
+  rect(-11,-18,6,2,'#c8c8c8');rect(5,-18,6,2,'#c8c8c8');
+  rect(-8,-14,3,4,'#334052');rect(5,-14,3,4,'#334052');
+  // beard
+  ctx.fillStyle='#ffffff';ctx.beginPath();ctx.moveTo(-8,-1);ctx.lineTo(0,12);ctx.lineTo(8,-1);ctx.closePath();ctx.fill();
+  // robe
+  rect(-16,4,32,28,'#253553');rect(-12,8,24,7,'#e8eef3');rect(-3,11,6,21,'#9ad9ea');
+  rect(-12,31,9,10,'#dfe7eb');rect(3,31,9,10,'#dfe7eb');
+  // staff
+  rect(18,5,4,38,'#7b5c3f');ellipse(20,2,5,5,'#d6edf3');
+  ctx.restore();
+}
 function drawHeroFox(x,y,s=1){
   ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.scale(s,s);
   ellipse(0,34,18,6,'rgba(23,38,56,.22)');
@@ -224,7 +278,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.5',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.6',480,121,18,'center','#eef8ff');
   ctx.fillStyle='rgba(10,23,48,.73)';ctx.fillRect(310,466,340,52);text('タップ / Enter で はじめる',480,492,21,'center');
 }
 function speakerName(who){
@@ -316,12 +370,12 @@ function drawVillageDialog(){
   ctx.fillStyle='#8fd47f';ctx.fillRect(0,0,W,H);rect(0,0,W,92,'#89d9e8');drawHouse(95,145);drawHouse(225,105);drawHouse(725,135);drawTree(30,300);drawTree(845,290);drawTree(720,330);
   drawDashmiu(345,335,1.35);drawHeroFox(570,335,1.38);
   for(let i=0;i<5;i++){const x=650+i*40,y=385+(i%2)*8;ellipse(x,y-10,11,10,'#d3eef3');rect(x-10,y,20,25,'#e8f4f5');}
-  ellipse(490,350,13,12,'#d2eef6');rect(475,362,30,30,'#22314c');
+  drawElderFox(490,350,1.2);
   const vd=villageDialog();const item=vd[Math.min(dialogIndex,vd.length-1)];drawDialog(item[0],item[1]);
 }
 function drawDepartureDialog(){
   ctx.fillStyle='#8fd47f';ctx.fillRect(0,0,W,H);rect(0,0,W,92,'#89d9e8');drawHouse(105,138);drawTree(770,260);drawTree(55,280);
-  drawHeroFox(430,330,1.42);drawDashmiu(565,335,1.36);ellipse(330,350,13,12,'#d2eef6');rect(315,362,30,30,'#22314c');
+  drawHeroFox(430,330,1.42);drawDashmiu(565,335,1.36);drawElderFox(330,350,1.2);
   const item=departureDialog[Math.min(dialogIndex,departureDialog.length-1)];drawDialog(item[0],item[1]);
 }
 function drawRoad2(){
@@ -362,7 +416,7 @@ function drawRoad2(){
 }
 function startBattle(mon){
   battle={
-    heroHP:42,heroMP:24,
+    heroHP:progress.maxHP,heroMP:progress.maxMP,
     enemyHP:mon.hp,enemyMaxHP:mon.maxHP,
     enemyName:mon.name,enemyKind:mon.kind,
     monsterId:mon.id,turn:'player',defending:false
@@ -378,7 +432,7 @@ function drawBattle(){
   drawWildMonster(tempMon);
   // status
   ctx.fillStyle='rgba(14,30,55,.9)';ctx.fillRect(45,35,330,105);ctx.fillRect(585,35,330,105);
-  text(heroName,68,62,22);text(`HP ${battle.heroHP}/42`,68,93,19);text(`MP ${battle.heroMP}/24`,68,119,19);
+  text(heroName,68,62,22);text(`Lv.${progress.level}  HP ${battle.heroHP}/${progress.maxHP}`,68,93,18);text(`MP ${battle.heroMP}/${progress.maxMP}`,68,119,18);
   text(battle.enemyName,610,62,22);text(`HP ${Math.max(0,battle.enemyHP)}/${battle.enemyMaxHP}`,610,96,19);
   // commands
   ctx.fillStyle='rgba(9,20,42,.92)';ctx.fillRect(50,365,860,140);
@@ -390,9 +444,14 @@ function drawBattle(){
       outlineRect(670,388,180,48,'#dff4fb','#71bad7',2);text('にげる',760,412,20,'center','#17324a');
       text('タップでコマンド選択',480,474,15,'center','#c8e7f4');
     }else{
-      outlineRect(70,390,245,56,'#dff4fb','#71bad7',2);text('水のいやし MP5',192,418,18,'center','#17324a');
-      outlineRect(335,390,245,56,'#dff4fb','#71bad7',2);text('氷のつぶて MP4',457,418,18,'center','#17324a');
-      outlineRect(600,390,245,56,'#dff4fb','#71bad7',2);text('もどる',722,418,18,'center','#17324a');
+      outlineRect(55,390,205,56,'#dff4fb','#71bad7',2);text('水のいやし MP5',157,418,16,'center','#17324a');
+      outlineRect(275,390,205,56,'#dff4fb','#71bad7',2);text('氷のつぶて MP4',377,418,16,'center','#17324a');
+      if(progress.learned.iceSlash){
+        outlineRect(495,390,205,56,'#dff4fb','#71bad7',2);text('氷結斬り MP7',597,418,16,'center','#17324a');
+      }else{
+        outlineRect(495,390,205,56,'#6f8092','#5d6d7c',2);text('？？？？',597,418,16,'center','#d5dde4');
+      }
+      outlineRect(715,390,150,56,'#dff4fb','#71bad7',2);text('もどる',790,418,16,'center','#17324a');
       text('スキルを選択',480,474,15,'center','#c8e7f4');
     }
   }else{
@@ -409,13 +468,19 @@ function battleAttack(mode='attack'){
     battle.turn='enemy';battleCooldown=.8;battleMenu='main';return;
   }
   let dmg=0;
-  if(mode==='ice'){
+  if(mode==='iceSlash'){
+    if(!progress.learned.iceSlash){battleMessage='まだ覚えていない！';return;}
+    if(battle.heroMP<7){battleMessage='MPが足りない！';return;}
+    battle.heroMP-=7;
+    dmg=progress.atk+15+Math.floor(Math.random()*7);
+    battleMessage=`${heroName}の「氷結斬り」！ ${dmg}ダメージ！`;
+  }else if(mode==='ice'){
     if(battle.heroMP<4){battleMessage='MPが足りない！';return;}
     battle.heroMP-=4;
-    dmg=15+Math.floor(Math.random()*6);
+    dmg=progress.atk+9+Math.floor(Math.random()*6);
     battleMessage=`${heroName}の「氷のつぶて」！ ${dmg}ダメージ！`;
   }else{
-    dmg=10+Math.floor(Math.random()*5);
+    dmg=progress.atk+4+Math.floor(Math.random()*5);
     battleMessage=`${heroName}のこうげき！ ${dmg}ダメージ！`;
   }
   battle.enemyHP-=dmg;
@@ -434,7 +499,7 @@ function battleRun(){
   battle.turn='run';battleCooldown=.6;battleMenu='main';
 }
 function enemyTurn(){
-  let dmg=5+Math.floor(Math.random()*4);
+  let dmg=Math.max(1,7+Math.floor(Math.random()*5)-Math.floor(progress.def/3));
   if(battle.defending){dmg=Math.max(1,Math.floor(dmg/2));battle.defending=false;}
   battle.heroHP=Math.max(1,battle.heroHP-dmg);
   battleMessage=`${battle.enemyName}のこうげき！ ${dmg}ダメージ！`;
@@ -443,12 +508,65 @@ function enemyTurn(){
 function finishBattle(){
   const mon=monsters.find(m=>m.id===battle.monsterId);
   if(mon) mon.alive=false;
+  const expGain = mon ? ({1:12,2:15,3:20}[mon.id] || 10) : 10;
+  const leveled = gainExp(expGain);
   scene='road2';touchUI.classList.remove('hidden');
-  battle=null;flashText='戦闘終了！ HP・MPは全回復した';flashTimer=2.6;
+  battle=null;
+  flashText = leveled ? `レベルアップ！ Lv.${progress.level}　SP+1` : `経験値 ${expGain} 獲得！ HP・MP全回復`;
+  flashTimer=3.0;
+}
+
+function drawMenu(){
+  ctx.fillStyle='#0e1d37';ctx.fillRect(0,0,W,H);
+  text('メニュー',55,45,30,'left','#ffffff',800);
+  // Tabs
+  outlineRect(55,80,180,52,menuPage==='status'?'#dff4fb':'#31455f','#78b9d7',2);
+  text('ステータス',145,106,19,'center',menuPage==='status'?'#17324a':'#d9e6ef');
+  outlineRect(250,80,180,52,menuPage==='skill'?'#dff4fb':'#31455f','#78b9d7',2);
+  text('スキル習得',340,106,19,'center',menuPage==='skill'?'#17324a':'#d9e6ef');
+  outlineRect(445,80,180,52,'#31455f','#78b9d7',2);text('もちもの',535,106,19,'center','#8ea5b7');
+  outlineRect(640,80,180,52,'#31455f','#78b9d7',2);text('とじる',730,106,19,'center','#d9e6ef');
+
+  if(menuPage==='status'){
+    drawHeroFox(190,290,2.0);
+    text(heroName,340,185,30,'left');
+    text(`Lv. ${progress.level}`,340,230,22,'left');
+    text(`EXP ${progress.exp} / ${expNeeded(progress.level)}`,340,267,20,'left');
+    text(`SP ${progress.sp}`,340,305,22,'left','#ffe8a8');
+    text(`HP ${progress.maxHP}`,340,350,20,'left');
+    text(`MP ${progress.maxMP}`,500,350,20,'left');
+    text(`こうげき ${progress.atk}`,340,388,20,'left');
+    text(`ぼうぎょ ${progress.def}`,500,388,20,'left');
+    text('戦闘終了後はHP・MPが全回復します。',340,447,17,'left','#bad9e7');
+  }else{
+    text(`スキルポイント：${progress.sp}`,65,170,23,'left','#ffe8a8');
+    outlineRect(65,215,390,92,progress.learned.iceSlash?'#536777':'#e7f5fb','#78b9d7',2);
+    text('氷結斬り',90,242,22,'left',progress.learned.iceSlash?'#c5d0d8':'#18334a');
+    text('MP7 / 氷をまとった小剣で強く斬る',90,277,16,'left',progress.learned.iceSlash?'#c5d0d8':'#3d5d73');
+    text(progress.learned.iceSlash?'習得済み':'必要SP：1',420,261,17,'right',progress.learned.iceSlash?'#c5d0d8':'#b66f31');
+    outlineRect(65,330,390,80,'#536777','#64798a',2);
+    text('いやしの水・強化',90,355,20,'left','#aebbc5');
+    text('まだ先のスキル',90,385,15,'left','#91a0ab');
+    text('※ 今回はスキルツリーの土台だけ実装',65,460,16,'left','#a9c5d2');
+  }
+}
+function menuTap(x,y){
+  if(y>=80 && y<=140){
+    if(x<240)menuPage='status';
+    else if(x<440)menuPage='skill';
+    else if(x>=640){scene='road2';touchUI.classList.remove('hidden');}
+    return;
+  }
+  if(menuPage==='skill' && y>=215 && y<=307 && x>=65 && x<=455){
+    if(!progress.learned.iceSlash && progress.sp>=1){
+      progress.sp--;progress.learned.iceSlash=true;saveProgress();
+      flashText='「氷結斬り」を習得した！';flashTimer=2.3;
+    }
+  }
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.5 ここまで',480,112,42,'center');
+  text('Ver.0.6 ここまで',480,112,42,'center');
   text(`${heroName}の冒険は、ここから本格的に始まる。`,480,365,22,'center','#d8efff');
   text('次は：さるびえ村到着 ＋ スズマル登場へ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
@@ -510,6 +628,9 @@ function pressAction(){
     }
     return;
   }
+  if(scene==='road2'){
+    scene='menu';menuPage='status';touchUI.classList.add('hidden');return;
+  }
   if(scene==='battle'){
     if(!battle || battle.turn!=='player')return;
     battleAttack('attack');return;
@@ -528,6 +649,7 @@ function frame(now){
   else if(scene==='departureDialog')drawDepartureDialog();
   else if(scene==='road2')drawRoad2();
   else if(scene==='battle')drawBattle();
+  else if(scene==='menu')drawMenu();
   else drawEnd();
   if(flashTimer>0 && ['road2','world'].includes(scene)){
     ctx.fillStyle='rgba(0,0,0,.58)';ctx.fillRect(305,85,350,58);text(flashText,480,114,20,'center');
@@ -539,7 +661,12 @@ requestAnimationFrame(frame);
 addEventListener('keydown',e=>{
   keys[e.key]=true;
   if(['Enter',' ','z','Z'].includes(e.key)){e.preventDefault();pressAction();}
-  if(scene==='battle' && battle && battle.turn==='player'){
+  if(scene==='menu'){
+    const r=canvas.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width*W;
+    const y=(e.clientY-r.top)/r.height*H;
+    menuTap(x,y);
+  } else if(scene==='battle' && battle && battle.turn==='player'){
     if(e.key==='1')battleAttack('attack');
     if(e.key==='2')battleMenu='skill';
     if(e.key==='3')battleDefend();
@@ -550,7 +677,12 @@ addEventListener('keydown',e=>{
 });
 addEventListener('keyup',e=>{keys[e.key]=false;});
 canvas.addEventListener('pointerdown',e=>{
-  if(scene==='battle' && battle && battle.turn==='player'){
+  if(scene==='menu'){
+    const r=canvas.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width*W;
+    const y=(e.clientY-r.top)/r.height*H;
+    menuTap(x,y);
+  } else if(scene==='battle' && battle && battle.turn==='player'){
     const r=canvas.getBoundingClientRect();
     const x=(e.clientX-r.left)/r.width*W;
     const y=(e.clientY-r.top)/r.height*H;
@@ -563,8 +695,9 @@ canvas.addEventListener('pointerdown',e=>{
       }
     }else{
       if(y>=385 && y<=460){
-        if(x<325)battleAttack('heal');
-        else if(x<590)battleAttack('ice');
+        if(x<270)battleAttack('heal');
+        else if(x<490)battleAttack('ice');
+        else if(x<710)battleAttack('iceSlash');
         else battleMenu='main';
       }
     }

@@ -317,7 +317,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.10.1',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.10.2',480,121,18,'center','#eef8ff');
   ctx.fillStyle='rgba(10,23,48,.73)';ctx.fillRect(310,466,340,52);text('タップ / Enter で はじめる',480,492,21,'center');
 }
 function speakerName(who){
@@ -474,6 +474,20 @@ function drawForest2(){
   const ht=hudTop();
   ctx.fillStyle='rgba(9,22,48,.82)';ctx.fillRect(18,ht,340,46);
   text('目的：森を抜ける',35,ht+23,18);
+}
+
+function drawVillageDialog(){
+  ctx.fillStyle='#8fd47f';ctx.fillRect(0,0,W,H);rect(0,0,W,92,'#89d9e8');drawHouse(95,145);drawHouse(225,105);drawHouse(725,135);drawTree(30,300);drawTree(845,290);drawTree(720,330);
+  drawDashmiu(345,335,1.35);drawHeroFox(570,335,1.38);
+  for(let i=0;i<5;i++){const x=650+i*40,y=385+(i%2)*8;ellipse(x,y-10,11,10,'#d3eef3');rect(x-10,y,20,25,'#e8f4f5');}
+  drawElderFox(490,350,1.2);
+  const vd=villageDialog();const item=vd[Math.min(dialogIndex,vd.length-1)];drawDialog(item[0],item[1]);
+}
+
+function drawDepartureDialog(){
+  ctx.fillStyle='#8fd47f';ctx.fillRect(0,0,W,H);rect(0,0,W,92,'#89d9e8');drawHouse(105,138);drawTree(770,260);drawTree(55,280);
+  drawHeroFox(430,330,1.42);drawDashmiu(565,335,1.36);drawElderFox(330,350,1.2);
+  const item=departureDialog[Math.min(dialogIndex,departureDialog.length-1)];drawDialog(item[0],item[1]);
 }
 
 function drawRoad2(){
@@ -692,7 +706,7 @@ function menuTap(x,y){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.10.1 ここまで',480,112,42,'center');
+  text('Ver.0.10.2 ここまで',480,112,42,'center');
   text(`${heroName}の冒険は、ここから本格的に始まる。`,480,365,22,'center','#d8efff');
   text('次は：火山麓の洞窟 ＋ 炎晶石探しへ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
@@ -721,7 +735,7 @@ function update(dt){
     }
     dash.x=Math.max(55,Math.min(1845,dash.x));
     dash.y=Math.max(120,Math.min(1000,dash.y));
-    if(dash.x<470&&dash.y>610&&!villageEventStarted){
+    if(dash.x<520&&dash.y>580&&!villageEventStarted){
       villageEventStarted=true;
       scene='villageDialog';
       dialogIndex=0;

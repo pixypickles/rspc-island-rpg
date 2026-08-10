@@ -19,7 +19,7 @@ let dialogIndex = 0;
 let flashText = '';
 let flashTimer = 0;
 let villageEventStarted = false;
-let heroName = localStorage.getItem('risupekuHeroName') || 'リク';
+let heroName = localStorage.getItem('risupekuHeroName') || 'ぴくるす';
 
 let progress = JSON.parse(localStorage.getItem('risupekuProgress') || 'null') || {
   level:1, exp:0, sp:0,
@@ -317,7 +317,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.11',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.12',480,121,18,'center','#eef8ff');
   ctx.fillStyle='rgba(10,23,48,.73)';ctx.fillRect(310,466,340,52);text('タップ / Enter で はじめる',480,492,21,'center');
 }
 function speakerName(who){
@@ -674,7 +674,7 @@ function menuTap(x,y){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.11 ここまで',480,112,42,'center');
+  text('Ver.0.12 ここまで',480,112,42,'center');
   text(`${heroName}の冒険は、ここから本格的に始まる。`,480,365,22,'center','#d8efff');
   text('次は：火山麓の洞窟 ＋ 炎晶石探しへ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
@@ -756,12 +756,12 @@ function update(dt){
 }
 
 function openNameInput(){
-  nameInput.value=heroName;nameOverlay.classList.remove('hidden');
+  nameInput.value=(heroName||'ぴくるす');nameOverlay.classList.remove('hidden');
   setTimeout(()=>{nameInput.focus();nameInput.select();},50);
 }
 function confirmName(){
   const v=(nameInput.value||'').trim().slice(0,8);
-  heroName=v || 'リク';localStorage.setItem('risupekuHeroName',heroName);nameOverlay.classList.add('hidden');
+  heroName=v || 'ぴくるす';localStorage.setItem('risupekuHeroName',heroName);nameOverlay.classList.add('hidden');
   dialogIndex=9;
 }
 nameOk.addEventListener('click',confirmName);

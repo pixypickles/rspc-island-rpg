@@ -27,7 +27,8 @@ let progress = JSON.parse(localStorage.getItem('risupekuProgress') || 'null') ||
   learned:{ waterHeal:true, icePebble:true, iceSlash:false }
 };
 if(progress.gold===undefined) progress.gold=90;
-if(!progress.shopBought) progress.shopBought={fireBlade:false,skillFruit:false};
+if(!progress.items) progress.items={potion:0};
+if(!progress.shopBought) progress.shopBought={fireBlade:false};
 saveProgress();
 
 function saveProgress(){
@@ -64,6 +65,11 @@ let caveHero={x:150,y:760,speed:230};
 let caveBoss={x:1540,y:300,alive:true,hp:95,maxHP:95};
 let caveBattle=false;
 let caveCrystalTaken=false;
+let caveMobs=[
+  {id:201,name:'ヤキトカゲ',kind:'emberLizard',x:520,y:700,spawnX:520,spawnY:700,alive:true,hp:32,maxHP:32,respawn:0},
+  {id:202,name:'トウガラネズミ',kind:'pepperMouse',x:910,y:520,spawnX:910,spawnY:520,alive:true,hp:36,maxHP:36,respawn:0},
+  {id:203,name:'イワモグラ',kind:'rockMole',x:1270,y:420,spawnX:1270,spawnY:420,alive:true,hp:42,maxHP:42,respawn:0}
+];
 let suzumaruActive=false;
 let suzumaruJoined=false;
 let townHero={x:330,y:385,speed:210};
@@ -293,6 +299,10 @@ function drawPirate(x,y,s=1,variant=0){
 }
 
 function drawWildMonster(mon){
+  if(mon.kind==='emberLizard'||mon.kind==='pepperMouse'||mon.kind==='rockMole'){
+    drawCaveMob(mon);return;
+  }
+
   if(mon.kind==='magmaTurtle'){
     drawCaveBoss(mon.x||690,mon.y||250,1.55);
     return;
@@ -358,7 +368,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.16',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.17',480,121,18,'center','#eef8ff');
   ctx.fillStyle='rgba(10,23,48,.73)';ctx.fillRect(310,466,340,52);text('タップ / Enter で はじめる',480,492,21,'center');
 }
 function speakerName(who){
@@ -603,7 +613,7 @@ function drawBattleFx(){
 
 function drawBattle(){
   const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#9cd8ef');g.addColorStop(1,'#b9dc8c');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  if(battle.monsterId===99 && suzumaruActive){
+  if((battle.monsterId===99||battle.monsterId>=200) && suzumaruActive){
     drawHeroFox(185,255,1.65);
     drawSuzumaru(335,258,1.65);
   }else{
@@ -618,7 +628,7 @@ function drawBattle(){
   drawBattleFx();
   // status
   ctx.fillStyle='rgba(14,30,55,.9)';
-  if(battle.monsterId===99 && suzumaruActive){
+  if((battle.monsterId===99||battle.monsterId>=200) && suzumaruActive){
     ctx.fillRect(35,28,430,122);
     text(heroName,55,52,20);
     text(`HP ${battle.heroHP}/${progress.maxHP}  MP ${battle.heroMP}/${progress.maxMP}`,55,82,16);
@@ -649,21 +659,23 @@ function drawBattle(){
       outlineRect(270,388,180,48,'#dff4fb','#71bad7',2);text('スキル',360,412,20,'center','#17324a');
       outlineRect(470,388,180,48,'#dff4fb','#71bad7',2);text('ぼうぎょ',560,412,20,'center','#17324a');
       outlineRect(670,388,180,48,'#dff4fb','#71bad7',2);text('にげる',760,412,20,'center','#17324a');
-      const actorName=(battle.monsterId===99&&suzumaruActive&&battleActor==='suzu')?'スズマル':heroName;
+      const actorName=((battle.monsterId===99||battle.monsterId>=200)&&suzumaruActive&&battleActor==='suzu')?'スズマル':heroName;
       text(`${actorName}の行動`,480,474,15,'center','#c8e7f4');
     }else{
       if(battle.monsterId===99 && suzumaruActive && battleActor==='suzu'){
-        outlineRect(110,390,300,56,'#dff4fb','#71bad7',2);text('火炎斬り MP5',260,418,18,'center','#17324a');
-        outlineRect(450,390,300,56,'#dff4fb','#71bad7',2);text('もどる',600,418,18,'center','#17324a');
+        outlineRect(85,390,260,56,'#dff4fb','#71bad7',2);text('火炎斬り MP5',215,418,17,'center','#17324a');
+        outlineRect(365,390,260,56,'#fff0d0','#d2a24d',2);text(`回復薬 x${progress.items.potion}`,495,418,17,'center','#5f4623');
+        outlineRect(645,390,220,56,'#dff4fb','#71bad7',2);text('もどる',755,418,17,'center','#17324a');
       }else{
-        outlineRect(55,390,205,56,'#dff4fb','#71bad7',2);text('水のいやし MP5',157,418,16,'center','#17324a');
-        outlineRect(275,390,205,56,'#dff4fb','#71bad7',2);text('氷のつぶて MP4',377,418,16,'center','#17324a');
+        outlineRect(50,385,185,50,'#dff4fb','#71bad7',2);text('水のいやし',142,410,15,'center','#17324a');
+        outlineRect(245,385,185,50,'#dff4fb','#71bad7',2);text('氷のつぶて',337,410,15,'center','#17324a');
         if(progress.learned.iceSlash){
-          outlineRect(495,390,205,56,'#dff4fb','#71bad7',2);text('氷結斬り MP7',597,418,16,'center','#17324a');
+          outlineRect(440,385,185,50,'#dff4fb','#71bad7',2);text('氷結斬り',532,410,15,'center','#17324a');
         }else{
-          outlineRect(495,390,205,56,'#6f8092','#5d6d7c',2);text('？？？？',597,418,16,'center','#d5dde4');
+          outlineRect(440,385,185,50,'#6f8092','#5d6d7c',2);text('？？？？',532,410,15,'center','#d5dde4');
         }
-        outlineRect(715,390,150,56,'#dff4fb','#71bad7',2);text('もどる',790,418,16,'center','#17324a');
+        outlineRect(635,385,185,50,'#fff0d0','#d2a24d',2);text(`回復薬 x${progress.items.potion}`,727,410,15,'center','#5f4623');
+        outlineRect(330,446,300,42,'#dff4fb','#71bad7',2);text('もどる',480,467,15,'center','#17324a');
       }
       text('スキルを選択',480,474,15,'center','#c8e7f4');
     }
@@ -716,6 +728,31 @@ function battleAttack(mode='attack'){
   }
 }
 
+
+function usePotion(target){
+  if(!battle || battle.turn!=='player')return;
+  if(progress.items.potion<=0){battleMessage='回復薬を持っていない！';return;}
+  progress.items.potion--;saveProgress();
+  if(target==='suzu'){
+    battle.suzuHP=Math.min(battle.suzuMaxHP,battle.suzuHP+25);
+    battleMessage='スズマルは回復薬を使った！ HPが25回復！';
+    setBattleFx('heal',335,258);
+    battleChoiceText.suzu='回復薬';
+    battleActor='hero';
+    battle.turn='enemy';battleCooldown=.8;battleMenu='main';
+  }else{
+    battle.heroHP=Math.min(progress.maxHP,battle.heroHP+25);
+    battleMessage=`${heroName}は回復薬を使った！ HPが25回復！`;
+    setBattleFx('heal',185,255);
+    if(battle.monsterId===99||battle.monsterId>=200)battleChoiceText.hero='回復薬';
+    if(suzumaruActive && (battle.monsterId===99||battle.monsterId>=200)){
+      battleActor='suzu';battleMenu='main';
+    }else{
+      battle.turn='enemy';battleCooldown=.8;battleMenu='main';
+    }
+  }
+}
+
 function suzuAction(mode='attack'){
   if(!battle || battle.turn!=='player' || battleActor!=='suzu')return;
   let dmg=0;
@@ -746,7 +783,7 @@ function battleDefend(){
   }
   battle.defending=true;
   battleMessage=`${heroName}は身を守っている！`;if(battle.monsterId===99)battleChoiceText.hero='ぼうぎょ';
-  if(battle.monsterId===99 && suzumaruActive){
+  if((battle.monsterId===99||battle.monsterId>=200) && suzumaruActive){
     battleActor='suzu';battleMenu='main';
   }else{
     battle.turn='enemy';battleCooldown=.65;battleMenu='main';
@@ -782,28 +819,36 @@ function finishBattle(){
   if(battle && battle.monsterId===99){
     caveBoss.alive=false;caveBoss.hp=0;
     const expGain=35;
-    progress.gold += 35;
+    progress.gold+=35;
     const leveled=gainExp(expGain);
     saveProgress();
     battle=null;scene='cave';touchUI.classList.remove('hidden');
     caveHero.x=1450;caveHero.y=350;
     flashText=leveled?`マグマガメ撃破！ Lv.${progress.level}　SP+1`:'マグマガメ撃破！ 炎晶石への道が開いた';
-    flashTimer=3.0;
-    return;
+    flashTimer=3.0;return;
   }
-  const mon=battle.monsterId===99?{id:99,name:'マグマガメ',kind:'magmaTurtle'}:monsters.find(m=>m.id===battle.monsterId);
-  if(mon){
-    mon.alive=false;
-    mon.respawn=12.0;
+
+  if(battle && battle.monsterId>=200){
+    const mon=caveMobs.find(m=>m.id===battle.monsterId);
+    if(mon){mon.alive=false;mon.respawn=12.0;}
+    const expGain=mon?({201:14,202:16,203:18}[mon.id]||12):12;
+    const goldGain=mon?({201:9,202:11,203:12}[mon.id]||8):8;
+    progress.gold+=goldGain;
+    const leveled=gainExp(expGain);saveProgress();
+    battle=null;scene='cave';touchUI.classList.remove('hidden');
+    flashText=leveled?`レベルアップ！ Lv.${progress.level}　SP+1`:`経験値 ${expGain} / ${goldGain}G 獲得！`;
+    flashTimer=2.5;return;
   }
-  const expGain = mon ? ({1:12,2:15,3:20}[mon.id] || 10) : 10;
-  const goldGain = mon ? ({1:8,2:10,3:14}[mon.id] || 6) : 6;
-  progress.gold += goldGain;
-  const leveled = gainExp(expGain);
-  saveProgress();
+
+  const mon=monsters.find(m=>m.id===battle.monsterId);
+  if(mon){mon.alive=false;mon.respawn=12.0;}
+  const expGain=mon?({1:12,2:15,3:20}[mon.id]||10):10;
+  const goldGain=mon?({1:8,2:10,3:14}[mon.id]||6):6;
+  progress.gold+=goldGain;
+  const leveled=gainExp(expGain);saveProgress();
   scene='road2';touchUI.classList.remove('hidden');
   battle=null;
-  flashText = leveled ? `レベルアップ！ Lv.${progress.level}　SP+1` : `経験値 ${expGain} / ${goldGain}G 獲得！`;
+  flashText=leveled?`レベルアップ！ Lv.${progress.level}　SP+1`:`経験値 ${expGain} / ${goldGain}G 獲得！`;
   flashTimer=3.0;
 }
 
@@ -905,12 +950,11 @@ function drawShop(){
     text(bought?'購入済み':'60G',820,184,20,'right',bought?'#c7d0d6':'#b4612e');
     text('炎の村で鍛えた軽い小剣。水・氷魔法の邪魔をしない。',115,224,15,'left',bought?'#aab5bd':'#526f82');
   }else{
-    const bought=progress.shopBought.skillFruit;
-    outlineRect(80,125,800,120,bought?'#576575':'#eef8fb','#79b9d5',2);
-    text('スキルの実',115,157,24,'left',bought?'#c7d0d6':'#17324a');
-    text('使うと SP +1',115,193,18,'left',bought?'#aab5bd':'#395a70');
-    text(bought?'購入済み':'80G',820,184,20,'right',bought?'#c7d0d6':'#b4612e');
-    text('珍しい実。今回は購入時にすぐSPへ変換されます。',115,224,15,'left',bought?'#aab5bd':'#526f82');
+    outlineRect(80,125,800,120,'#eef8fb','#79b9d5',2);
+    text('回復薬',115,157,24,'left','#17324a');
+    text('戦闘中、味方1人のHPを25回復',115,193,18,'left','#395a70');
+    text('20G',820,184,20,'right','#b4612e');
+    text(`所持数：${progress.items.potion}`,115,224,15,'left','#526f82');
   }
 
   outlineRect(315,335,330,66,'#dff4fb','#71bad7',2);
@@ -929,13 +973,11 @@ function shopBuy(){
     saveProgress();
     flashText='火打ちの小剣を装備した！ 攻撃力+3';flashTimer=2.1;
   }else{
-    if(progress.shopBought.skillFruit){flashText='もう購入済みです';flashTimer=1.6;return;}
-    if(progress.gold<80){flashText='お金が足りません';flashTimer=1.6;return;}
-    progress.gold-=80;
-    progress.sp+=1;
-    progress.shopBought.skillFruit=true;
+    if(progress.gold<20){flashText='お金が足りません';flashTimer=1.6;return;}
+    progress.gold-=20;
+    progress.items.potion+=1;
     saveProgress();
-    flashText='スキルの実！ SP+1';flashTimer=2.1;
+    flashText=`回復薬を買った！ 所持数 ${progress.items.potion}`;flashTimer=1.8;
   }
 }
 
@@ -952,6 +994,38 @@ function drawSarubieArrival(){
   drawDialog(item[0],item[1]);
 }
 
+
+
+function drawCaveMob(mon){
+  if(!mon || !mon.alive)return;
+  const x=mon.x,y=mon.y;
+  if(mon.kind==='emberLizard'){
+    ctx.save();ctx.translate(x,y);
+    ellipse(0,18,22,6,'rgba(0,0,0,.2)');
+    ellipse(0,0,24,12,'#d66a43');
+    ellipse(20,-3,10,8,'#e27c4f');
+    rect(22,-6,3,3,'#243149');
+    ctx.strokeStyle='#c95839';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(-20,2);ctx.lineTo(-38,-8);ctx.stroke();
+    text('🔥',-34,-18,16,'center');
+    ctx.restore();
+  }else if(mon.kind==='pepperMouse'){
+    ctx.save();ctx.translate(x,y);
+    ellipse(0,18,20,6,'rgba(0,0,0,.2)');
+    ctx.fillStyle='#b53838';ctx.beginPath();ctx.moveTo(-18,10);ctx.lineTo(-10,-12);ctx.lineTo(12,-18);ctx.lineTo(20,8);ctx.closePath();ctx.fill();
+    ellipse(-9,-14,6,6,'#8d6a52');ellipse(9,-14,6,6,'#8d6a52');
+    rect(-7,-5,3,4,'#243149');rect(5,-5,3,4,'#243149');
+    ctx.strokeStyle='#8d6a52';ctx.lineWidth=3;ctx.beginPath();ctx.arc(20,7,17,-1.0,1.0);ctx.stroke();
+    ctx.restore();
+  }else{
+    ctx.save();ctx.translate(x,y);
+    ellipse(0,18,22,6,'rgba(0,0,0,.2)');
+    ellipse(0,3,22,16,'#766f64');
+    ellipse(0,-3,15,12,'#928a7b');
+    rect(-7,-6,3,4,'#243149');rect(4,-6,3,4,'#243149');
+    ctx.fillStyle='#c3b49b';ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(7,7);ctx.lineTo(-7,7);ctx.closePath();ctx.fill();
+    ctx.restore();
+  }
+}
 
 function drawCaveBoss(x,y,s=1){
   ctx.save();ctx.translate(x,y);ctx.scale(s,s);
@@ -1011,6 +1085,7 @@ function drawCave(){
     ctx.fillStyle='#ff8a45';ctx.beginPath();ctx.moveTo(1562,120);ctx.lineTo(1582,170);ctx.lineTo(1562,202);ctx.lineTo(1542,170);ctx.closePath();ctx.fill();
     text('炎晶石',1562,95,17,'center','#ffd39d');
   }
+  for(const mon of caveMobs) drawCaveMob(mon);
   if(caveBoss.alive) drawCaveBoss(caveBoss.x,caveBoss.y,1.45);
 
   drawHeroFox(caveHero.x,caveHero.y,1.15);
@@ -1022,6 +1097,21 @@ function drawCave(){
   ctx.fillStyle='rgba(9,22,35,.88)';ctx.fillRect(18,ht,390,46);
   text(caveBoss.alive?'目的：洞窟の奥で炎晶石を探す':'目的：炎晶石を手に入れる',35,ht+23,17);
 }
+
+function startCaveMobBattle(mon){
+  battle={
+    heroHP:progress.maxHP,heroMP:progress.maxMP,
+    suzuHP:56,suzuMaxHP:56,suzuMP:22,suzuMaxMP:22,
+    enemyHP:mon.hp,enemyMaxHP:mon.maxHP,
+    monsterId:mon.id,enemyName:mon.name,enemyKind:mon.kind,
+    turn:'player',defending:false
+  };
+  battleMenu='main';battleActor='hero';
+  battleChoiceText={hero:'未選択',suzu:'未選択'};
+  battleMessage=`${mon.name}が現れた！`;
+  scene='battle';touchUI.classList.add('hidden');
+}
+
 function startCaveBossBattle(){
   caveBattle=true;
   battle={
@@ -1085,7 +1175,7 @@ function menuTap(x,y){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.16 ここまで',480,112,42,'center');
+  text('Ver.0.17 ここまで',480,112,42,'center');
   text(`スズマルが正式加入！ 次はさるびび村へ。`,480,365,22,'center','#d8efff');
   text('次は：さるびび村へ向かう',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
@@ -1162,6 +1252,16 @@ function update(dt){
     townHero.x=Math.max(80,Math.min(900,townHero.x));
     townHero.y=Math.max(250,Math.min(455,townHero.y));
   } else if(scene==='cave'){
+    for(const mon of caveMobs){
+      if(!mon.alive && mon.respawn>0){
+        mon.respawn-=dt;
+        if(mon.respawn<=0){
+          mon.alive=true;
+          mon.x=mon.spawnX+(Math.random()*40-20);
+          mon.y=mon.spawnY+(Math.random()*30-15);
+        }
+      }
+    }
     let dx=0,dy=0;
     if(keys.ArrowLeft||keys.a)dx--;
     if(keys.ArrowRight||keys.d)dx++;
@@ -1172,7 +1272,10 @@ function update(dt){
     if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);caveHero.x+=dx*caveHero.speed*dt;caveHero.y+=dy*caveHero.speed*dt;}
     caveHero.x=Math.max(120,Math.min(1660,caveHero.x));
     caveHero.y=Math.max(150,Math.min(850,caveHero.y));
-    if(caveBoss.alive && Math.hypot(caveHero.x-caveBoss.x,caveHero.y-caveBoss.y)<85) startCaveBossBattle();
+    for(const mon of caveMobs){
+      if(mon.alive && Math.hypot(caveHero.x-mon.x,caveHero.y-mon.y)<55){startCaveMobBattle(mon);break;}
+    }
+    if(scene==='cave' && caveBoss.alive && Math.hypot(caveHero.x-caveBoss.x,caveHero.y-caveBoss.y)<85) startCaveBossBattle();
     if(!caveBoss.alive && !caveCrystalTaken && Math.hypot(caveHero.x-1562,caveHero.y-170)<95){
       caveCrystalTaken=true;
       scene='sarubieRitual';
@@ -1348,7 +1451,7 @@ canvas.addEventListener('pointerdown',e=>{
     if(battleMenu==='main'){
       if(y>=380 && y<=455){
         if(x<260){
-          if(battle.monsterId===99&&suzumaruActive&&battleActor==='suzu')suzuAction('attack');
+          if((battle.monsterId===99||battle.monsterId>=200)&&suzumaruActive&&battleActor==='suzu')suzuAction('attack');
           else battleAttack('attack');
         }
         else if(x<460)battleMenu='skill';
@@ -1357,14 +1460,19 @@ canvas.addEventListener('pointerdown',e=>{
       }
     }else{
       if(y>=385 && y<=460){
-        if(battle.monsterId===99&&suzumaruActive&&battleActor==='suzu'){
-          if(x<430)suzuAction('fire');
+        if((battle.monsterId===99||battle.monsterId>=200)&&suzumaruActive&&battleActor==='suzu'){
+          if(x<355)suzuAction('fire');
+          else if(x<635)usePotion('suzu');
           else battleMenu='main';
         }else{
-          if(x<270)battleAttack('heal');
-          else if(x<490)battleAttack('ice');
-          else if(x<710)battleAttack('iceSlash');
-          else battleMenu='main';
+          if(y>=380&&y<=442){
+            if(x<240)battleAttack('heal');
+            else if(x<435)battleAttack('ice');
+            else if(x<630)battleAttack('iceSlash');
+            else usePotion('hero');
+          }else{
+            battleMenu='main';
+          }
         }
       }
     }

@@ -28,6 +28,10 @@ let progress = JSON.parse(localStorage.getItem('risupekuProgress') || 'null') ||
 };
 if(progress.gold===undefined) progress.gold=90;
 if(!progress.items) progress.items={potion:0};
+if(!progress.suzuSkills) progress.suzuSkills={
+  single:0,   // 火炎斬り系：主力。伸び幅を大きくする
+  all:0       // 火走り系：全体攻撃。伸ばせるが単体ほど火力効率は上がらない
+};
 if(!progress.shopBought) progress.shopBought={fireBlade:false};
 saveProgress();
 
@@ -368,7 +372,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.18',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.18.1',480,121,18,'center','#eef8ff');
   ctx.fillStyle='rgba(10,23,48,.73)';ctx.fillRect(310,466,340,52);text('タップ / Enter で はじめる',480,492,21,'center');
 }
 function speakerName(who){
@@ -611,6 +615,10 @@ function drawBattleFx(){
   ctx.restore();
 }
 
+function isSuzumaruTurn(){
+  return !!(battle && suzumaruActive && battleActor==='suzu' &&
+    (battle.monsterId===99 || battle.monsterId>=200));
+}
 function drawBattle(){
   const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#9cd8ef');g.addColorStop(1,'#b9dc8c');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
   if((battle.monsterId===99||battle.monsterId>=200) && suzumaruActive){
@@ -675,12 +683,13 @@ function drawBattle(){
       outlineRect(270,388,180,48,'#dff4fb','#71bad7',2);text('スキル',360,412,20,'center','#17324a');
       outlineRect(470,388,180,48,'#dff4fb','#71bad7',2);text('ぼうぎょ',560,412,20,'center','#17324a');
       outlineRect(670,388,180,48,'#dff4fb','#71bad7',2);text('にげる',760,412,20,'center','#17324a');
-      const actorName=((battle.monsterId===99||battle.monsterId>=200)&&suzumaruActive&&battleActor==='suzu')?'スズマル':heroName;
+      const actorName=isSuzumaruTurn()?'スズマル':heroName;
       text(`${actorName}の行動`,480,474,15,'center','#c8e7f4');
     }else{
-      if(battle.monsterId===99 && suzumaruActive && battleActor==='suzu'){
-        outlineRect(55,385,245,54,'#dff4fb','#71bad7',2);text('火炎斬り MP5',177,412,16,'center','#17324a');
-        outlineRect(315,385,245,54,'#ffe2cf','#d78251',2);text('火走り MP8',437,412,16,'center','#5c3023');
+      if(isSuzumaruTurn()){
+        text('スズマルのスキル',480,372,14,'center','#ffe5c8');
+        outlineRect(55,385,245,54,'#dff4fb','#71bad7',2);text('火炎斬り MP5',177,406,16,'center','#17324a');text('単体・高威力',177,425,11,'center','#5a7383');
+        outlineRect(315,385,245,54,'#ffe2cf','#d78251',2);text('火走り MP8',437,406,16,'center','#5c3023');text('敵全体',437,425,11,'center','#7d5748');
         outlineRect(575,385,180,54,'#fff0d0','#d2a24d',2);text(`回復薬 x${progress.items.potion}`,665,412,14,'center','#5f4623');
         outlineRect(770,385,140,54,'#dff4fb','#71bad7',2);text('もどる',840,412,15,'center','#17324a');
       }else{
@@ -790,7 +799,7 @@ function suzuAction(mode='attack'){
   if(mode==='fireRun'){
     if(battle.suzuMP<8){battleMessage='MPが足りない！';return;}
     battle.suzuMP-=8;
-    dmg=8+Math.floor(Math.random()*4);
+    dmg=8+progress.suzuSkills.all*2+Math.floor(Math.random()*4);
     damageAllEnemies(dmg);
     battleMessage=`スズマルの「火走り」！ 炎が敵全体を駆け抜ける！`;
     setBattleFx('fire');battleChoiceText.suzu='火走り';
@@ -800,7 +809,7 @@ function suzuAction(mode='attack'){
   if(mode==='fire'){
     if(battle.suzuMP<5){battleMessage='MPが足りない！';return;}
     battle.suzuMP-=5;
-    dmg=22+Math.floor(Math.random()*7);
+    dmg=22+progress.suzuSkills.single*5+Math.floor(Math.random()*7);
     battleMessage=`スズマルの「火炎斬り」！ ${dmg}ダメージ！`;setBattleFx('fire');battleChoiceText.suzu='火炎斬り';
   }else{
     dmg=12+Math.floor(Math.random()*5);
@@ -817,7 +826,7 @@ function suzuAction(mode='attack'){
 }
 function battleDefend(){
   if(!battle || battle.turn!=='player')return;
-  if(battle.monsterId===99 && suzumaruActive && battleActor==='suzu'){
+  if(isSuzumaruTurn()){
     battleMessage='スズマルは身を守っている！';battleChoiceText.suzu='ぼうぎょ';
     battleActor='hero';battleMenu='main';
     return;
@@ -1276,7 +1285,7 @@ function menuTap(x,y){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.18 ここまで',480,112,42,'center');
+  text('Ver.0.18.1 ここまで',480,112,42,'center');
   text(`スズマルが正式加入！ 次はさるびび村へ。`,480,365,22,'center','#d8efff');
   text('次は：さるびび村へ向かう',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
@@ -1561,7 +1570,7 @@ canvas.addEventListener('pointerdown',e=>{
       }
     }else{
       if(y>=385 && y<=460){
-        if((battle.monsterId===99||battle.monsterId>=200)&&suzumaruActive&&battleActor==='suzu'){
+        if(isSuzumaruTurn()){
           if(x<305)suzuAction('fire');
           else if(x<565)suzuAction('fireRun');
           else if(x<760)usePotion('suzu');

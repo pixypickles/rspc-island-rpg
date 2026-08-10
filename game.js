@@ -317,7 +317,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.10',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.10.1',480,121,18,'center','#eef8ff');
   ctx.fillStyle='rgba(10,23,48,.73)';ctx.fillRect(310,466,340,52);text('タップ / Enter で はじめる',480,492,21,'center');
 }
 function speakerName(who){
@@ -692,7 +692,7 @@ function menuTap(x,y){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.10 ここまで',480,112,42,'center');
+  text('Ver.0.10.1 ここまで',480,112,42,'center');
   text(`${heroName}の冒険は、ここから本格的に始まる。`,480,365,22,'center','#d8efff');
   text('次は：火山麓の洞窟 ＋ 炎晶石探しへ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
@@ -702,19 +702,30 @@ function update(dt){
     let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;
     dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);dash.x+=dx*dash.speed*dt;dash.y+=dy*dash.speed*dt;}
     dash.x=Math.max(60,Math.min(world.width-70,dash.x));dash.y=Math.max(140,Math.min(world.height-130,dash.y));
-    if(dash.x<620&&dash.y>760&&!villageEventStarted){villageEventStarted=true;scene='villageDialog';dialogIndex=0;touchUI.classList.add('hidden');}
+    if(dash.x<430&&dash.y>900){
+      scene='forest2';
+      dash.x=1660;dash.y=210;
+      flashText='森のさらに奥へ…';flashTimer=1.5;
+    }
   } else if(scene==='forest2'){
     let dx=0,dy=0;
     if(keys['ArrowLeft']||keys['a'])dx--;
     if(keys['ArrowRight']||keys['d'])dx++;
     if(keys['ArrowUp']||keys['w'])dy--;
     if(keys['ArrowDown']||keys['s'])dy++;
-    if(touchDir.left)dx--;if(touchDir.right)dx++;if(touchDir.up)dy--;if(touchDir.down)dy++;
-    if(dx||dy){const l=Math.hypot(dx,dy);dash.x+=dx/l*dash.speed*dt;dash.y+=dy/l*dash.speed*dt;}
+    dx+=touchVector.x;dy+=touchVector.y;
+    const l=Math.hypot(dx,dy);
+    if(l>.05){
+      dx/=Math.max(1,l);dy/=Math.max(1,l);
+      dash.x+=dx*dash.speed*dt;dash.y+=dy*dash.speed*dt;
+    }
     dash.x=Math.max(55,Math.min(1845,dash.x));
     dash.y=Math.max(120,Math.min(1000,dash.y));
     if(dash.x<470&&dash.y>610&&!villageEventStarted){
-      villageEventStarted=true;scene='village';dialogIndex=0;touchUI.classList.add('hidden');
+      villageEventStarted=true;
+      scene='villageDialog';
+      dialogIndex=0;
+      touchUI.classList.add('hidden');
     }
   } else if(scene==='road2'){
     for(const mon of monsters){
@@ -809,7 +820,7 @@ function frame(now){
   else if(scene==='menu')drawMenu();
   else if(scene==='sarubieArrival')drawSarubieArrival();
   else drawEnd();
-  if(flashTimer>0 && ['road2','world'].includes(scene)){
+  if(flashTimer>0 && ['road2','world','forest2'].includes(scene)){
     ctx.fillStyle='rgba(0,0,0,.58)';ctx.fillRect(305,85,350,58);text(flashText,480,114,20,'center');
   }
   requestAnimationFrame(frame);
@@ -859,7 +870,7 @@ canvas.addEventListener('pointerdown',e=>{
         else battleMenu='main';
       }
     }
-  } else if(scene!=='world'&&scene!=='road2') pressAction();
+  } else if(scene!=='world'&&scene!=='forest2'&&scene!=='road2') pressAction();
 });
 actionBtn.addEventListener('pointerdown',e=>{e.preventDefault();pressAction();});
 

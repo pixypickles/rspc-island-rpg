@@ -21,8 +21,8 @@ let flashTimer = 0;
 let villageEventStarted = false;
 let heroName = localStorage.getItem('risupekuHeroName') || 'リク';
 
-const dash = {x:260,y:170,speed:178};
-const hero = {x:1630,y:780,speed:175};
+const dash = {x:1960,y:180,speed:178};
+const hero = {x:360,y:300,speed:175};
 const camera = {x:0,y:0};
 
 let battle = null;
@@ -70,9 +70,13 @@ const departureDialog = [
   ['hero','……うん。']
 ];
 
-const world = { width:2300, height:1100 };
-const road2 = { width:2100, height:1200 };
-const slime = {x:1050,y:610,alive:true};
+const world = { width:2400, height:1250 };
+const road2 = { width:2200, height:1550 };
+const monsters = [
+  {id:1,name:'リンゴリス',kind:'appleSquirrel',x:720,y:570,alive:true,hp:24,maxHP:24},
+  {id:2,name:'モモモモンガ',kind:'peachGlider',x:1210,y:890,alive:true,hp:30,maxHP:30},
+  {id:3,name:'カボチャガニ',kind:'pumpkinCrab',x:1710,y:1190,alive:true,hp:38,maxHP:38}
+];
 
 function resize(){
   const dpr=Math.min(devicePixelRatio||1,2);
@@ -125,20 +129,91 @@ function drawDashmiu(x,y,s=1){
   rect(-18,9,5,15,'#f6eee5');rect(13,9,5,15,'#f6eee5');rect(-11,28,8,12,'#263552');rect(3,28,8,12,'#263552');rect(-12,38,10,4,'#f6eee5');rect(2,38,10,4,'#f6eee5');
   ctx.restore();
 }
-function drawPirate(x,y,s=1){
+function drawPirate(x,y,s=1,variant=0){
   ctx.save();ctx.translate(x,y);ctx.scale(s,s);
-  ellipse(0,27,16,5,'rgba(0,0,0,.22)');ellipse(0,-10,14,13,'#806b56');rect(-13,2,26,24,'#e87a2e');rect(-12,6,24,5,'#283346');
-  rect(-15,-23,30,6,'#ef8b3c');rect(-9,-28,18,7,'#2d3340');rect(-9,-13,4,4,'#1c2537');rect(5,-13,4,4,'#1c2537');rect(-10,26,8,12,'#2f2f36');rect(2,26,8,12,'#2f2f36');
+  ellipse(0,29,17,5,'rgba(0,0,0,.22)');
+  const fur = ['#9b765b','#b58a68','#6f8a72'][variant%3];
+  const dark = '#263247';
+  // tail / animal silhouette
+  if(variant%3===0){
+    ctx.fillStyle=fur;ctx.beginPath();ctx.moveTo(13,10);ctx.quadraticCurveTo(31,5,30,23);ctx.quadraticCurveTo(25,31,14,24);ctx.closePath();ctx.fill();
+  }else if(variant%3===1){
+    ctx.fillStyle=fur;ctx.beginPath();ctx.moveTo(13,12);ctx.quadraticCurveTo(32,12,32,29);ctx.quadraticCurveTo(22,26,13,24);ctx.closePath();ctx.fill();
+  }
+  // ears
+  ctx.fillStyle=fur;
+  if(variant%3===0){ // cat
+    ctx.beginPath();ctx.moveTo(-13,-20);ctx.lineTo(-8,-34);ctx.lineTo(-1,-20);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(13,-20);ctx.lineTo(8,-34);ctx.lineTo(1,-20);ctx.closePath();ctx.fill();
+  }else if(variant%3===1){ // rat
+    ellipse(-10,-23,6,7,fur);ellipse(10,-23,6,7,fur);
+  }else{ // boar-ish
+    ctx.beginPath();ctx.moveTo(-14,-18);ctx.lineTo(-19,-28);ctx.lineTo(-7,-23);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(14,-18);ctx.lineTo(19,-28);ctx.lineTo(7,-23);ctx.closePath();ctx.fill();
+  }
+  ellipse(0,-10,15,14,fur);
+  if(variant%3===2) ellipse(0,-4,9,6,'#b88f76');
+  else ellipse(0,-4,8,6,'#c5a183');
+  rect(-9,-13,4,5,'#172338');rect(5,-13,4,5,'#172338');
+  // orange pirate outfit
+  rect(-14,3,28,25,'#e8782d');rect(-13,7,26,5,dark);
+  rect(-17,-25,34,6,'#f08b3c');rect(-10,-30,20,7,dark);
+  // limbs
+  rect(-11,28,8,12,'#30343e');rect(3,28,8,12,'#30343e');
   ctx.restore();
 }
-function drawSlime(x,y,s=1){
+
+function drawWildMonster(mon){
+  if(!mon || !mon.alive) return;
+  if(mon.kind==='appleSquirrel') drawAppleSquirrel(mon.x,mon.y,1.25);
+  else if(mon.kind==='peachGlider') drawPeachGlider(mon.x,mon.y,1.25);
+  else drawPumpkinCrab(mon.x,mon.y,1.25);
+}
+function drawAppleSquirrel(x,y,s=1){
   ctx.save();ctx.translate(x,y);ctx.scale(s,s);
-  ellipse(0,20,22,6,'rgba(0,0,0,.18)');
-  ctx.fillStyle='#7fcfe6';ctx.beginPath();ctx.moveTo(-22,15);ctx.quadraticCurveTo(-22,-10,0,-18);ctx.quadraticCurveTo(22,-10,22,15);ctx.quadraticCurveTo(0,27,-22,15);ctx.fill();
-  ellipse(-7,3,3,4,'#243149');ellipse(7,3,3,4,'#243149');
-  ctx.strokeStyle='#36586a';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,8,6,4,0,Math.PI);ctx.stroke();
+  ellipse(0,24,22,6,'rgba(0,0,0,.16)');
+  // apple body
+  ellipse(0,3,21,20,'#e7685d');
+  rect(-2,-22,5,10,'#6d5134');
+  ctx.fillStyle='#5b9d58';ctx.beginPath();ctx.ellipse(8,-18,9,5,-.45,0,Math.PI*2);ctx.fill();
+  // squirrel ears / tail
+  ellipse(-11,-14,6,7,'#d9a36c');ellipse(11,-14,6,7,'#d9a36c');
+  ctx.fillStyle='#d69a61';ctx.beginPath();ctx.moveTo(17,0);ctx.quadraticCurveTo(40,-10,38,18);ctx.quadraticCurveTo(30,34,15,22);ctx.closePath();ctx.fill();
+  rect(-8,0,4,5,'#253148');rect(5,0,4,5,'#253148');rect(-2,7,4,3,'#7d3d40');
+  rect(-13,17,8,8,'#d9a36c');rect(5,17,8,8,'#d9a36c');
   ctx.restore();
 }
+function drawPeachGlider(x,y,s=1){
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+  ellipse(0,23,23,6,'rgba(0,0,0,.16)');
+  ellipse(0,2,22,20,'#f5a1a5');
+  ctx.fillStyle='#f7c2c4';
+  ctx.beginPath();ctx.moveTo(-16,-3);ctx.lineTo(-38,10);ctx.lineTo(-17,18);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(16,-3);ctx.lineTo(38,10);ctx.lineTo(17,18);ctx.closePath();ctx.fill();
+  ellipse(-10,-13,6,7,'#d9a47c');ellipse(10,-13,6,7,'#d9a47c');
+  rect(-8,-2,4,5,'#253148');rect(4,-2,4,5,'#253148');rect(-2,6,4,3,'#8d4e55');
+  ctx.fillStyle='#62a95b';ctx.beginPath();ctx.ellipse(7,-19,9,5,-.4,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+}
+function drawPumpkinCrab(x,y,s=1){
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+  ellipse(0,23,26,6,'rgba(0,0,0,.16)');
+  ellipse(0,3,25,21,'#e99b43');
+  rect(-3,-23,6,10,'#598653');
+  // pumpkin grooves
+  ctx.strokeStyle='#c87535';ctx.lineWidth=2;
+  [-12,0,12].forEach(xx=>{ctx.beginPath();ctx.moveTo(xx,-12);ctx.quadraticCurveTo(xx/2,4,xx,20);ctx.stroke();});
+  // crab legs/claws
+  ctx.strokeStyle='#c77a3b';ctx.lineWidth=5;
+  ctx.beginPath();ctx.moveTo(-20,10);ctx.lineTo(-35,18);ctx.lineTo(-43,12);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(20,10);ctx.lineTo(35,18);ctx.lineTo(43,12);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-17,16);ctx.lineTo(-30,28);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(17,16);ctx.lineTo(30,28);ctx.stroke();
+  ellipse(-9,-1,3,4,'#253148');ellipse(9,-1,3,4,'#253148');
+  ctx.restore();
+}
+
+
 
 function drawTitle(){
   const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#77cae7');g.addColorStop(.55,'#c5eadc');g.addColorStop(1,'#f2d5a6');
@@ -146,8 +221,10 @@ function drawTitle(){
   ctx.fillStyle='#66af63';ctx.beginPath();ctx.moveTo(480,118);ctx.lineTo(756,250);ctx.lineTo(654,448);ctx.lineTo(307,448);ctx.lineTo(205,251);ctx.closePath();ctx.fill();
   ctx.strokeStyle='#4c8d59';ctx.lineWidth=5;ctx.stroke();
   ctx.fillStyle='#526751';ctx.beginPath();ctx.moveTo(480,172);ctx.lineTo(570,352);ctx.lineTo(391,352);ctx.closePath();ctx.fill();
-  [['🎪',480,140],['💧',273,266],['🔥',350,407],['🌪️',610,407],['🪨',687,266]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.4',480,121,18,'center','#eef8ff');
+  [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
+  ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
+  ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.5',480,121,18,'center','#eef8ff');
   ctx.fillStyle='rgba(10,23,48,.73)';ctx.fillRect(310,466,340,52);text('タップ / Enter で はじめる',480,492,21,'center');
 }
 function speakerName(who){
@@ -177,7 +254,7 @@ function drawCutscene(){
   }else if(i<=8){
     ctx.fillStyle='#101936';ctx.fillRect(0,0,W,H);for(let a=0;a<60;a++)rect((a*137)%W,(a*79)%250,2,2,'#d5e7ff');
     rect(0,340,W,200,'#21483f');rect(110,270,280,76,'#5a3829');text('ちぇすたぴ号',250,307,17,'center','#e8e2cc');
-    drawPirate(610,354,1.35);drawPirate(687,369,1.18);drawPirate(760,350,1.28);if(i>=5)drawDashmiu(220,361,1.32);
+    drawPirate(610,354,1.35,0);drawPirate(687,369,1.18,1);drawPirate(760,350,1.28,2);if(i>=5)drawDashmiu(220,361,1.32);
   }else{
     ctx.fillStyle='#101936';ctx.fillRect(0,0,W,H);rect(0,345,W,195,'#234d43');
     for(let x=0;x<W;x+=78){rect(x,286,42,80,'#173d36');rect(x+8,260,26,35,'#245d49')}
@@ -198,16 +275,42 @@ function drawVillage(x,y){
   drawHouse(x,y+58);drawHouse(x+108,y+15);drawHouse(x+100,y+157);drawHouse(x-28,y+178);text('ぶりふぉ村',x+92,y-25,25,'center','#284461');
 }
 function drawWorld(){
-  camera.x=Math.max(0,Math.min(world.width-W,dash.x-W*.42));camera.y=Math.max(0,Math.min(world.height-H,dash.y-H*.56));
-  ctx.save();ctx.translate(-camera.x,-camera.y);rect(0,0,world.width,world.height,'#8fd47f');rect(0,0,world.width,120,'#62c4df');rect(0,world.height-120,world.width,120,'#62c4df');
-  ctx.fillStyle='#e8d5a3';ctx.beginPath();ctx.moveTo(180,180);ctx.bezierCurveTo(650,300,1050,520,1640,760);ctx.lineTo(1740,875);ctx.bezierCurveTo(1120,640,700,430,145,300);ctx.closePath();ctx.fill();
-  ctx.strokeStyle='#d4bc82';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(180,235);ctx.bezierCurveTo(650,350,1100,560,1690,820);ctx.stroke();
-  for(let x=40;x<2240;x+=105){drawTree(x,150+(x%5)*14);drawTree(x+42,870+(x%4)*12);}
-  rect(1750,560,80,250,'#a6e8f2');rect(1765,560,10,250,'rgba(255,255,255,.28)');drawVillage(1830,620);
-  rect(1500,690,8,50,'#74523b');outlineRect(1460,653,92,42,'#efd99f','#98784c',2);text('ぶりふぉ',1506,674,14,'center','#38475a');
-  drawDashmiu(dash.x,dash.y,1.22);ctx.restore();
-  ctx.fillStyle='rgba(9,22,48,.8)';ctx.fillRect(18,18,292,46);text('目的：ぶりふぉ村へ向かう',35,41,18);
-  if(flashTimer>0){ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(325,88,310,58);text(flashText,480,117,21,'center');}
+  camera.x=Math.max(0,Math.min(world.width-W,dash.x-W*.5));
+  camera.y=Math.max(0,Math.min(world.height-H,dash.y-H*.45));
+  ctx.save();ctx.translate(-camera.x,-camera.y);
+  rect(0,0,world.width,world.height,'#8fd47f');
+  rect(0,0,world.width,105,'#62c4df');rect(0,world.height-105,world.width,105,'#62c4df');
+
+  // northern circus side -> southwestern Brifo road
+  ctx.fillStyle='#e8d5a3';ctx.beginPath();
+  ctx.moveTo(2020,150);
+  ctx.bezierCurveTo(1700,260,1350,420,1000,610);
+  ctx.bezierCurveTo(720,760,510,900,300,1010);
+  ctx.lineTo(390,1125);
+  ctx.bezierCurveTo(610,990,850,850,1120,700);
+  ctx.bezierCurveTo(1470,505,1800,340,2080,260);
+  ctx.closePath();ctx.fill();
+
+  for(let x=40;x<2350;x+=115){
+    drawTree(x,145+(x%5)*12);
+    if(x<1750) drawTree(x+45,1000+(x%4)*10);
+  }
+
+  // northern coast hint
+  rect(1830,105,170,70,'#74cadf');
+  text('サーカス団方面',1920,125,15,'center','#32526a');
+
+  // Brifo at southwest
+  drawVillage(255,820);
+  rect(520,835,8,50,'#74523b');
+  outlineRect(480,798,94,42,'#efd99f','#98784c',2);
+  text('ぶりふぉ',527,819,14,'center','#38475a');
+
+  drawDashmiu(dash.x,dash.y,1.22);
+  ctx.restore();
+
+  ctx.fillStyle='rgba(9,22,48,.8)';ctx.fillRect(18,18,310,46);
+  text('目的：南西のぶりふぉ村へ',35,41,18);
 }
 function drawVillageDialog(){
   ctx.fillStyle='#8fd47f';ctx.fillRect(0,0,W,H);rect(0,0,W,92,'#89d9e8');drawHouse(95,145);drawHouse(225,105);drawHouse(725,135);drawTree(30,300);drawTree(845,290);drawTree(720,330);
@@ -222,29 +325,61 @@ function drawDepartureDialog(){
   const item=departureDialog[Math.min(dialogIndex,departureDialog.length-1)];drawDialog(item[0],item[1]);
 }
 function drawRoad2(){
-  camera.x=Math.max(0,Math.min(road2.width-W,hero.x-W*.42));
-  camera.y=Math.max(0,Math.min(road2.height-H,hero.y-H*.56));
+  camera.x=Math.max(0,Math.min(road2.width-W,hero.x-W*.43));
+  camera.y=Math.max(0,Math.min(road2.height-H,hero.y-H*.45));
   ctx.save();ctx.translate(-camera.x,-camera.y);
-  rect(0,0,road2.width,road2.height,'#90d47e');rect(0,0,road2.width,110,'#65c5df');rect(0,road2.height-110,road2.width,110,'#65c5df');
-  ctx.fillStyle='#e7d09a';ctx.beginPath();ctx.moveTo(250,180);ctx.bezierCurveTo(620,310,1020,560,1780,1010);ctx.lineTo(1900,1100);ctx.bezierCurveTo(1180,720,700,440,180,300);ctx.closePath();ctx.fill();
-  for(let x=20;x<2050;x+=110){drawTree(x,150+(x%4)*12);drawTree(x+40,930+(x%5)*8);}
-  if(slime.alive)drawSlime(slime.x,slime.y,1.3);
-  drawDashmiu(hero.x-55,hero.y+22,1.08);drawHeroFox(hero.x,hero.y,1.18);
+  rect(0,0,road2.width,road2.height,'#90d47e');
+  rect(0,0,road2.width,100,'#65c5df');rect(0,road2.height-100,road2.width,100,'#65c5df');
+
+  // Brifo -> Sarubie: mostly south, slightly east
+  ctx.fillStyle='#e7d09a';ctx.beginPath();
+  ctx.moveTo(250,170);
+  ctx.bezierCurveTo(430,450,700,720,1010,940);
+  ctx.bezierCurveTo(1270,1125,1530,1290,1900,1420);
+  ctx.lineTo(1960,1510);
+  ctx.bezierCurveTo(1540,1405,1260,1250,950,1040);
+  ctx.bezierCurveTo(620,820,370,540,165,260);
+  ctx.closePath();ctx.fill();
+
+  for(let x=20;x<2150;x+=115){
+    drawTree(x,145+(x%4)*12);
+    drawTree(x+38,1360+(x%5)*7);
+  }
+
+  // volcano becomes visible toward southeast
+  ctx.fillStyle='#6e7562';ctx.beginPath();ctx.moveTo(1730,1220);ctx.lineTo(1910,880);ctx.lineTo(2080,1220);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#c05f3e';ctx.beginPath();ctx.moveTo(1882,935);ctx.lineTo(1910,880);ctx.lineTo(1938,935);ctx.closePath();ctx.fill();
+  text('中央火山',1910,840,16,'center','#4c5260');
+
+  for(const mon of monsters) drawWildMonster(mon);
+
+  drawDashmiu(hero.x-55,hero.y+22,1.08);
+  drawHeroFox(hero.x,hero.y,1.18);
   ctx.restore();
-  ctx.fillStyle='rgba(9,22,48,.8)';ctx.fillRect(18,18,330,46);text('目的：さるびえ村へ向かう',35,41,18);
+
+  ctx.fillStyle='rgba(9,22,48,.8)';ctx.fillRect(18,18,340,46);
+  text('目的：南南東のさるびえ村へ',35,41,18);
 }
-function startBattle(){
-  battle={heroHP:42,heroMP:24,enemyHP:28,enemyMaxHP:28,turn:'player'};
-  battleMessage='ぷるぷるスライムが現れた！';battleMenu='main';
+function startBattle(mon){
+  battle={
+    heroHP:42,heroMP:24,
+    enemyHP:mon.hp,enemyMaxHP:mon.maxHP,
+    enemyName:mon.name,enemyKind:mon.kind,
+    monsterId:mon.id,turn:'player',defending:false
+  };
+  battleMessage=`${mon.name}が現れた！`;
+  battleMenu='main';
   scene='battle';touchUI.classList.add('hidden');
 }
 function drawBattle(){
   const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#9cd8ef');g.addColorStop(1,'#b9dc8c');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  drawHeroFox(250,260,2.0);drawSlime(700,245,2.15);
+  drawHeroFox(250,260,2.0);
+  const tempMon={x:700,y:245,alive:true,kind:battle.enemyKind};
+  drawWildMonster(tempMon);
   // status
   ctx.fillStyle='rgba(14,30,55,.9)';ctx.fillRect(45,35,330,105);ctx.fillRect(585,35,330,105);
   text(heroName,68,62,22);text(`HP ${battle.heroHP}/42`,68,93,19);text(`MP ${battle.heroMP}/24`,68,119,19);
-  text('ぷるぷるスライム',610,62,22);text(`HP ${Math.max(0,battle.enemyHP)}/${battle.enemyMaxHP}`,610,96,19);
+  text(battle.enemyName,610,62,22);text(`HP ${Math.max(0,battle.enemyHP)}/${battle.enemyMaxHP}`,610,96,19);
   // commands
   ctx.fillStyle='rgba(9,20,42,.92)';ctx.fillRect(50,365,860,140);
   if(battle.turn==='player'){
@@ -255,25 +390,35 @@ function drawBattle(){
       outlineRect(670,388,180,48,'#dff4fb','#71bad7',2);text('にげる',760,412,20,'center','#17324a');
       text('タップでコマンド選択',480,474,15,'center','#c8e7f4');
     }else{
-      outlineRect(110,392,300,56,'#dff4fb','#71bad7',2);text('水のいやし　MP5',260,420,20,'center','#17324a');
-      outlineRect(450,392,300,56,'#dff4fb','#71bad7',2);text('もどる',600,420,20,'center','#17324a');
+      outlineRect(70,390,245,56,'#dff4fb','#71bad7',2);text('水のいやし MP5',192,418,18,'center','#17324a');
+      outlineRect(335,390,245,56,'#dff4fb','#71bad7',2);text('氷のつぶて MP4',457,418,18,'center','#17324a');
+      outlineRect(600,390,245,56,'#dff4fb','#71bad7',2);text('もどる',722,418,18,'center','#17324a');
       text('スキルを選択',480,474,15,'center','#c8e7f4');
     }
   }else{
     wrapText(battleMessage,80,405,790,28,22);
   }
 }
-function battleAttack(useHeal=false){
+function battleAttack(mode='attack'){
   if(!battle || battle.turn!=='player')return;
-  if(useHeal){
+  if(mode==='heal'){
     if(battle.heroMP>=5){
       battle.heroMP-=5;battle.heroHP=Math.min(42,battle.heroHP+16);
       battleMessage=`${heroName}は「水のいやし」を使った！ HPが回復した。`;
     }else battleMessage='MPが足りない！';
     battle.turn='enemy';battleCooldown=.8;battleMenu='main';return;
   }
-  const dmg=11+Math.floor(Math.random()*5);battle.enemyHP-=dmg;
-  battleMessage=`${heroName}のこうげき！ ${dmg}ダメージ！`;
+  let dmg=0;
+  if(mode==='ice'){
+    if(battle.heroMP<4){battleMessage='MPが足りない！';return;}
+    battle.heroMP-=4;
+    dmg=15+Math.floor(Math.random()*6);
+    battleMessage=`${heroName}の「氷のつぶて」！ ${dmg}ダメージ！`;
+  }else{
+    dmg=10+Math.floor(Math.random()*5);
+    battleMessage=`${heroName}のこうげき！ ${dmg}ダメージ！`;
+  }
+  battle.enemyHP-=dmg;
   if(battle.enemyHP<=0){battle.turn='win';battleCooldown=1.0;return;}
   battle.turn='enemy';battleCooldown=.8;battleMenu='main';
 }
@@ -292,18 +437,20 @@ function enemyTurn(){
   let dmg=5+Math.floor(Math.random()*4);
   if(battle.defending){dmg=Math.max(1,Math.floor(dmg/2));battle.defending=false;}
   battle.heroHP=Math.max(1,battle.heroHP-dmg);
-  battleMessage=`ぷるぷるスライムのたいあたり！ ${dmg}ダメージ！`;
+  battleMessage=`${battle.enemyName}のこうげき！ ${dmg}ダメージ！`;
   battle.turn='player';
 }
 function finishBattle(){
-  slime.alive=false;scene='road2';touchUI.classList.remove('hidden');
+  const mon=monsters.find(m=>m.id===battle.monsterId);
+  if(mon) mon.alive=false;
+  scene='road2';touchUI.classList.remove('hidden');
   battle=null;flashText='戦闘終了！ HP・MPは全回復した';flashTimer=2.6;
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.4 ここまで',480,112,42,'center');
+  text('Ver.0.5 ここまで',480,112,42,'center');
   text(`${heroName}の冒険は、ここから本格的に始まる。`,480,365,22,'center','#d8efff');
-  text('次は：さるびえ村 ＋ スズマル登場へ',480,405,20,'center','#d8efff');
+  text('次は：さるびえ村到着 ＋ スズマル登場へ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
 }
 function update(dt){
@@ -311,13 +458,15 @@ function update(dt){
     let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;
     dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);dash.x+=dx*dash.speed*dt;dash.y+=dy*dash.speed*dt;}
     dash.x=Math.max(60,Math.min(world.width-70,dash.x));dash.y=Math.max(140,Math.min(world.height-130,dash.y));
-    if(dash.x>1770&&dash.y>610&&dash.y<990&&!villageEventStarted){villageEventStarted=true;scene='villageDialog';dialogIndex=0;touchUI.classList.add('hidden');}
+    if(dash.x<620&&dash.y>760&&!villageEventStarted){villageEventStarted=true;scene='villageDialog';dialogIndex=0;touchUI.classList.add('hidden');}
   } else if(scene==='road2'){
     let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;
     dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);hero.x+=dx*hero.speed*dt;hero.y+=dy*hero.speed*dt;}
     hero.x=Math.max(50,Math.min(road2.width-60,hero.x));hero.y=Math.max(140,Math.min(road2.height-130,hero.y));
-    if(slime.alive && Math.hypot(hero.x-slime.x,hero.y-slime.y)<55) startBattle();
-    if(!slime.alive && hero.x>1840 && hero.y>930) scene='end';
+    for(const mon of monsters){
+      if(mon.alive && Math.hypot(hero.x-mon.x,hero.y-mon.y)<58){ startBattle(mon); break; }
+    }
+    if(monsters.every(m=>!m.alive) && hero.x>1840 && hero.y>1360) scene='end';
   } else if(scene==='battle'){
     if(battleCooldown>0){
       battleCooldown-=dt;
@@ -356,17 +505,17 @@ function pressAction(){
   if(scene==='departureDialog'){
     dialogIndex++;
     if(dialogIndex>=departureDialog.length){
-      scene='road2';dialogIndex=0;hero.x=300;hero.y=220;slime.alive=true;touchUI.classList.remove('hidden');
+      scene='road2';dialogIndex=0;hero.x=260;hero.y=210;monsters.forEach(m=>m.alive=true);touchUI.classList.remove('hidden');
       flashText='さるびえ村へ向かおう';flashTimer=2.0;
     }
     return;
   }
   if(scene==='battle'){
     if(!battle || battle.turn!=='player')return;
-    battleAttack(false);return;
+    battleAttack('attack');return;
   }
   if(scene==='end'){
-    scene='title';dash.x=260;dash.y=170;hero.x=1630;hero.y=780;villageEventStarted=false;slime.alive=true;
+    scene='title';dash.x=1960;dash.y=180;hero.x=360;hero.y=300;villageEventStarted=false;monsters.forEach(m=>m.alive=true);
   }
 }
 
@@ -391,11 +540,12 @@ addEventListener('keydown',e=>{
   keys[e.key]=true;
   if(['Enter',' ','z','Z'].includes(e.key)){e.preventDefault();pressAction();}
   if(scene==='battle' && battle && battle.turn==='player'){
-    if(e.key==='1')battleAttack(false);
+    if(e.key==='1')battleAttack('attack');
     if(e.key==='2')battleMenu='skill';
     if(e.key==='3')battleDefend();
     if(e.key==='4')battleRun();
-    if((e.key==='x'||e.key==='X') && battleMenu==='skill')battleAttack(true);
+    if((e.key==='x'||e.key==='X') && battleMenu==='skill')battleAttack('heal');
+    if((e.key==='c'||e.key==='C') && battleMenu==='skill')battleAttack('ice');
   }
 });
 addEventListener('keyup',e=>{keys[e.key]=false;});
@@ -406,14 +556,15 @@ canvas.addEventListener('pointerdown',e=>{
     const y=(e.clientY-r.top)/r.height*H;
     if(battleMenu==='main'){
       if(y>=380 && y<=455){
-        if(x<260)battleAttack(false);
+        if(x<260)battleAttack('attack');
         else if(x<460)battleMenu='skill';
         else if(x<660)battleDefend();
         else battleRun();
       }
     }else{
       if(y>=385 && y<=460){
-        if(x<430)battleAttack(true);
+        if(x<325)battleAttack('heal');
+        else if(x<590)battleAttack('ice');
         else battleMenu='main';
       }
     }

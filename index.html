@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
   <meta name="theme-color" content="#101b36" />
-  <title>りすぺく島RPG Ver.0.2</title>
+  <title>りすぺく島RPG Ver.0.3</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -14,6 +14,16 @@
     <div id="rotateNotice">
       <div>📱</div>
       <strong>スマホを横向きにすると遊びやすいです</strong>
+    </div>
+
+
+    <div id="nameOverlay" class="hidden">
+      <div class="namePanel">
+        <div class="nameTitle">主人公の名前を決めてください</div>
+        <input id="nameInput" maxlength="8" value="リク" autocomplete="off" />
+        <button id="nameOk">この名前で決定</button>
+        <div class="nameHint">※ 8文字まで</div>
+      </div>
     </div>
 
     <div id="touchUI" class="hidden">

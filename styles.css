@@ -18,3 +18,27 @@ body{display:flex;align-items:center;justify-content:center}
 #game{
   background:#9dd9ef;
 }
+
+#nameOverlay{
+  position:absolute;inset:0;z-index:30;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(5,13,29,.78);
+}
+.namePanel{
+  width:min(520px,86vw);
+  background:#10213f;border:3px solid #d8eef8;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+  padding:28px;border-radius:14px;text-align:center;
+}
+.nameTitle{font-size:24px;font-weight:800;margin-bottom:18px}
+#nameInput{
+  width:85%;font-size:28px;text-align:center;padding:12px 14px;
+  border-radius:9px;border:2px solid #78b9d7;background:#f5fbff;color:#17314b;
+  font-weight:800;
+}
+#nameOk{
+  display:block;margin:18px auto 0;padding:12px 26px;
+  border:0;border-radius:10px;background:#67b9dd;color:#0c2038;
+  font-size:20px;font-weight:900;
+}
+.nameHint{margin-top:10px;font-size:14px;color:#b9d7e6}

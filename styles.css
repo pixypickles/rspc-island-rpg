@@ -13,3 +13,8 @@ body{display:flex;align-items:center;justify-content:center}
 @media (orientation:portrait) and (max-width:900px){
   #rotateNotice{display:flex}
 }
+
+/* Ver.0.2: slightly softer rendering while keeping crisp pixel edges */
+#game{
+  background:#9dd9ef;
+}

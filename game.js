@@ -21,12 +21,13 @@ let flashTimer = 0;
 let villageEventStarted = false;
 let heroName = localStorage.getItem('risupekuHeroName') || 'リク';
 
-const dash = {x:125,y:362,speed:178};
-const hero = {x:1435,y:392,speed:175};
+const dash = {x:260,y:170,speed:178};
+const hero = {x:1630,y:780,speed:175};
 const camera = {x:0,y:0};
 
 let battle = null;
 let battleMessage = '';
+let battleMenu = 'main';
 let battleCooldown = 0;
 
 const prologue = [
@@ -69,9 +70,9 @@ const departureDialog = [
   ['hero','……うん。']
 ];
 
-const world = { width:1700, height:760 };
-const road2 = { width:1900, height:760 };
-const slime = {x:870,y:390,alive:true};
+const world = { width:2300, height:1100 };
+const road2 = { width:2100, height:1200 };
+const slime = {x:1050,y:610,alive:true};
 
 function resize(){
   const dpr=Math.min(devicePixelRatio||1,2);
@@ -146,7 +147,7 @@ function drawTitle(){
   ctx.strokeStyle='#4c8d59';ctx.lineWidth=5;ctx.stroke();
   ctx.fillStyle='#526751';ctx.beginPath();ctx.moveTo(480,172);ctx.lineTo(570,352);ctx.lineTo(391,352);ctx.closePath();ctx.fill();
   [['🎪',480,140],['💧',273,266],['🔥',350,407],['🌪️',610,407],['🪨',687,266]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.3',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.4',480,121,18,'center','#eef8ff');
   ctx.fillStyle='rgba(10,23,48,.73)';ctx.fillRect(310,466,340,52);text('タップ / Enter で はじめる',480,492,21,'center');
 }
 function speakerName(who){
@@ -198,12 +199,12 @@ function drawVillage(x,y){
 }
 function drawWorld(){
   camera.x=Math.max(0,Math.min(world.width-W,dash.x-W*.42));camera.y=Math.max(0,Math.min(world.height-H,dash.y-H*.56));
-  ctx.save();ctx.translate(-camera.x,-camera.y);rect(0,0,world.width,world.height,'#8fd47f');rect(0,0,world.width,95,'#62c4df');rect(0,660,world.width,100,'#62c4df');
-  ctx.fillStyle='#e8d5a3';ctx.beginPath();ctx.moveTo(65,295);ctx.bezierCurveTo(500,280,890,335,1485,300);ctx.lineTo(1498,447);ctx.bezierCurveTo(900,470,510,430,65,445);ctx.closePath();ctx.fill();
-  rect(65,330,1425,6,'#d4bc82');rect(65,411,1425,6,'#d4bc82');
-  for(let x=32;x<1640;x+=92){drawTree(x,178+(x%4)*10);drawTree(x+34,518+(x%5)*5);}
-  rect(1190,105,70,190,'#a6e8f2');rect(1203,105,10,190,'rgba(255,255,255,.28)');drawVillage(1390,180);
-  rect(982,280,8,50,'#74523b');outlineRect(944,243,86,42,'#efd99f','#98784c',2);text('ぶりふぉ',987,264,14,'center','#38475a');
+  ctx.save();ctx.translate(-camera.x,-camera.y);rect(0,0,world.width,world.height,'#8fd47f');rect(0,0,world.width,120,'#62c4df');rect(0,world.height-120,world.width,120,'#62c4df');
+  ctx.fillStyle='#e8d5a3';ctx.beginPath();ctx.moveTo(180,180);ctx.bezierCurveTo(650,300,1050,520,1640,760);ctx.lineTo(1740,875);ctx.bezierCurveTo(1120,640,700,430,145,300);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#d4bc82';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(180,235);ctx.bezierCurveTo(650,350,1100,560,1690,820);ctx.stroke();
+  for(let x=40;x<2240;x+=105){drawTree(x,150+(x%5)*14);drawTree(x+42,870+(x%4)*12);}
+  rect(1750,560,80,250,'#a6e8f2');rect(1765,560,10,250,'rgba(255,255,255,.28)');drawVillage(1830,620);
+  rect(1500,690,8,50,'#74523b');outlineRect(1460,653,92,42,'#efd99f','#98784c',2);text('ぶりふぉ',1506,674,14,'center','#38475a');
   drawDashmiu(dash.x,dash.y,1.22);ctx.restore();
   ctx.fillStyle='rgba(9,22,48,.8)';ctx.fillRect(18,18,292,46);text('目的：ぶりふぉ村へ向かう',35,41,18);
   if(flashTimer>0){ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(325,88,310,58);text(flashText,480,117,21,'center');}
@@ -224,9 +225,9 @@ function drawRoad2(){
   camera.x=Math.max(0,Math.min(road2.width-W,hero.x-W*.42));
   camera.y=Math.max(0,Math.min(road2.height-H,hero.y-H*.56));
   ctx.save();ctx.translate(-camera.x,-camera.y);
-  rect(0,0,road2.width,road2.height,'#90d47e');rect(0,0,road2.width,92,'#65c5df');rect(0,665,road2.width,95,'#65c5df');
-  ctx.fillStyle='#e7d09a';ctx.beginPath();ctx.moveTo(40,295);ctx.bezierCurveTo(650,250,1270,350,1850,300);ctx.lineTo(1850,455);ctx.bezierCurveTo(1300,490,650,420,40,445);ctx.closePath();ctx.fill();
-  for(let x=20;x<1870;x+=105){drawTree(x,175+(x%3)*10);drawTree(x+45,530+(x%4)*6);}
+  rect(0,0,road2.width,road2.height,'#90d47e');rect(0,0,road2.width,110,'#65c5df');rect(0,road2.height-110,road2.width,110,'#65c5df');
+  ctx.fillStyle='#e7d09a';ctx.beginPath();ctx.moveTo(250,180);ctx.bezierCurveTo(620,310,1020,560,1780,1010);ctx.lineTo(1900,1100);ctx.bezierCurveTo(1180,720,700,440,180,300);ctx.closePath();ctx.fill();
+  for(let x=20;x<2050;x+=110){drawTree(x,150+(x%4)*12);drawTree(x+40,930+(x%5)*8);}
   if(slime.alive)drawSlime(slime.x,slime.y,1.3);
   drawDashmiu(hero.x-55,hero.y+22,1.08);drawHeroFox(hero.x,hero.y,1.18);
   ctx.restore();
@@ -234,7 +235,7 @@ function drawRoad2(){
 }
 function startBattle(){
   battle={heroHP:42,heroMP:24,enemyHP:28,enemyMaxHP:28,turn:'player'};
-  battleMessage='ぷるぷるスライムが現れた！';
+  battleMessage='ぷるぷるスライムが現れた！';battleMenu='main';
   scene='battle';touchUI.classList.add('hidden');
 }
 function drawBattle(){
@@ -245,13 +246,21 @@ function drawBattle(){
   text(heroName,68,62,22);text(`HP ${battle.heroHP}/42`,68,93,19);text(`MP ${battle.heroMP}/24`,68,119,19);
   text('ぷるぷるスライム',610,62,22);text(`HP ${Math.max(0,battle.enemyHP)}/${battle.enemyMaxHP}`,610,96,19);
   // commands
-  ctx.fillStyle='rgba(9,20,42,.92)';ctx.fillRect(50,375,860,125);
+  ctx.fillStyle='rgba(9,20,42,.92)';ctx.fillRect(50,365,860,140);
   if(battle.turn==='player'){
-    outlineRect(70,398,190,72,'#dff4fb','#71bad7',2);text('こうげき',165,434,22,'center','#17324a');
-    outlineRect(280,398,190,72,'#dff4fb','#71bad7',2);text('水のいやし',375,434,22,'center','#17324a');
-    text('A：こうげき　／　画面右側タップ：水のいやし',480,486,15,'center','#c8e7f4');
+    if(battleMenu==='main'){
+      outlineRect(70,388,180,48,'#dff4fb','#71bad7',2);text('こうげき',160,412,20,'center','#17324a');
+      outlineRect(270,388,180,48,'#dff4fb','#71bad7',2);text('スキル',360,412,20,'center','#17324a');
+      outlineRect(470,388,180,48,'#dff4fb','#71bad7',2);text('ぼうぎょ',560,412,20,'center','#17324a');
+      outlineRect(670,388,180,48,'#dff4fb','#71bad7',2);text('にげる',760,412,20,'center','#17324a');
+      text('タップでコマンド選択',480,474,15,'center','#c8e7f4');
+    }else{
+      outlineRect(110,392,300,56,'#dff4fb','#71bad7',2);text('水のいやし　MP5',260,420,20,'center','#17324a');
+      outlineRect(450,392,300,56,'#dff4fb','#71bad7',2);text('もどる',600,420,20,'center','#17324a');
+      text('スキルを選択',480,474,15,'center','#c8e7f4');
+    }
   }else{
-    wrapText(battleMessage,80,412,790,28,22);
+    wrapText(battleMessage,80,405,790,28,22);
   }
 }
 function battleAttack(useHeal=false){
@@ -261,17 +270,28 @@ function battleAttack(useHeal=false){
       battle.heroMP-=5;battle.heroHP=Math.min(42,battle.heroHP+16);
       battleMessage=`${heroName}は「水のいやし」を使った！ HPが回復した。`;
     }else battleMessage='MPが足りない！';
-    battle.turn='enemy';battleCooldown=.8;return;
+    battle.turn='enemy';battleCooldown=.8;battleMenu='main';return;
   }
   const dmg=11+Math.floor(Math.random()*5);battle.enemyHP-=dmg;
   battleMessage=`${heroName}のこうげき！ ${dmg}ダメージ！`;
-  if(battle.enemyHP<=0){
-    battle.turn='win';battleCooldown=1.0;return;
-  }
-  battle.turn='enemy';battleCooldown=.8;
+  if(battle.enemyHP<=0){battle.turn='win';battleCooldown=1.0;return;}
+  battle.turn='enemy';battleCooldown=.8;battleMenu='main';
+}
+function battleDefend(){
+  if(!battle || battle.turn!=='player')return;
+  battle.defending=true;
+  battleMessage=`${heroName}は身を守っている！`;
+  battle.turn='enemy';battleCooldown=.65;battleMenu='main';
+}
+function battleRun(){
+  if(!battle || battle.turn!=='player')return;
+  battleMessage='うまく逃げ切った！';
+  battle.turn='run';battleCooldown=.6;battleMenu='main';
 }
 function enemyTurn(){
-  const dmg=5+Math.floor(Math.random()*4);battle.heroHP=Math.max(1,battle.heroHP-dmg);
+  let dmg=5+Math.floor(Math.random()*4);
+  if(battle.defending){dmg=Math.max(1,Math.floor(dmg/2));battle.defending=false;}
+  battle.heroHP=Math.max(1,battle.heroHP-dmg);
   battleMessage=`ぷるぷるスライムのたいあたり！ ${dmg}ダメージ！`;
   battle.turn='player';
 }
@@ -281,7 +301,7 @@ function finishBattle(){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.3 ここまで',480,112,42,'center');
+  text('Ver.0.4 ここまで',480,112,42,'center');
   text(`${heroName}の冒険は、ここから本格的に始まる。`,480,365,22,'center','#d8efff');
   text('次は：さるびえ村 ＋ スズマル登場へ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
@@ -290,20 +310,21 @@ function update(dt){
   if(scene==='world'){
     let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;
     dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);dash.x+=dx*dash.speed*dt;dash.y+=dy*dash.speed*dt;}
-    dash.x=Math.max(48,Math.min(world.width-70,dash.x));dash.y=Math.max(145,Math.min(world.height-120,dash.y));
-    if(dash.x>1320&&dash.y>185&&dash.y<535&&!villageEventStarted){villageEventStarted=true;scene='villageDialog';dialogIndex=0;touchUI.classList.add('hidden');}
+    dash.x=Math.max(60,Math.min(world.width-70,dash.x));dash.y=Math.max(140,Math.min(world.height-130,dash.y));
+    if(dash.x>1770&&dash.y>610&&dash.y<990&&!villageEventStarted){villageEventStarted=true;scene='villageDialog';dialogIndex=0;touchUI.classList.add('hidden');}
   } else if(scene==='road2'){
     let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;
     dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);hero.x+=dx*hero.speed*dt;hero.y+=dy*hero.speed*dt;}
-    hero.x=Math.max(50,Math.min(road2.width-60,hero.x));hero.y=Math.max(150,Math.min(road2.height-120,hero.y));
+    hero.x=Math.max(50,Math.min(road2.width-60,hero.x));hero.y=Math.max(140,Math.min(road2.height-130,hero.y));
     if(slime.alive && Math.hypot(hero.x-slime.x,hero.y-slime.y)<55) startBattle();
-    if(!slime.alive && hero.x>1780) scene='end';
+    if(!slime.alive && hero.x>1840 && hero.y>930) scene='end';
   } else if(scene==='battle'){
     if(battleCooldown>0){
       battleCooldown-=dt;
       if(battleCooldown<=0){
         if(battle.turn==='enemy')enemyTurn();
         else if(battle.turn==='win')finishBattle();
+        else if(battle.turn==='run'){scene='road2';touchUI.classList.remove('hidden');battle=null;flashText='戦闘から離脱した';flashTimer=1.8;}
       }
     }
   }
@@ -335,7 +356,7 @@ function pressAction(){
   if(scene==='departureDialog'){
     dialogIndex++;
     if(dialogIndex>=departureDialog.length){
-      scene='road2';dialogIndex=0;hero.x=250;hero.y=375;slime.alive=true;touchUI.classList.remove('hidden');
+      scene='road2';dialogIndex=0;hero.x=300;hero.y=220;slime.alive=true;touchUI.classList.remove('hidden');
       flashText='さるびえ村へ向かおう';flashTimer=2.0;
     }
     return;
@@ -345,7 +366,7 @@ function pressAction(){
     battleAttack(false);return;
   }
   if(scene==='end'){
-    scene='title';dash.x=125;dash.y=362;hero.x=1435;hero.y=392;villageEventStarted=false;slime.alive=true;
+    scene='title';dash.x=260;dash.y=170;hero.x=1630;hero.y=780;villageEventStarted=false;slime.alive=true;
   }
 }
 
@@ -369,13 +390,33 @@ requestAnimationFrame(frame);
 addEventListener('keydown',e=>{
   keys[e.key]=true;
   if(['Enter',' ','z','Z'].includes(e.key)){e.preventDefault();pressAction();}
-  if(scene==='battle' && battle && battle.turn==='player' && (e.key==='x'||e.key==='X')) battleAttack(true);
+  if(scene==='battle' && battle && battle.turn==='player'){
+    if(e.key==='1')battleAttack(false);
+    if(e.key==='2')battleMenu='skill';
+    if(e.key==='3')battleDefend();
+    if(e.key==='4')battleRun();
+    if((e.key==='x'||e.key==='X') && battleMenu==='skill')battleAttack(true);
+  }
 });
 addEventListener('keyup',e=>{keys[e.key]=false;});
 canvas.addEventListener('pointerdown',e=>{
   if(scene==='battle' && battle && battle.turn==='player'){
-    const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W;
-    if(x>480)battleAttack(true);else battleAttack(false);
+    const r=canvas.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width*W;
+    const y=(e.clientY-r.top)/r.height*H;
+    if(battleMenu==='main'){
+      if(y>=380 && y<=455){
+        if(x<260)battleAttack(false);
+        else if(x<460)battleMenu='skill';
+        else if(x<660)battleDefend();
+        else battleRun();
+      }
+    }else{
+      if(y>=385 && y<=460){
+        if(x<430)battleAttack(true);
+        else battleMenu='main';
+      }
+    }
   } else if(scene!=='world'&&scene!=='road2') pressAction();
 });
 actionBtn.addEventListener('pointerdown',e=>{e.preventDefault();pressAction();});

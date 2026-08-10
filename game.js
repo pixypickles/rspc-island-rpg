@@ -97,6 +97,25 @@ const departureDialog = [
   ['hero','……うん。']
 ];
 
+const sarubieArrivalDialog = [
+  ['dash','ここが、さるびえ村……で合ってるよね？'],
+  ['hero','うん。'],
+  ['dash','なんか……村のみんな、海賊どころじゃない顔してない？'],
+  ['suzu','その通り。悪いけど、今は島の外より山の方がまずい。'],
+  ['dash','え？'],
+  ['suzu','中央火山の揺れが強くなってる。鎮めの儀式を急がないと、噴火する。'],
+  ['dash','噴火！？ ちょっと待って！ 海賊の次は火山！？'],
+  ['suzu','順番が逆だな。火山が先だ。海賊はそのあと。'],
+  ['dash','落ち着きすぎじゃない！？'],
+  ['suzu','慌てても噴火は止まらない。まず必要なものを揃える。'],
+  ['hero','何が足りないの？'],
+  ['suzu','儀式に使う炎晶石。山の麓の洞窟に取りに行く。'],
+  ['suzu','海賊の話も聞く。でも、島そのものが無くなったら意味がない。手を貸してくれるか？'],
+  ['hero','もちろん。'],
+  ['narrator','スズマルが一時的に仲間になった！']
+];
+
+
 const world = { width:2400, height:1250 };
 const road2 = { width:2200, height:1550 };
 const monsters = [
@@ -127,6 +146,22 @@ function text(t,x,y,size=24,align='left',color='#fff',weight=700){
 }
 function ellipse(x,y,rx,ry,color){ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill();}
 
+
+
+function drawSuzumaru(x,y,s=1){
+  ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.scale(s,s);
+  ellipse(0,34,18,6,'rgba(23,38,56,.22)');
+  ctx.strokeStyle='#8d6a4d';ctx.lineWidth=7;ctx.beginPath();ctx.arc(17,13,16,-1.2,1.2);ctx.stroke();
+  ellipse(-10,-26,6,7,'#a77b57');ellipse(10,-26,6,7,'#a77b57');
+  ellipse(0,-12,17,16,'#b48761');ellipse(0,-3,10,7,'#d7b08d');
+  rect(-8,-14,4,5,'#1d293d');rect(4,-14,4,5,'#1d293d');rect(-2,-6,4,3,'#553b31');
+  ctx.fillStyle='#5c4238';ctx.beginPath();ctx.moveTo(-12,-24);ctx.lineTo(-4,-31);ctx.lineTo(0,-24);ctx.lineTo(7,-29);ctx.lineTo(12,-21);ctx.closePath();ctx.fill();
+  rect(-15,4,30,25,'#6f2030');rect(-13,5,26,7,'#8e3142');rect(-3,9,6,18,'#f0d8b0');
+  rect(-17,8,5,16,'#a77b57');rect(12,8,5,16,'#a77b57');rect(-13,23,26,4,'#382d2c');
+  rect(15,10,4,25,'#806343');rect(18,31,12,3,'#c6cbd2');
+  rect(-12,28,9,12,'#45252e');rect(3,28,9,12,'#45252e');
+  ctx.restore();
+}
 
 function drawElderFox(x,y,s=1){
   ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.scale(s,s);
@@ -282,11 +317,11 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.7',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.8',480,121,18,'center','#eef8ff');
   ctx.fillStyle='rgba(10,23,48,.73)';ctx.fillRect(310,466,340,52);text('タップ / Enter で はじめる',480,492,21,'center');
 }
 function speakerName(who){
-  return ({narrator:'',dash:'ダッシュミウ',pirate:'海賊',elder:'ぶりふぉ村長',hero:heroName})[who]||who;
+  return ({narrator:'',dash:'ダッシュミウ',pirate:'海賊',elder:'ぶりふぉ村長',hero:heroName,suzu:'スズマル'})[who]||who;
 }
 function drawDialog(who,line){
   ctx.fillStyle='rgba(7,17,36,.92)';ctx.fillRect(46,380,868,132);
@@ -326,6 +361,26 @@ function drawTree(x,y){
 function drawHouse(x,y){
   outlineRect(x,y+32,82,61,'#f1f5f1','#345166',2);ctx.fillStyle='#1d2d49';ctx.beginPath();ctx.moveTo(x-8,y+34);ctx.lineTo(x+41,y);ctx.lineTo(x+90,y+34);ctx.closePath();ctx.fill();ctx.strokeStyle='#0f1e35';ctx.lineWidth=2;ctx.stroke();
   rect(x+31,y+59,19,34,'#8bd7ea');outlineRect(x+9,y+47,17,15,'#aee8f2','#5a8290',1);outlineRect(x+56,y+47,17,15,'#aee8f2','#5a8290',1);rect(x+6,y+36,68,4,'#ffffff');
+}
+
+function drawFireHouse(x,y){
+  outlineRect(x,y+32,84,62,'#f2dfc4','#6f4433',2);
+  ctx.fillStyle='#6b2d2f';ctx.beginPath();ctx.moveTo(x-8,y+34);ctx.lineTo(x+42,y);ctx.lineTo(x+92,y+34);ctx.closePath();ctx.fill();
+  rect(x+32,y+59,18,35,'#8f3340');
+  outlineRect(x+10,y+47,17,15,'#f6c77f','#9c6b39',1);
+  outlineRect(x+57,y+47,17,15,'#f6c77f','#9c6b39',1);
+  rect(x+7,y+36,70,4,'#d9a05b');
+}
+function drawSarubieVillageBG(){
+  const sky=ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#d8b680');sky.addColorStop(1,'#c99b66');
+  ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#5f6258';ctx.beginPath();ctx.moveTo(635,230);ctx.lineTo(760,30);ctx.lineTo(900,230);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#c35f3a';ctx.beginPath();ctx.moveTo(735,70);ctx.lineTo(760,30);ctx.lineTo(790,73);ctx.closePath();ctx.fill();
+  rect(0,230,W,310,'#cfa96f');rect(0,410,W,130,'#b98b5b');
+  drawFireHouse(70,260);drawFireHouse(195,220);drawFireHouse(730,250);
+  rect(480,260,115,95,'#6a4c3d');rect(500,225,75,42,'#482f2a');rect(520,300,35,35,'#e57939');
+  text('鍛冶場',538,244,16,'center','#f3d9b1');
 }
 function drawVillage(x,y){
   ctx.fillStyle='rgba(219,250,255,.93)';ctx.beginPath();ctx.moveTo(x+220,y-8);ctx.lineTo(x+255,y-22);ctx.lineTo(x+260,y+250);ctx.lineTo(x+218,y+258);ctx.closePath();ctx.fill();ctx.strokeStyle='#8fd7eb';ctx.lineWidth=3;ctx.stroke();
@@ -525,6 +580,20 @@ function finishBattle(){
   flashTimer=3.0;
 }
 
+
+function drawSarubieArrival(){
+  drawSarubieVillageBG();
+  drawHeroFox(300,340,1.35);
+  drawDashmiu(415,346,1.28);
+  drawSuzumaru(610,340,1.38);
+  for(let i=0;i<4;i++){
+    const x=690+i*48,y=385+(i%2)*6;
+    ellipse(x,y-12,11,10,'#b98d68');rect(x-10,y,20,24,'#6d2733');
+  }
+  const item=sarubieArrivalDialog[Math.min(dialogIndex,sarubieArrivalDialog.length-1)];
+  drawDialog(item[0],item[1]);
+}
+
 function drawMenu(){
   ctx.fillStyle='#0e1d37';ctx.fillRect(0,0,W,H);
   text('メニュー',55,45,30,'left','#ffffff',800);
@@ -575,9 +644,9 @@ function menuTap(x,y){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.7 ここまで',480,112,42,'center');
+  text('Ver.0.8 ここまで',480,112,42,'center');
   text(`${heroName}の冒険は、ここから本格的に始まる。`,480,365,22,'center','#d8efff');
-  text('次は：さるびえ村到着 ＋ スズマル登場へ',480,405,20,'center','#d8efff');
+  text('次は：火山麓の洞窟 ＋ 炎晶石探しへ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
 }
 function update(dt){
@@ -603,7 +672,7 @@ function update(dt){
     for(const mon of monsters){
       if(mon.alive && Math.hypot(hero.x-mon.x,hero.y-mon.y)<58){ startBattle(mon); break; }
     }
-    if(hero.x>1840 && hero.y>1360) scene='end';
+    if(hero.x>1840 && hero.y>1360){scene='sarubieArrival';dialogIndex=0;touchUI.classList.add('hidden');}
   } else if(scene==='battle'){
     if(battleCooldown>0){
       battleCooldown-=dt;
@@ -650,6 +719,13 @@ function pressAction(){
   if(scene==='road2'){
     scene='menu';menuPage='status';touchUI.classList.add('hidden');return;
   }
+  if(scene==='sarubieArrival'){
+    dialogIndex++;
+    if(dialogIndex>=sarubieArrivalDialog.length){
+      scene='end';dialogIndex=0;
+    }
+    return;
+  }
   if(scene==='battle'){
     if(!battle || battle.turn!=='player')return;
     battleAttack('attack');return;
@@ -669,6 +745,7 @@ function frame(now){
   else if(scene==='road2')drawRoad2();
   else if(scene==='battle')drawBattle();
   else if(scene==='menu')drawMenu();
+  else if(scene==='sarubieArrival')drawSarubieArrival();
   else drawEnd();
   if(flashTimer>0 && ['road2','world'].includes(scene)){
     ctx.fillStyle='rgba(0,0,0,.58)';ctx.fillRect(305,85,350,58);text(flashText,480,114,20,'center');

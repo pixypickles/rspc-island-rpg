@@ -61,6 +61,7 @@ let caveBoss={x:1540,y:300,alive:true,hp:95,maxHP:95};
 let caveBattle=false;
 let caveCrystalTaken=false;
 let suzumaruActive=false;
+let suzumaruJoined=false;
 
 let menuPage = 'status';
 
@@ -121,6 +122,25 @@ const sarubieArrivalDialog = [
   ['hero','もちろん。'],
   ['narrator','スズマルが一時的に仲間になった！']
 ];
+
+const sarubieRitualDialog = [
+  ['narrator','炎晶石を手に、3人はさるびえ村へ戻った。'],
+  ['suzu','間に合った。すぐ儀式を始める。'],
+  ['dash','これで本当に噴火、止まるんだよね？'],
+  ['suzu','止める。というより、火山の力を落ち着かせる。'],
+  ['narrator','村人たちは祭壇を囲み、炎晶石へ少しずつ炎の魔力を注いでいく。'],
+  ['narrator','赤く脈打っていた火山の光が、ゆっくりと静まっていった。'],
+  ['dash','……揺れ、止まった？'],
+  ['suzu','ああ。これでしばらくは大丈夫だ。'],
+  ['dash','よかったぁ……海賊と火山を同時に相手にするところだった……。'],
+  ['hero','じゃあ、次はさるびび村へ知らせないと。'],
+  ['suzu','俺も行く。'],
+  ['dash','村は大丈夫なの？'],
+  ['suzu','火山は落ち着いた。あとは村のみんなで守れる。'],
+  ['suzu','それに、島を守るなら次の村へ急いだ方がいい。'],
+  ['narrator','スズマルが正式に仲間になった！']
+];
+
 
 
 const world = { width:2400, height:1250 };
@@ -329,7 +349,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.14.1',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.15',480,121,18,'center','#eef8ff');
   ctx.fillStyle='rgba(10,23,48,.73)';ctx.fillRect(310,466,340,52);text('タップ / Enter で はじめる',480,492,21,'center');
 }
 function speakerName(who){
@@ -715,6 +735,46 @@ function finishBattle(){
 }
 
 
+
+function drawSarubieRitual(){
+  drawSarubieVillageBG();
+
+  // ritual altar
+  outlineRect(415,245,130,80,'#6b4b3f','#c58b54',2);
+  ctx.fillStyle='#ff8a45';
+  ctx.beginPath();
+  ctx.moveTo(480,205);ctx.lineTo(500,250);ctx.lineTo(480,285);ctx.lineTo(460,250);ctx.closePath();
+  ctx.fill();
+
+  // flame magic effects
+  for(let i=0;i<6;i++){
+    const x=350+i*52;
+    ctx.fillStyle='rgba(247,122,47,.85)';
+    ctx.beginPath();
+    ctx.moveTo(x,340);
+    ctx.lineTo(x-10,315-(i%2)*8);
+    ctx.lineTo(x,300);
+    ctx.lineTo(x+10,315-(i%2)*8);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  drawHeroFox(275,360,1.28);
+  drawDashmiu(365,366,1.18);
+  drawSuzumaru(610,360,1.32);
+
+  // villagers around altar
+  for(let i=0;i<6;i++){
+    const x=655+i*38;
+    const y=390+(i%2)*8;
+    ellipse(x,y-11,10,9,'#b78c68');
+    rect(x-9,y,18,22,'#6d2733');
+  }
+
+  const item=sarubieRitualDialog[Math.min(dialogIndex,sarubieRitualDialog.length-1)];
+  drawDialog(item[0],item[1]);
+}
+
 function drawSarubieArrival(){
   drawSarubieVillageBG();
   drawHeroFox(300,340,1.35);
@@ -861,9 +921,9 @@ function menuTap(x,y){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.14.1 ここまで',480,112,42,'center');
-  text(`${heroName}の冒険は、ここから本格的に始まる。`,480,365,22,'center','#d8efff');
-  text('次は：炎晶石を持ち帰り、鎮めの儀式へ',480,405,20,'center','#d8efff');
+  text('Ver.0.15 ここまで',480,112,42,'center');
+  text(`スズマルが正式加入！ 次はさるびび村へ。`,480,365,22,'center','#d8efff');
+  text('次は：さるびび村へ向かう',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
 }
 function update(dt){
@@ -937,8 +997,9 @@ function update(dt){
     if(caveBoss.alive && Math.hypot(caveHero.x-caveBoss.x,caveHero.y-caveBoss.y)<85) startCaveBossBattle();
     if(!caveBoss.alive && !caveCrystalTaken && Math.hypot(caveHero.x-1562,caveHero.y-170)<95){
       caveCrystalTaken=true;
-      flashText='炎晶石を手に入れた！';flashTimer=3.0;
-      scene='end';touchUI.classList.add('hidden');
+      scene='sarubieRitual';
+      dialogIndex=0;
+      touchUI.classList.add('hidden');
     }
   } else if(scene==='battle'){
     if(battleCooldown>0){
@@ -1005,6 +1066,16 @@ function pressAction(){
     }
     return;
   }
+  if(scene==='sarubieRitual'){
+    dialogIndex++;
+    if(dialogIndex>=sarubieRitualDialog.length){
+      suzumaruJoined=true;
+      suzumaruActive=true;
+      scene='end';
+      dialogIndex=0;
+    }
+    return;
+  }
   if(scene==='battle'){
     if(!battle || battle.turn!=='player')return;
     battleAttack('attack');return;
@@ -1025,6 +1096,7 @@ function frame(now){
   else if(scene==='battle')drawBattle();
   else if(scene==='menu')drawMenu();
   else if(scene==='sarubieArrival')drawSarubieArrival();
+  else if(scene==='sarubieRitual')drawSarubieRitual();
   else if(scene==='cave')drawCave();
   else drawEnd();
   if(flashTimer>0 && ['road2','world','cave'].includes(scene)){

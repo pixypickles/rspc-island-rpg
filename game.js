@@ -54,11 +54,13 @@ const camera = {x:0,y:0};
 let battle = null;
 let battleMessage = '';
 let battleMenu = 'main';
+let battleActor='hero';
 let battleCooldown = 0;
 let caveHero={x:150,y:760,speed:230};
 let caveBoss={x:1540,y:300,alive:true,hp:95,maxHP:95};
 let caveBattle=false;
 let caveCrystalTaken=false;
+let suzumaruActive=false;
 
 let menuPage = 'status';
 
@@ -327,7 +329,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.13',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.14',480,121,18,'center','#eef8ff');
   ctx.fillStyle='rgba(10,23,48,.73)';ctx.fillRect(310,466,340,52);text('タップ / Enter で はじめる',480,492,21,'center');
 }
 function speakerName(who){
@@ -528,13 +530,31 @@ function startBattle(mon){
 }
 function drawBattle(){
   const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#9cd8ef');g.addColorStop(1,'#b9dc8c');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  drawHeroFox(250,260,2.0);
+  if(battle.monsterId===99 && suzumaruActive){
+    drawHeroFox(185,255,1.65);
+    drawSuzumaru(335,258,1.65);
+  }else{
+    drawHeroFox(250,260,2.0);
+  }
   const tempMon={x:700,y:245,alive:true,kind:battle.enemyKind};
   drawWildMonster(tempMon);
   // status
-  ctx.fillStyle='rgba(14,30,55,.9)';ctx.fillRect(45,35,330,105);ctx.fillRect(585,35,330,105);
-  text(heroName,68,62,22);text(`Lv.${progress.level}  HP ${battle.heroHP}/${progress.maxHP}`,68,93,18);text(`MP ${battle.heroMP}/${progress.maxMP}`,68,119,18);
-  text(battle.enemyName,610,62,22);text(`HP ${Math.max(0,battle.enemyHP)}/${battle.enemyMaxHP}`,610,96,19);
+  ctx.fillStyle='rgba(14,30,55,.9)';
+  if(battle.monsterId===99 && suzumaruActive){
+    ctx.fillRect(35,28,430,122);
+    text(heroName,55,52,20);
+    text(`HP ${battle.heroHP}/${progress.maxHP}  MP ${battle.heroMP}/${progress.maxMP}`,55,82,16);
+    text('スズマル',55,113,20);
+    text(`HP ${battle.suzuHP}/${battle.suzuMaxHP}  MP ${battle.suzuMP}/${battle.suzuMaxMP}`,185,113,16);
+  }else{
+    ctx.fillRect(45,35,330,105);
+    text(heroName,68,62,22);
+    text(`Lv.${progress.level}  HP ${battle.heroHP}/${progress.maxHP}`,68,93,18);
+    text(`MP ${battle.heroMP}/${progress.maxMP}`,68,119,18);
+  }
+  ctx.fillRect(585,35,330,105);
+  text(battle.enemyName,610,62,22);
+  text(`HP ${Math.max(0,battle.enemyHP)}/${battle.enemyMaxHP}`,610,96,19);
   // commands
   ctx.fillStyle='rgba(9,20,42,.92)';ctx.fillRect(50,365,860,140);
   if(battle.turn==='player'){
@@ -543,16 +563,22 @@ function drawBattle(){
       outlineRect(270,388,180,48,'#dff4fb','#71bad7',2);text('スキル',360,412,20,'center','#17324a');
       outlineRect(470,388,180,48,'#dff4fb','#71bad7',2);text('ぼうぎょ',560,412,20,'center','#17324a');
       outlineRect(670,388,180,48,'#dff4fb','#71bad7',2);text('にげる',760,412,20,'center','#17324a');
-      text('タップでコマンド選択',480,474,15,'center','#c8e7f4');
+      const actorName=(battle.monsterId===99&&suzumaruActive&&battleActor==='suzu')?'スズマル':heroName;
+      text(`${actorName}の行動`,480,474,15,'center','#c8e7f4');
     }else{
-      outlineRect(55,390,205,56,'#dff4fb','#71bad7',2);text('水のいやし MP5',157,418,16,'center','#17324a');
-      outlineRect(275,390,205,56,'#dff4fb','#71bad7',2);text('氷のつぶて MP4',377,418,16,'center','#17324a');
-      if(progress.learned.iceSlash){
-        outlineRect(495,390,205,56,'#dff4fb','#71bad7',2);text('氷結斬り MP7',597,418,16,'center','#17324a');
+      if(battle.monsterId===99 && suzumaruActive && battleActor==='suzu'){
+        outlineRect(110,390,300,56,'#dff4fb','#71bad7',2);text('火炎斬り MP5',260,418,18,'center','#17324a');
+        outlineRect(450,390,300,56,'#dff4fb','#71bad7',2);text('もどる',600,418,18,'center','#17324a');
       }else{
-        outlineRect(495,390,205,56,'#6f8092','#5d6d7c',2);text('？？？？',597,418,16,'center','#d5dde4');
+        outlineRect(55,390,205,56,'#dff4fb','#71bad7',2);text('水のいやし MP5',157,418,16,'center','#17324a');
+        outlineRect(275,390,205,56,'#dff4fb','#71bad7',2);text('氷のつぶて MP4',377,418,16,'center','#17324a');
+        if(progress.learned.iceSlash){
+          outlineRect(495,390,205,56,'#dff4fb','#71bad7',2);text('氷結斬り MP7',597,418,16,'center','#17324a');
+        }else{
+          outlineRect(495,390,205,56,'#6f8092','#5d6d7c',2);text('？？？？',597,418,16,'center','#d5dde4');
+        }
+        outlineRect(715,390,150,56,'#dff4fb','#71bad7',2);text('もどる',790,418,16,'center','#17324a');
       }
-      outlineRect(715,390,150,56,'#dff4fb','#71bad7',2);text('もどる',790,418,16,'center','#17324a');
       text('スキルを選択',480,474,15,'center','#c8e7f4');
     }
   }else{
@@ -566,7 +592,12 @@ function battleAttack(mode='attack'){
       battle.heroMP-=5;battle.heroHP=Math.min(42,battle.heroHP+16);
       battleMessage=`${heroName}は「水のいやし」を使った！ HPが回復した。`;
     }else battleMessage='MPが足りない！';
-    battle.turn='enemy';battleCooldown=.8;battleMenu='main';return;
+    if(battle.monsterId===99 && suzumaruActive && battleActor==='hero'){
+      battleActor='suzu';battleMenu='main';
+    }else{
+      battle.turn='enemy';battleCooldown=.8;battleMenu='main';
+    }
+    return;
   }
   let dmg=0;
   if(mode==='iceSlash'){
@@ -586,25 +617,74 @@ function battleAttack(mode='attack'){
   }
   battle.enemyHP-=dmg;
   if(battle.enemyHP<=0){battle.turn='win';battleCooldown=1.0;return;}
-  battle.turn='enemy';battleCooldown=.8;battleMenu='main';
+  if(battle.monsterId===99 && suzumaruActive && battleActor==='hero'){
+    battleActor='suzu';
+    battleMenu='main';
+    battleMessage+='　次はスズマル！';
+  }else{
+    battle.turn='enemy';battleCooldown=.8;battleMenu='main';
+  }
+}
+
+function suzuAction(mode='attack'){
+  if(!battle || battle.turn!=='player' || battleActor!=='suzu')return;
+  let dmg=0;
+  if(mode==='fire'){
+    if(battle.suzuMP<5){battleMessage='MPが足りない！';return;}
+    battle.suzuMP-=5;
+    dmg=17+Math.floor(Math.random()*6);
+    battleMessage=`スズマルの「火炎斬り」！ ${dmg}ダメージ！`;
+  }else{
+    dmg=12+Math.floor(Math.random()*5);
+    battleMessage=`スズマルのこうげき！ ${dmg}ダメージ！`;
+  }
+  battle.enemyHP-=dmg;
+  if(battle.enemyHP<=0){
+    battle.turn='win';battleCooldown=1.0;return;
+  }
+  battleActor='hero';
+  battle.turn='enemy';
+  battleCooldown=.8;
+  battleMenu='main';
 }
 function battleDefend(){
   if(!battle || battle.turn!=='player')return;
+  if(battle.monsterId===99 && suzumaruActive && battleActor==='suzu'){
+    battleMessage='スズマルは身を守っている！';
+    battleActor='hero';battleMenu='main';
+    return;
+  }
   battle.defending=true;
   battleMessage=`${heroName}は身を守っている！`;
-  battle.turn='enemy';battleCooldown=.65;battleMenu='main';
+  if(battle.monsterId===99 && suzumaruActive){
+    battleActor='suzu';battleMenu='main';
+  }else{
+    battle.turn='enemy';battleCooldown=.65;battleMenu='main';
+  }
 }
 function battleRun(){
   if(!battle || battle.turn!=='player')return;
+  if(battle.monsterId===99){
+    battleMessage='マグマガメからは逃げられない！';
+    return;
+  }
   battleMessage='うまく逃げ切った！';
   battle.turn='run';battleCooldown=.6;battleMenu='main';
 }
 function enemyTurn(){
   let dmg=Math.max(1,7+Math.floor(Math.random()*5)-Math.floor(progress.def/3));
   if(battle.defending){dmg=Math.max(1,Math.floor(dmg/2));battle.defending=false;}
-  battle.heroHP=Math.max(1,battle.heroHP-dmg);
-  battleMessage=`${battle.enemyName}のこうげき！ ${dmg}ダメージ！`;
-  battle.turn='player';
+
+  if(battle.monsterId===99 && suzumaruActive && Math.random()<0.42){
+    battle.suzuHP=Math.max(1,battle.suzuHP-dmg);
+    battleMessage=`マグマガメの火炎体当たり！ スズマルに${dmg}ダメージ！`;
+  }else{
+    battle.heroHP=Math.max(1,battle.heroHP-dmg);
+    battleMessage=battle.monsterId===99
+      ?`マグマガメの火炎体当たり！ ${heroName}に${dmg}ダメージ！`
+      :`${battle.enemyName}のこうげき！ ${dmg}ダメージ！`;
+  }
+  battle.turn='player';battleActor='hero';
 }
 function finishBattle(){
   if(battle && battle.monsterId===99){
@@ -647,15 +727,38 @@ function drawSarubieArrival(){
 
 function drawCaveBoss(x,y,s=1){
   ctx.save();ctx.translate(x,y);ctx.scale(s,s);
-  ellipse(0,31,24,7,'rgba(0,0,0,.25)');
-  // cute magma tortoise-like guardian
-  ellipse(0,4,28,23,'#8a4938');
-  ellipse(0,0,23,18,'#d66a3d');
-  rect(-18,-7,10,8,'#ffb04c');rect(7,-7,10,8,'#ffb04c');
-  ellipse(-25,8,8,8,'#b85a3d');ellipse(25,8,8,8,'#b85a3d');
-  ellipse(-15,25,8,6,'#744338');ellipse(15,25,8,6,'#744338');
-  rect(-8,0,5,5,'#25314a');rect(4,0,5,5,'#25314a');
-  text('🔥',0,-24,22,'center');
+  ellipse(0,36,34,8,'rgba(0,0,0,.28)');
+
+  // rear shell: broad and clearly turtle-like
+  ellipse(-4,4,38,28,'#7d4437');
+  ellipse(-4,1,31,22,'#a9553e');
+
+  // lava seams on shell
+  ctx.strokeStyle='#ff8a3d';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(-26,-4);ctx.lineTo(-10,6);ctx.lineTo(-18,18);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(3,-15);ctx.lineTo(8,2);ctx.lineTo(24,10);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-2,8);ctx.lineTo(12,22);ctx.stroke();
+
+  // head protrudes in front
+  ellipse(38,8,17,14,'#c96743');
+  ellipse(44,12,10,8,'#df8456');
+  rect(39,3,4,5,'#243149');
+  rect(48,12,3,2,'#693d31');
+
+  // four short legs
+  ellipse(-24,27,12,8,'#8e4c3d');
+  ellipse(18,28,12,8,'#8e4c3d');
+  ellipse(-30,-12,10,7,'#8e4c3d');
+  ellipse(15,-15,10,7,'#8e4c3d');
+
+  // small tail
+  ctx.fillStyle='#8e4c3d';
+  ctx.beginPath();ctx.moveTo(-41,7);ctx.lineTo(-56,14);ctx.lineTo(-42,20);ctx.closePath();ctx.fill();
+
+  // heat / flame accent
+  ctx.fillStyle='#ff9c45';
+  ctx.beginPath();ctx.moveTo(-5,-30);ctx.lineTo(2,-48);ctx.lineTo(9,-30);ctx.lineTo(4,-24);ctx.closePath();ctx.fill();
+
   ctx.restore();
 }
 function drawCave(){
@@ -683,7 +786,8 @@ function drawCave(){
   if(caveBoss.alive) drawCaveBoss(caveBoss.x,caveBoss.y,1.45);
 
   drawHeroFox(caveHero.x,caveHero.y,1.15);
-  drawSuzumaru(caveHero.x-48,caveHero.y+20,1.05);
+  if(suzumaruActive) drawSuzumaru(caveHero.x-52,caveHero.y+18,1.04);
+  drawDashmiu(caveHero.x-98,caveHero.y+34,0.98);
   ctx.restore();
 
   const ht=hudTop();
@@ -694,11 +798,12 @@ function startCaveBossBattle(){
   caveBattle=true;
   battle={
     heroHP:progress.maxHP,heroMP:progress.maxMP,
+    suzuHP:56,suzuMaxHP:56,suzuMP:22,suzuMaxMP:22,
     enemyHP:caveBoss.hp,enemyMaxHP:caveBoss.maxHP,
     monsterId:99,monsterName:'マグマガメ',
     turn:'player',guard:false
   };
-  battleMenu='main';battleMessage='炎晶石を守るマグマガメが現れた！';
+  battleMenu='main';battleActor='hero';battleMessage='炎晶石を守るマグマガメが現れた！';
   scene='battle';touchUI.classList.add('hidden');
 }
 
@@ -752,7 +857,7 @@ function menuTap(x,y){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.13 ここまで',480,112,42,'center');
+  text('Ver.0.14 ここまで',480,112,42,'center');
   text(`${heroName}の冒険は、ここから本格的に始まる。`,480,365,22,'center','#d8efff');
   text('次は：炎晶石を持ち帰り、鎮めの儀式へ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
@@ -887,11 +992,12 @@ function pressAction(){
   if(scene==='sarubieArrival'){
     dialogIndex++;
     if(dialogIndex>=sarubieArrivalDialog.length){
+      suzumaruActive=true;
       scene='cave';
       dialogIndex=0;
       caveHero.x=150;caveHero.y=760;
       touchUI.classList.remove('hidden');
-      flashText='火山麓の洞窟';flashTimer=2.0;
+      flashText='火山麓の洞窟　ダッシュミウも同行中';flashTimer=2.3;
     }
     return;
   }
@@ -954,17 +1060,25 @@ canvas.addEventListener('pointerdown',e=>{
     const y=(e.clientY-r.top)/r.height*H;
     if(battleMenu==='main'){
       if(y>=380 && y<=455){
-        if(x<260)battleAttack('attack');
+        if(x<260){
+          if(battle.monsterId===99&&suzumaruActive&&battleActor==='suzu')suzuAction('attack');
+          else battleAttack('attack');
+        }
         else if(x<460)battleMenu='skill';
         else if(x<660)battleDefend();
         else battleRun();
       }
     }else{
       if(y>=385 && y<=460){
-        if(x<270)battleAttack('heal');
-        else if(x<490)battleAttack('ice');
-        else if(x<710)battleAttack('iceSlash');
-        else battleMenu='main';
+        if(battle.monsterId===99&&suzumaruActive&&battleActor==='suzu'){
+          if(x<430)suzuAction('fire');
+          else battleMenu='main';
+        }else{
+          if(x<270)battleAttack('heal');
+          else if(x<490)battleAttack('ice');
+          else if(x<710)battleAttack('iceSlash');
+          else battleMenu='main';
+        }
       }
     }
   } else if(scene!=='world'&&scene!=='road2') pressAction();

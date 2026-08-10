@@ -317,7 +317,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.8',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.9',480,121,18,'center','#eef8ff');
   ctx.fillStyle='rgba(10,23,48,.73)';ctx.fillRect(310,466,340,52);text('タップ / Enter で はじめる',480,492,21,'center');
 }
 function speakerName(who){
@@ -465,7 +465,17 @@ function drawRoad2(){
   ctx.fillStyle='#c05f3e';ctx.beginPath();ctx.moveTo(1882,935);ctx.lineTo(1910,880);ctx.lineTo(1938,935);ctx.closePath();ctx.fill();
   text('中央火山',1910,840,16,'center','#4c5260');
 
-  for(const mon of monsters) drawWildMonster(mon);
+  
+  // Sarubie village entrance
+  rect(1672,1280,8,58,'#72513a');
+  outlineRect(1620,1240,112,46,'#f0d39a','#8e623d',2);
+  text('さるびえ村',1676,1264,16,'center','#4d332c');
+  rect(1840,1300,18,92,'#63383a'); rect(1990,1300,18,92,'#63383a'); rect(1835,1292,178,18,'#792d38');
+  text('さるびえ村',1924,1277,17,'center','#5b2630',700);
+  rect(1802,1354,28,18,'#5a4436'); ctx.fillStyle='#f07a34';ctx.beginPath();ctx.moveTo(1816,1354);ctx.lineTo(1807,1333);ctx.lineTo(1816,1339);ctx.lineTo(1822,1323);ctx.lineTo(1828,1354);ctx.closePath();ctx.fill();
+  rect(2018,1354,28,18,'#5a4436'); ctx.fillStyle='#f07a34';ctx.beginPath();ctx.moveTo(2032,1354);ctx.lineTo(2023,1333);ctx.lineTo(2032,1339);ctx.lineTo(2038,1323);ctx.lineTo(2044,1354);ctx.closePath();ctx.fill();
+  drawFireHouse(1870,1370); drawFireHouse(1990,1390);
+for(const mon of monsters) drawWildMonster(mon);
 
   drawDashmiu(hero.x-55,hero.y+22,1.08);
   drawHeroFox(hero.x,hero.y,1.18);
@@ -473,7 +483,7 @@ function drawRoad2(){
 
   const ht=hudTop();
   ctx.fillStyle='rgba(9,22,48,.8)';ctx.fillRect(18,ht,340,46);
-  text('目的：南南東のさるびえ村へ',35,ht+23,18);
+  text('目的：南南東のさるびえ村へ　→ 村門を目指す',35,ht+23,17);
 }
 function startBattle(mon){
   battle={
@@ -644,7 +654,7 @@ function menuTap(x,y){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.8 ここまで',480,112,42,'center');
+  text('Ver.0.9 ここまで',480,112,42,'center');
   text(`${heroName}の冒険は、ここから本格的に始まる。`,480,365,22,'center','#d8efff');
   text('次は：火山麓の洞窟 ＋ 炎晶石探しへ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');

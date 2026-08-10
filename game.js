@@ -317,7 +317,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.9',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.10',480,121,18,'center','#eef8ff');
   ctx.fillStyle='rgba(10,23,48,.73)';ctx.fillRect(310,466,340,52);text('タップ / Enter で はじめる',480,492,21,'center');
 }
 function speakerName(who){
@@ -391,53 +391,91 @@ function drawWorld(){
   camera.x=Math.max(0,Math.min(world.width-W,dash.x-W*.5));
   camera.y=Math.max(0,Math.min(world.height-H,dash.y-H*.45));
   ctx.save();ctx.translate(-camera.x,-camera.y);
-  rect(0,0,world.width,world.height,'#8fd47f');
-  rect(0,0,world.width,105,'#62c4df');rect(0,world.height-105,world.width,105,'#62c4df');
+  rect(0,0,world.width,world.height,'#72b96f');
 
-  // northern circus side -> southwestern Brifo road
-  ctx.fillStyle='#e8d5a3';ctx.beginPath();
-  ctx.moveTo(2020,150);
-  ctx.bezierCurveTo(1700,260,1350,420,1000,610);
-  ctx.bezierCurveTo(720,760,510,900,300,1010);
-  ctx.lineTo(390,1125);
-  ctx.bezierCurveTo(610,990,850,850,1120,700);
-  ctx.bezierCurveTo(1470,505,1800,340,2080,260);
+  ctx.fillStyle='#d8c48f';ctx.beginPath();
+  ctx.moveTo(2050,145);
+  ctx.bezierCurveTo(1830,245,1640,335,1430,450);
+  ctx.bezierCurveTo(1190,580,1040,730,835,860);
+  ctx.bezierCurveTo(650,975,500,1005,335,1050);
+  ctx.lineTo(390,1140);
+  ctx.bezierCurveTo(590,1090,760,1040,920,930);
+  ctx.bezierCurveTo(1140,780,1310,640,1510,530);
+  ctx.bezierCurveTo(1740,405,1910,315,2110,245);
   ctx.closePath();ctx.fill();
 
-  for(let x=40;x<2350;x+=115){
-    drawTree(x,145+(x%5)*12);
-    if(x<1750) drawTree(x+45,1000+(x%4)*10);
+  // Dense forest walls.
+  for(let x=20;x<2380;x+=78){
+    drawTree(x,100+(x%5)*20);
+    drawTree(x+32,190+(x%4)*22);
+    if(x<1200) drawTree(x+8,300+(x%3)*25);
+  }
+  for(let x=20;x<2300;x+=82){
+    if(x<280 || x>1050) {
+      drawTree(x,900+(x%4)*20);
+      drawTree(x+35,1010+(x%3)*18);
+    }
+  }
+  for(let i=0;i<23;i++){
+    const x=300+i*78;
+    const y=520+Math.sin(i*.7)*115;
+    drawTree(x,y-145);
+    drawTree(x+35,y+155);
   }
 
-  // northern coast hint
-  rect(1830,105,170,70,'#74cadf');
-  text('サーカス団方面',1920,125,15,'center','#32526a');
+  rect(1870,110,180,55,'#74cadf');
+  text('サーカス団方面',1960,130,15,'center','#32526a');
 
-  // Brifo at southwest
-  drawVillage(255,820);
-  rect(520,835,8,50,'#74523b');
-  outlineRect(480,798,94,42,'#efd99f','#98784c',2);
-  text('ぶりふぉ',527,819,14,'center','#38475a');
+  rect(275,970,8,55,'#74523b');
+  outlineRect(230,932,100,42,'#e9d39b','#8b6845',2);
+  text('森の奥へ',280,953,14,'center','#38475a');
 
   drawDashmiu(dash.x,dash.y,1.22);
   ctx.restore();
 
   const ht=hudTop();
-  ctx.fillStyle='rgba(9,22,48,.8)';ctx.fillRect(18,ht,310,46);
-  text('目的：南西のぶりふぉ村へ',35,ht+23,18);
+  ctx.fillStyle='rgba(9,22,48,.82)';ctx.fillRect(18,ht,350,46);
+  text('目的：森を抜けてぶりふぉ村へ',35,ht+23,18);
 }
-function drawVillageDialog(){
-  ctx.fillStyle='#8fd47f';ctx.fillRect(0,0,W,H);rect(0,0,W,92,'#89d9e8');drawHouse(95,145);drawHouse(225,105);drawHouse(725,135);drawTree(30,300);drawTree(845,290);drawTree(720,330);
-  drawDashmiu(345,335,1.35);drawHeroFox(570,335,1.38);
-  for(let i=0;i<5;i++){const x=650+i*40,y=385+(i%2)*8;ellipse(x,y-10,11,10,'#d3eef3');rect(x-10,y,20,25,'#e8f4f5');}
-  drawElderFox(490,350,1.2);
-  const vd=villageDialog();const item=vd[Math.min(dialogIndex,vd.length-1)];drawDialog(item[0],item[1]);
+
+function drawForest2(){
+  camera.x=Math.max(0,Math.min(1900-W,dash.x-W*.5));
+  camera.y=Math.max(0,Math.min(1100-H,dash.y-H*.45));
+  ctx.save();ctx.translate(-camera.x,-camera.y);
+  rect(0,0,1900,1100,'#7fc477');
+
+  ctx.fillStyle='#dfca95';ctx.beginPath();
+  ctx.moveTo(1700,160);ctx.bezierCurveTo(1430,300,1220,470,980,600);
+  ctx.bezierCurveTo(760,720,560,800,330,835);
+  ctx.lineTo(350,950);
+  ctx.bezierCurveTo(610,900,820,820,1050,690);
+  ctx.bezierCurveTo(1300,550,1510,390,1770,270);
+  ctx.closePath();ctx.fill();
+
+  for(let x=20;x<1880;x+=82){
+    drawTree(x,110+(x%4)*18);
+    if(x>650) drawTree(x+35,300+(x%5)*22);
+  }
+  for(let x=500;x<1880;x+=86){
+    drawTree(x,830+(x%4)*18);
+    drawTree(x+35,960+(x%3)*15);
+  }
+
+  drawVillage(150,620);
+  rect(410,695,8,55,'#74523b');
+  outlineRect(365,655,100,42,'#efd99f','#98784c',2);
+  text('ぶりふぉ村',415,676,14,'center','#38475a');
+  rect(80,565,22,190,'#bcecf5');
+  rect(105,575,15,175,'rgba(255,255,255,.45)');
+
+  drawDashmiu(dash.x,dash.y,1.22);
+  ctx.restore();
+
+  const ht=hudTop();
+  ctx.fillStyle='rgba(9,22,48,.82)';ctx.fillRect(18,ht,340,46);
+  text('目的：森を抜ける',35,ht+23,18);
 }
-function drawDepartureDialog(){
-  ctx.fillStyle='#8fd47f';ctx.fillRect(0,0,W,H);rect(0,0,W,92,'#89d9e8');drawHouse(105,138);drawTree(770,260);drawTree(55,280);
-  drawHeroFox(430,330,1.42);drawDashmiu(565,335,1.36);drawElderFox(330,350,1.2);
-  const item=departureDialog[Math.min(dialogIndex,departureDialog.length-1)];drawDialog(item[0],item[1]);
-}
+
 function drawRoad2(){
   camera.x=Math.max(0,Math.min(road2.width-W,hero.x-W*.43));
   camera.y=Math.max(0,Math.min(road2.height-H,hero.y-H*.45));
@@ -654,7 +692,7 @@ function menuTap(x,y){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.9 ここまで',480,112,42,'center');
+  text('Ver.0.10 ここまで',480,112,42,'center');
   text(`${heroName}の冒険は、ここから本格的に始まる。`,480,365,22,'center','#d8efff');
   text('次は：火山麓の洞窟 ＋ 炎晶石探しへ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
@@ -665,6 +703,19 @@ function update(dt){
     dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);dash.x+=dx*dash.speed*dt;dash.y+=dy*dash.speed*dt;}
     dash.x=Math.max(60,Math.min(world.width-70,dash.x));dash.y=Math.max(140,Math.min(world.height-130,dash.y));
     if(dash.x<620&&dash.y>760&&!villageEventStarted){villageEventStarted=true;scene='villageDialog';dialogIndex=0;touchUI.classList.add('hidden');}
+  } else if(scene==='forest2'){
+    let dx=0,dy=0;
+    if(keys['ArrowLeft']||keys['a'])dx--;
+    if(keys['ArrowRight']||keys['d'])dx++;
+    if(keys['ArrowUp']||keys['w'])dy--;
+    if(keys['ArrowDown']||keys['s'])dy++;
+    if(touchDir.left)dx--;if(touchDir.right)dx++;if(touchDir.up)dy--;if(touchDir.down)dy++;
+    if(dx||dy){const l=Math.hypot(dx,dy);dash.x+=dx/l*dash.speed*dt;dash.y+=dy/l*dash.speed*dt;}
+    dash.x=Math.max(55,Math.min(1845,dash.x));
+    dash.y=Math.max(120,Math.min(1000,dash.y));
+    if(dash.x<470&&dash.y>610&&!villageEventStarted){
+      villageEventStarted=true;scene='village';dialogIndex=0;touchUI.classList.add('hidden');
+    }
   } else if(scene==='road2'){
     for(const mon of monsters){
       if(!mon.alive && mon.respawn>0){
@@ -750,6 +801,7 @@ function frame(now){
   if(scene==='title')drawTitle();
   else if(scene==='cutscene')drawCutscene();
   else if(scene==='world')drawWorld();
+  else if(scene==='forest2')drawForest2();
   else if(scene==='villageDialog')drawVillageDialog();
   else if(scene==='departureDialog')drawDepartureDialog();
   else if(scene==='road2')drawRoad2();

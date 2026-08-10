@@ -100,11 +100,15 @@ const departureDialog = [
 const world = { width:2400, height:1250 };
 const road2 = { width:2200, height:1550 };
 const monsters = [
-  {id:1,name:'リンゴリス',kind:'appleSquirrel',x:720,y:570,alive:true,hp:24,maxHP:24},
-  {id:2,name:'モモモモンガ',kind:'peachGlider',x:1210,y:890,alive:true,hp:30,maxHP:30},
-  {id:3,name:'カボチャガニ',kind:'pumpkinCrab',x:1710,y:1190,alive:true,hp:38,maxHP:38}
+  {id:1,name:'リンゴリス',kind:'appleSquirrel',x:720,y:570,spawnX:720,spawnY:570,alive:true,hp:24,maxHP:24,respawn:0},
+  {id:2,name:'モモモモンガ',kind:'peachGlider',x:1210,y:890,spawnX:1210,spawnY:890,alive:true,hp:30,maxHP:30,respawn:0},
+  {id:3,name:'カボチャガニ',kind:'pumpkinCrab',x:1710,y:1190,spawnX:1710,spawnY:1190,alive:true,hp:38,maxHP:38,respawn:0}
 ];
 
+function hudTop(){
+  const h = window.innerHeight || 540;
+  return h < 500 ? 74 : 20;
+}
 function resize(){
   const dpr=Math.min(devicePixelRatio||1,2);
   canvas.width=W*dpr;canvas.height=H*dpr;
@@ -278,7 +282,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.6',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.7',480,121,18,'center','#eef8ff');
   ctx.fillStyle='rgba(10,23,48,.73)';ctx.fillRect(310,466,340,52);text('タップ / Enter で はじめる',480,492,21,'center');
 }
 function speakerName(who){
@@ -363,8 +367,9 @@ function drawWorld(){
   drawDashmiu(dash.x,dash.y,1.22);
   ctx.restore();
 
-  ctx.fillStyle='rgba(9,22,48,.8)';ctx.fillRect(18,18,310,46);
-  text('目的：南西のぶりふぉ村へ',35,41,18);
+  const ht=hudTop();
+  ctx.fillStyle='rgba(9,22,48,.8)';ctx.fillRect(18,ht,310,46);
+  text('目的：南西のぶりふぉ村へ',35,ht+23,18);
 }
 function drawVillageDialog(){
   ctx.fillStyle='#8fd47f';ctx.fillRect(0,0,W,H);rect(0,0,W,92,'#89d9e8');drawHouse(95,145);drawHouse(225,105);drawHouse(725,135);drawTree(30,300);drawTree(845,290);drawTree(720,330);
@@ -411,8 +416,9 @@ function drawRoad2(){
   drawHeroFox(hero.x,hero.y,1.18);
   ctx.restore();
 
-  ctx.fillStyle='rgba(9,22,48,.8)';ctx.fillRect(18,18,340,46);
-  text('目的：南南東のさるびえ村へ',35,41,18);
+  const ht=hudTop();
+  ctx.fillStyle='rgba(9,22,48,.8)';ctx.fillRect(18,ht,340,46);
+  text('目的：南南東のさるびえ村へ',35,ht+23,18);
 }
 function startBattle(mon){
   battle={
@@ -507,7 +513,10 @@ function enemyTurn(){
 }
 function finishBattle(){
   const mon=monsters.find(m=>m.id===battle.monsterId);
-  if(mon) mon.alive=false;
+  if(mon){
+    mon.alive=false;
+    mon.respawn=12.0;
+  }
   const expGain = mon ? ({1:12,2:15,3:20}[mon.id] || 10) : 10;
   const leveled = gainExp(expGain);
   scene='road2';touchUI.classList.remove('hidden');
@@ -566,7 +575,7 @@ function menuTap(x,y){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.6 ここまで',480,112,42,'center');
+  text('Ver.0.7 ここまで',480,112,42,'center');
   text(`${heroName}の冒険は、ここから本格的に始まる。`,480,365,22,'center','#d8efff');
   text('次は：さるびえ村到着 ＋ スズマル登場へ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
@@ -578,13 +587,23 @@ function update(dt){
     dash.x=Math.max(60,Math.min(world.width-70,dash.x));dash.y=Math.max(140,Math.min(world.height-130,dash.y));
     if(dash.x<620&&dash.y>760&&!villageEventStarted){villageEventStarted=true;scene='villageDialog';dialogIndex=0;touchUI.classList.add('hidden');}
   } else if(scene==='road2'){
+    for(const mon of monsters){
+      if(!mon.alive && mon.respawn>0){
+        mon.respawn -= dt;
+        if(mon.respawn<=0){
+          mon.alive=true;
+          mon.x=mon.spawnX + (Math.random()*50-25);
+          mon.y=mon.spawnY + (Math.random()*40-20);
+        }
+      }
+    }
     let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;
     dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);hero.x+=dx*hero.speed*dt;hero.y+=dy*hero.speed*dt;}
     hero.x=Math.max(50,Math.min(road2.width-60,hero.x));hero.y=Math.max(140,Math.min(road2.height-130,hero.y));
     for(const mon of monsters){
       if(mon.alive && Math.hypot(hero.x-mon.x,hero.y-mon.y)<58){ startBattle(mon); break; }
     }
-    if(monsters.every(m=>!m.alive) && hero.x>1840 && hero.y>1360) scene='end';
+    if(hero.x>1840 && hero.y>1360) scene='end';
   } else if(scene==='battle'){
     if(battleCooldown>0){
       battleCooldown-=dt;
@@ -623,7 +642,7 @@ function pressAction(){
   if(scene==='departureDialog'){
     dialogIndex++;
     if(dialogIndex>=departureDialog.length){
-      scene='road2';dialogIndex=0;hero.x=260;hero.y=210;monsters.forEach(m=>m.alive=true);touchUI.classList.remove('hidden');
+      scene='road2';dialogIndex=0;hero.x=260;hero.y=210;monsters.forEach(m=>{m.alive=true;m.respawn=0;m.x=m.spawnX;m.y=m.spawnY;});touchUI.classList.remove('hidden');
       flashText='さるびえ村へ向かおう';flashTimer=2.0;
     }
     return;
@@ -636,7 +655,7 @@ function pressAction(){
     battleAttack('attack');return;
   }
   if(scene==='end'){
-    scene='title';dash.x=1960;dash.y=180;hero.x=360;hero.y=300;villageEventStarted=false;monsters.forEach(m=>m.alive=true);
+    scene='title';dash.x=1960;dash.y=180;hero.x=360;hero.y=300;villageEventStarted=false;monsters.forEach(m=>{m.alive=true;m.respawn=0;m.x=m.spawnX;m.y=m.spawnY;});
   }
 }
 

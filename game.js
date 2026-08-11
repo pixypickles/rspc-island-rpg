@@ -32,11 +32,80 @@ let progress = JSON.parse(localStorage.getItem('risupekuProgress') || 'null') ||
 };
 if(progress.gold===undefined) progress.gold=90;
 if(!progress.items) progress.items={potion:0};
-if(progress.suzuLevel===undefined) progress.suzuLevel=progress.level;
+
+
+
+function suzuSingleSkillName(){
+  const lv=progress.suzuSkills?.single||0;
+  if(lv>=3)return '豪炎爆斬';
+  if(lv>=2)return '爆炎斬り';
+  return '火炎斬り';
+}
+function suzuAllSkillName(){
+  const lv=progress.suzuSkills?.all||0;
+  if(lv>=3)return '烈火走陣';
+  if(lv>=2)return '炎走陣';
+  return '火走り';
+}
+function heroIceSkillName(){
+  const lv=progress.heroIceSkill||0;
+  if(lv>=3)return '氷結三連斬り';
+  if(lv>=2)return '氷結二段斬り';
+  return '氷結斬り';
+}
+function heroIceHits(){
+  const lv=progress.heroIceSkill||0;
+  return lv>=3?3:lv>=2?2:1;
+}
+if(progress.heroIceSkill===undefined){
+  progress.heroIceSkill=progress.learned?.iceSlash?1:0;
+}
+
+function partyLevel(){ return progress.level; }
+
+function heroStats(){
+  return {
+    maxHP:progress.maxHP,
+    maxMP:progress.maxMP,
+    atk:progress.atk,
+    def:progress.def
+  };
+}
+
+function suzumaruStats(){
+  const lv=partyLevel();
+  // Lv1 baseline + character-specific growth.
+  // Suzumaru: HP / ATK high, MP low, DEF slightly below hero.
+  return {
+    maxHP:50+(lv-1)*7,
+    maxMP:18+(lv-1)*2,
+    atk:11+(lv-1)*3,
+    def:4+(lv-1)*1
+  };
+}
+
+function totalSPForLevel(level){
+  // Lv1 starts with 0, each level-up grants 1.
+  return Math.max(0, level-1);
+}
+
+if(progress.suzuSP===undefined){
+  progress.suzuSP=totalSPForLevel(progress.level);
+}
+if(progress.suzuSpentSP===undefined){
+  {
+  const s=progress.suzuSkills?.single||0,a=progress.suzuSkills?.all||0;
+  const spent=n=>n<=0?0:n===1?1:n===2?3:6;
+  progress.suzuSpentSP=spent(s)+spent(a);
+}
+  progress.suzuSP=Math.max(0,totalSPForLevel(progress.level)-progress.suzuSpentSP);
+}
+
 if(!progress.suzuSkills) progress.suzuSkills={
   single:0,   // 火炎斬り系：主力。伸び幅を大きくする
   all:0       // 火走り系：全体攻撃。伸ばせるが単体ほど火力効率は上がらない
 };
+saveProgress();
 if(!progress.shopBought) progress.shopBought={fireBlade:false};
 if(progress.shopBought.windKnife===undefined) progress.shopBought.windKnife=false;
 saveProgress();
@@ -51,10 +120,7 @@ function gainExp(amount){
   while(progress.exp >= expNeeded(progress.level)){
     progress.exp -= expNeeded(progress.level);
     progress.level++;
-    if(typeof suzumaruJoined!=='undefined' && (suzumaruJoined||suzumaruActive)){
-      progress.suzuLevel=(progress.suzuLevel||progress.level-1)+1;
-    }
-    progress.sp++;
+progress.sp++;
     progress.maxHP += 6;
     progress.maxMP += 3;
     progress.atk += 2;
@@ -581,7 +647,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.23.1',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.25',480,121,18,'center','#eef8ff');
   const canContinue=hasSaveGame();
   const y1=350,y2=406;
   outlineRect(300,y1,360,46,titleSelection===0?'#e8f7fb':'rgba(15,35,60,.78)','#73b9d6',2);
@@ -940,8 +1006,8 @@ function drawBattle(){
     }else{
       if(isSuzumaruTurn()){
         text('スズマルのスキル',480,372,14,'center','#ffe5c8');
-        outlineRect(55,385,245,54,'#ffd9cf','#d86145',2);text('火炎斬り MP5',177,406,16,'center','#6b231d');text('単体・高威力',177,425,11,'center','#934a3e');
-        outlineRect(315,385,245,54,'#ffe2cf','#d78251',2);text('火走り MP8',437,406,16,'center','#5c3023');text('敵全体',437,425,11,'center','#7d5748');
+        outlineRect(55,385,245,54,'#ffd9cf','#d86145',2);text(`${suzuSingleSkillName()} MP5`,177,406,16,'center','#6b231d');text('単体・高威力',177,425,11,'center','#934a3e');
+        outlineRect(315,385,245,54,'#ffe2cf','#d78251',2);text(`${suzuAllSkillName()} MP8`,437,406,16,'center','#5c3023');text('敵全体',437,425,11,'center','#7d5748');
         outlineRect(575,385,180,54,'#fff0d0','#d2a24d',2);text(`回復薬 x${progress.items.potion}`,665,412,14,'center','#5f4623');
         outlineRect(770,385,140,54,'#dff4fb','#71bad7',2);text('もどる',840,412,15,'center','#17324a');
       }else{
@@ -1058,12 +1124,17 @@ function beginEnemyTurn(){
   battleMenu='main';
 }
 function suzuAction(mode='attack'){
+  const ss=suzumaruStats();
   if(!battle || battle.turn!=='player' || battleActor!=='suzu')return;
   let dmg=0;
   if(mode==='fireRun'){
     if(battle.suzuMP<8){battleMessage='MPが足りない！';return;}
     battle.suzuMP-=8;
-    dmg=8+progress.suzuSkills.all*2+Math.floor(Math.random()*4);
+    {
+      const al=progress.suzuSkills.all||0;
+      const bonus=al>=3?12:al>=2?8:3;
+      dmg=Math.floor(ss.atk*0.45)+bonus+Math.floor(Math.random()*4);
+    }
     const allDmg=damageAllEnemies(dmg);
     const summary=Array.isArray(allDmg)?allDmg.map(v=>typeof v==='object'?`${v.name} ${v.damage}`:v).join(' / '):'';
     battleMessage=`スズマルの「火走り」！ ${summary}`;
@@ -1074,10 +1145,14 @@ function suzuAction(mode='attack'){
   if(mode==='fire'){
     if(battle.suzuMP<5){battleMessage='MPが足りない！';return;}
     battle.suzuMP-=5;
-    dmg=22+progress.suzuSkills.single*5+Math.floor(Math.random()*7);
+    {
+      const sl=progress.suzuSkills.single||0;
+      const bonus=sl>=3?30:sl>=2?20:10;
+      dmg=ss.atk+bonus+Math.floor(Math.random()*7);
+    }
     battleMessage=`スズマルの「火炎斬り」！ ${dmg}ダメージ！`;setBattleFx('fire');addDamagePopup('FIRE',700,155,'#ffb093');battleChoiceText.suzu='火炎斬り';
   }else{
-    dmg=12+Math.floor(Math.random()*5);
+    dmg=ss.atk+2+Math.floor(Math.random()*5);
     battleMessage=`スズマルのこうげき！ ${dmg}ダメージ！`;setBattleFx('slash');battleChoiceText.suzu='こうげき';
   }
   damageEnemy(dmg);
@@ -1113,6 +1188,7 @@ function battleRun(){
   battle.turn='run';battleCooldown=.6;battleMenu='main';
 }
 function enemyTurn(){
+  const ss=suzumaruStats();
   const attackers=battle.enemies?livingEnemies():[{
     name:battle.enemyName||'敵',
     kind:battle.enemyKind||''
@@ -1122,7 +1198,8 @@ function enemyTurn(){
   const attackLines=[];
 
   attackers.forEach((foe,idx)=>{
-    let dmg=Math.max(1,4+Math.floor(Math.random()*4)-Math.floor(progress.def/4));
+    let baseDmg=5+Math.floor(Math.random()*5);
+    let dmg=baseDmg;
     if(battle.defending)dmg=Math.max(1,Math.floor(dmg/2));
 
     let target='hero';
@@ -1133,10 +1210,12 @@ function enemyTurn(){
     addDamagePopup('攻撃！',ep[0],ep[1]-45,'#ffcf9d');
 
     if(target==='suzu'){
+      dmg=Math.max(1,baseDmg-Math.floor(ss.def/4));
       battle.suzuHP=Math.max(1,battle.suzuHP-dmg);
       totalSuzu+=dmg;
       attackLines.push(`${foe.name} → スズマル ${dmg}`);
     }else{
+      dmg=Math.max(1,baseDmg-Math.floor(progress.def/4));
       battle.heroHP=Math.max(1,battle.heroHP-dmg);
       totalHero+=dmg;
       attackLines.push(`${foe.name} → ${heroName} ${dmg}`);
@@ -1698,6 +1777,7 @@ function enemiesDefeated(){
 
 
 function startRoute3Battle(mon){
+  const ss=suzumaruStats();
   const pool=[
     {name:'ダイコンフェレット',kind:'radishFerret',hp:46,maxHP:46},
     {name:'ソラマメテン',kind:'beanMarten',hp:50,maxHP:50},
@@ -1708,7 +1788,7 @@ function startRoute3Battle(mon){
   while(enemies.length<count) enemies.push({...pool[Math.floor(Math.random()*pool.length)]});
   battle={
     heroHP:progress.maxHP,heroMP:progress.maxMP,
-    suzuHP:56,suzuMaxHP:56,suzuMP:22,suzuMaxMP:22,
+    suzuHP:ss.maxHP,suzuMaxHP:ss.maxHP,suzuMP:ss.maxMP,suzuMaxMP:ss.maxMP,
     enemies,enemyHP:enemies[0].hp,enemyMaxHP:enemies[0].maxHP,
     monsterId:mon.id,enemyName:enemies[0].name,enemyKind:enemies[0].kind,
     turn:'player',defending:false
@@ -1720,10 +1800,11 @@ function startRoute3Battle(mon){
 }
 
 function startCaveMobBattle(mon){
+  const ss=suzumaruStats();
   const enemies=caveEncounterGroup(mon);
   battle={
     heroHP:progress.maxHP,heroMP:progress.maxMP,
-    suzuHP:56,suzuMaxHP:56,suzuMP:22,suzuMaxMP:22,
+    suzuHP:ss.maxHP,suzuMaxHP:ss.maxHP,suzuMP:ss.maxMP,suzuMaxMP:ss.maxMP,
     enemies,
     enemyHP:enemies[0].hp,enemyMaxHP:enemies[0].maxHP,
     monsterId:mon.id,enemyName:enemies[0].name,enemyKind:enemies[0].kind,
@@ -1736,10 +1817,11 @@ function startCaveMobBattle(mon){
 }
 
 function startCaveBossBattle(){
+  const ss=suzumaruStats();
   caveBattle=true;
   battle={
     heroHP:progress.maxHP,heroMP:progress.maxMP,
-    suzuHP:56,suzuMaxHP:56,suzuMP:22,suzuMaxMP:22,
+    suzuHP:ss.maxHP,suzuMaxHP:ss.maxHP,suzuMP:ss.maxMP,suzuMaxMP:ss.maxMP,
     enemyHP:caveBoss.hp,enemyMaxHP:caveBoss.maxHP,
     monsterId:99,monsterName:'マグマガメ',enemyName:'マグマガメ',enemyKind:'magmaTurtle',
     turn:'player',guard:false
@@ -1782,12 +1864,16 @@ function drawMenu(){
       drawSuzumaru(580,280,1.55);
       text('スズマル',665,180,24,'left','#ffffff');
       text('火 / 剣・大剣',665,215,16,'left','#f4c9bc');
-      text('HP 56',665,260,18,'left','#ffffff');
-      text('MP 22',785,260,18,'left','#ffffff');
-      text('単体攻撃が得意',665,305,17,'left','#ffd4c4');
-      text('全体攻撃も習得可能',665,340,15,'left','#d9c5be');
-      text(`単体系 Lv.${progress.suzuSkills?.single||0}`,665,382,16,'left','#ffffff');
-      text(`全体系 Lv.${progress.suzuSkills?.all||0}`,665,414,16,'left','#ffffff');
+      const ss=suzumaruStats();
+      text(`HP ${ss.maxHP}`,665,260,18,'left','#ffffff');
+      text(`MP ${ss.maxMP}`,785,260,18,'left','#ffffff');
+      text(`こうげき ${ss.atk}`,665,300,16,'left','#ffffff');
+      text(`ぼうぎょ ${ss.def}`,785,300,16,'left','#ffffff');
+      text(`SP ${progress.suzuSP||0}`,665,330,17,'left','#ffe7a5');
+      text('単体攻撃が得意',665,360,16,'left','#ffd4c4');
+      text('全体攻撃も習得可能',665,388,14,'left','#d9c5be');
+      text(`単体系 Lv.${progress.suzuSkills?.single||0}`,665,414,15,'left','#ffffff');
+      text(`全体系 Lv.${progress.suzuSkills?.all||0}`,785,414,15,'left','#ffffff');
     }else{
       outlineRect(505,140,410,315,'#14243c','#44556d',2);
       text('仲間はまだいません',710,295,19,'center','#8295a8');
@@ -1804,16 +1890,24 @@ function drawMenu(){
          suzuEnabled?(menuCharacter==='suzu'?'#65291f':'#e9d8d3'):'#758596');
 
     if(menuCharacter==='suzu' && suzuEnabled){
-      text('スキルポイントは正式なスキルツリー実装時に使用',70,215,15,'left','#d9c5be');
+      text(`スズマル SP：${progress.suzuSP||0}`,70,215,18,'left','#ffe5c8');
 
       outlineRect(70,245,385,82,'#ffe0d6','#c95f48',2);
-      text('単体攻撃系',95,270,20,'left','#6b231d');
-      text('火炎斬り → 高威力の単体技へ',95,300,15,'left','#8d4a3b');
+      text(suzuSingleSkillName(),95,270,20,'left','#6b231d');
+      {
+        const sl=progress.suzuSkills?.single||0;
+        const nxt=sl<1?'火炎斬りを強化':sl===1?'次：爆炎斬り':sl===2?'次：豪炎爆斬':'単体系・最大強化';
+        text(nxt,95,300,15,'left','#8d4a3b');
+      }
       text(`現在：Lv.${progress.suzuSkills?.single||0}`,420,285,15,'right','#6b231d');
 
       outlineRect(505,245,385,82,'#ffe8dc','#d47b55',2);
-      text('全体攻撃系',530,270,20,'left','#703525');
-      text('火走り → 広範囲技へ',530,300,15,'left','#8d5847');
+      text(suzuAllSkillName(),530,270,20,'left','#703525');
+      {
+        const al=progress.suzuSkills?.all||0;
+        const nxt=al<1?'火走りを強化':al===1?'次：炎走陣':al===2?'次：烈火走陣':'全体系・最大強化';
+        text(nxt,530,300,15,'left','#8d5847');
+      }
       text(`現在：Lv.${progress.suzuSkills?.all||0}`,855,285,15,'right','#703525');
 
       text('スズマルは全体系も伸ばせますが、単体系の伸び幅が大きい設計です。',480,375,16,'center','#ffd5c6');
@@ -1822,9 +1916,15 @@ function drawMenu(){
       text(`スキルポイント：${progress.sp}`,65,215,22,'left','#ffe8a8');
 
       outlineRect(65,250,390,82,progress.learned.iceSlash?'#536777':'#e7f5fb','#78b9d7',2);
-      text('氷結斬り',90,277,21,'left',progress.learned.iceSlash?'#c5d0d8':'#18334a');
-      text('MP7 / 氷をまとった小剣で強く斬る',90,307,15,'left',progress.learned.iceSlash?'#c5d0d8':'#3d5d73');
-      text(progress.learned.iceSlash?'習得済み':'必要SP：1',420,292,16,'right',progress.learned.iceSlash?'#c5d0d8':'#b66f31');
+      text(heroIceSkillName(),90,277,21,'left','#18334a');
+      text((progress.heroIceSkill||0)>=2
+        ?`MP7 / ${heroIceHits()}ヒットする氷属性の連続斬り`
+        :'MP7 / 氷をまとった小剣で強く斬る',90,307,15,'left','#3d5d73');
+      {
+        const il=progress.heroIceSkill||0;
+        const next=il===0?'習得 SP1':il===1?'→ 氷結二段斬り SP2':il===2?'→ 氷結三連斬り SP3':'最大強化';
+        text(next,420,292,15,'right','#b66f31');
+      }
 
       outlineRect(505,250,390,82,'#dceffc','#6aaacb',2);
       text('氷晶波',530,277,21,'left','#18334a');
@@ -1850,21 +1950,55 @@ function menuTap(x,y){
     if(x>510 && (suzumaruActive||suzumaruJoined)){menuCharacter='suzu';return;}
   }
 
-  // Hero's currently implemented learnable skill
-  if(menuPage==='skill' && menuCharacter==='hero' && y>=245 && y<=332 && x>=65 && x<=455){
-    if(!progress.learned.iceSlash && progress.sp>=1){
-      progress.sp--;
-      progress.learned.iceSlash=true;
-      saveProgress();
-      saveGame();
-      flashText='「氷結斬り」を習得した！';
-      flashTimer=2.3;
+  if(menuPage==='skill' && menuCharacter==='suzu' && (suzumaruActive||suzumaruJoined)){
+    if(y>=245 && y<=327){
+      if(x>=70 && x<=455){
+        const lv=progress.suzuSkills.single||0;
+        if(lv>=3){flashText='単体系は最大強化です';flashTimer=1.6;return;}
+        const cost=lv+1;
+        if((progress.suzuSP||0)<cost){flashText=`SPが足りない（必要 ${cost}）`;flashTimer=1.6;return;}
+        progress.suzuSP-=cost;
+        progress.suzuSkills.single=lv+1;
+        progress.suzuSpentSP=(progress.suzuSpentSP||0)+cost;
+        saveProgress();saveGame();
+        flashText=`「${suzuSingleSkillName()}」になった！`;flashTimer=1.9;return;
+      }
+      if(x>=505 && x<=890){
+        const lv=progress.suzuSkills.all||0;
+        if(lv>=3){flashText='全体系は最大強化です';flashTimer=1.6;return;}
+        const cost=lv+1;
+        if((progress.suzuSP||0)<cost){flashText=`SPが足りない（必要 ${cost}）`;flashTimer=1.6;return;}
+        progress.suzuSP-=cost;
+        progress.suzuSkills.all=lv+1;
+        progress.suzuSpentSP=(progress.suzuSpentSP||0)+cost;
+        saveProgress();saveGame();
+        flashText=`「${suzuAllSkillName()}」になった！`;flashTimer=1.9;return;
+      }
     }
+  }
+
+  // Hero ice-blade evolution: learn -> two-hit -> three-hit.
+  if(menuPage==='skill' && menuCharacter==='hero' && y>=245 && y<=332 && x>=65 && x<=455){
+    const lv=progress.heroIceSkill||0;
+    const cost=lv===0?1:lv===1?2:lv===2?3:999;
+    if(lv>=3){
+      flashText='氷結斬り系は最大強化です';flashTimer=1.7;return;
+    }
+    if(progress.sp<cost){
+      flashText=`SPが足りない（必要 ${cost}）`;flashTimer=1.7;return;
+    }
+    progress.sp-=cost;
+    progress.heroIceSkill=lv+1;
+    progress.learned.iceSlash=true;
+    saveProgress();saveGame();
+    flashText=`「${heroIceSkillName()}」になった！`;
+    flashTimer=2.1;
+    return;
   }
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.23.1 ここまで',480,112,42,'center');
+  text('Ver.0.25 ここまで',480,112,42,'center');
   text(`さるびび村の問題を解決し、ユーノの協力を得よう。`,480,365,22,'center','#d8efff');
   text('次は：夜の尾行とツキポポの秘密へ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');

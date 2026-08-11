@@ -1405,6 +1405,22 @@ function drawBattleFx(){
   ctx.restore();
 }
 
+function ensureGyouBattle(){
+  if(!battle || !gyouJoined)return;
+  const gs=gyouStats();
+  if(battle.gyouMaxHP===undefined){battle.gyouMaxHP=gs.maxHP;battle.gyouHP=gs.maxHP;}
+  if(battle.gyouMaxMP===undefined){battle.gyouMaxMP=gs.maxMP;battle.gyouMP=gs.maxMP;}
+  if(battle.gyouDefTurns===undefined)battle.gyouDefTurns=0;
+  if(battle.gyouTauntTurns===undefined)battle.gyouTauntTurns=0;
+  if(battle.gyouCover===undefined)battle.gyouCover=null;
+  if(battle.gyouManaGuard===undefined)battle.gyouManaGuard=false;
+  if(battle.gyouCounter===undefined)battle.gyouCounter=false;
+  if(battle.gyouGrandGuard===undefined)battle.gyouGrandGuard=false;
+}
+function isGyouTurn(){
+  return !!(battle && gyouJoined && battle.monsterId>=400 && battleActor==='gyou');
+}
+
 function isPartyBattle(){
   return !!(battle && suzumaruActive && (battle.monsterId===99 || battle.monsterId>=200));
 }
@@ -1517,15 +1533,17 @@ function drawBattle(){
     text(`${battleActor==='suzu'?'▶ ':''}スズマル：${suzuSel}`,505,341,15,'left',battleActor==='suzu'?'#fff2ad':'#d7e6ee');
   }
   // commands
-  ctx.fillStyle='rgba(9,20,42,.92)';ctx.fillRect(50,365,860,140);
+  const cmdY=((window.innerHeight||540)<500)?338:365;
+  ctx.fillStyle='rgba(9,20,42,.92)';ctx.fillRect(50,cmdY,860,140);
   if(battle.turn==='player'){
     if(battleMenu==='main'){
-      outlineRect(70,388,180,48,'#dff4fb','#71bad7',2);text('こうげき',160,412,20,'center','#17324a');
-      outlineRect(270,388,180,48,'#dff4fb','#71bad7',2);text('スキル',360,412,20,'center','#17324a');
-      outlineRect(470,388,180,48,'#dff4fb','#71bad7',2);text('ぼうぎょ',560,412,20,'center','#17324a');
-      outlineRect(670,388,180,48,'#dff4fb','#71bad7',2);text('にげる',760,412,20,'center','#17324a');
+      const by=((window.innerHeight||540)<500)?354:388;
+      outlineRect(70,by,180,48,'#dff4fb','#71bad7',2);text('こうげき',160,by+24,20,'center','#17324a');
+      outlineRect(270,by,180,48,'#dff4fb','#71bad7',2);text('スキル',360,by+24,20,'center','#17324a');
+      outlineRect(470,by,180,48,'#dff4fb','#71bad7',2);text('ぼうぎょ',560,by+24,20,'center','#17324a');
+      outlineRect(670,by,180,48,'#dff4fb','#71bad7',2);text('にげる',760,by+24,20,'center','#17324a');
       const actorName=isGyouTurn()?'ギョウ':isYunoTurn()?'ユーノ':isSuzumaruTurn()?'スズマル':heroName;
-      text(`${actorName}の行動`,480,474,15,'center','#c8e7f4');
+      text(`${actorName}の行動`,480,by+78,15,'center','#c8e7f4');
     }else{
       if(isGyouTurn()){
         text('ギョウのスキル',480,372,14,'center','#f4efcf');
@@ -3932,7 +3950,8 @@ canvas.addEventListener('pointerdown',e=>{
     const x=(e.clientX-r.left)/r.width*W;
     const y=(e.clientY-r.top)/r.height*H;
     if(battleMenu==='main'){
-      if(y>=380 && y<=455){
+      const mainY=((window.innerHeight||540)<500)?346:380;
+      if(y>=mainY && y<=mainY+75){
         if(x<260){
           if(isGyouTurn()){
             const gs=gyouStats(),dmg=gs.atk+2+Math.floor(Math.random()*5);

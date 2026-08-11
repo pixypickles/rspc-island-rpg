@@ -628,6 +628,65 @@ const finalLaunchDialog=[
   ['narrator','島中の村人たちが、それぞれの持ち場へ走り出した――。']
 ];
 
+const finalBattleGroundDialog=[
+  ['narrator','ぶりふぉ村の外。氷壁の向こうには、これまでとは比べものにならない数の海賊が集まっていた。'],
+  ['pirate','押せ！　もう壁はもたねえぞ！'],
+  ['narrator','亀裂の入った氷壁へ砲撃が集中する。だが、その内側では島の村人たちがすでに配置についていた。'],
+  ['elder','土の者は前へ！　壁を二重にするぞ！'],
+  ['narrator','氷壁の後ろから分厚い土壁がせり上がり、崩れた場所を次々と塞いでいく。'],
+  ['yuno','まだ反撃しないで。予定通り、少しずつ下がって。'],
+  ['narrator','風、氷、炎の村人たちは攻撃しながら、わざと守備線を後退させた。海賊の大軍が島の内側へ踏み込んでくる。'],
+  ['pirate','逃げてるぞ！　一気に潰せ！'],
+  ['dash','……ちゃんと追ってきた。'],
+  ['yuno','水の人たち、今！'],
+  ['narrator','大量の水が地面と空へ放たれる。そこへ炎が走り、白い蒸気が戦場いっぱいに広がった。'],
+  ['suzu','霧、できたぞ！'],
+  ['yuno','風を海側へ。敵の本陣だけ濃くする！'],
+  ['narrator','風魔法が霧を押し流す。島側の視界は開けたまま、海賊本陣だけが白く覆われていった。'],
+  ['gyou','前が見えなくなって、隊列が崩れてる。今なら押さえられる。'],
+  ['narrator','ジュウたち土の村人が壁を押し上げ、海賊の進路を狭める。'],
+  ['hero','ユーノ、火山側の合図！'],
+  ['yuno','来るよ。全員、壁の内側へ！'],
+  ['narrator','遠くの火山で赤い合図が上がった。直後、ぶりふぉ村へ向いた斜面を巨大な岩が轟音とともに滑り始める。'],
+  ['narrator','さらに氷で固めた滑走路を、資材を積んだ巨大な氷の舟が走り抜けた。'],
+  ['pirate','なんだ、あれは――！？'],
+  ['narrator','岩と氷舟は氷壁の外側に密集していた海賊部隊へ突入。砲台と隊列をまとめて押し崩した。'],
+  ['suzu','うわ……思ってたより派手だな。'],
+  ['yuno','これで地上の主力は分断できた。次は、あっち。'],
+  ['narrator','ユーノが霧の向こうに浮かぶ海賊旗を指す。船長の本陣だ。'],
+  ['dash','いよいよ気球か。'],
+  ['gyou','地上は村のみんなに任せる。俺たちは船長を止めよう。'],
+  ['yuno','スズマル、火を。私が風を読む。'],
+  ['suzu','任せろ。燃やすんじゃなくて、浮かせるんだな。'],
+  ['hero','みんな、乗って！'],
+  ['narrator','熱を受けた気球がゆっくりと浮かび上がる。霧に隠れながら、5人は海賊本陣の上空へ向かった。']
+];
+
+const finalBalloonDialog=[
+  ['narrator','地上では土壁と霧の中で戦いが続いている。だが上空からなら、海賊本陣まで一直線だった。'],
+  ['yuno','右から強い風。スズマル、火を少し弱めて！'],
+  ['suzu','これくらいか？'],
+  ['yuno','うん。ぴくるす、前から来る風を水で散らせる？'],
+  ['hero','やってみる！'],
+  ['narrator','水と風がぶつかり、気球の前に小さな渦が生まれる。進路を塞いでいた霧が円を描いて開いた。'],
+  ['dash','あった！　あの大きい旗のところ！'],
+  ['gyou','下に銃を持った護衛がいる。降りた瞬間を狙われるぞ。'],
+  ['yuno','なら、着地しない。真上まで行って一気に降りる。'],
+  ['suzu','それ、奇襲っていうより落下じゃないか？'],
+  ['yuno','ジュウがいるから大丈夫。'],
+  ['gyou','俺を何だと思ってるんだ。'],
+  ['dash','盾。'],
+  ['gyou','……否定しづらいな。'],
+  ['narrator','一瞬だけ、5人にいつもの空気が戻る。'],
+  ['hero','見えた。船長だ。'],
+  ['narrator','霧の切れ間。巨大な海賊旗の下で、一人の影が空を見上げた。'],
+  ['captain','……島の連中が、空から来るとはな。'],
+  ['yuno','気づかれた！'],
+  ['hero','行こう。ここで終わらせる！'],
+  ['narrator','5人は海賊本陣へ降下を開始した――。']
+];
+
+
 const gyouTrainingDialog=[
   ['narrator','準備を進めていると、たけぞ村の老村長がジュウを呼び止めた。'],
   ['elder','ジュウ。守るというのは、ただ硬くなることではない。'],
@@ -855,7 +914,7 @@ function loadGame(){
       gyouJoin:'gyouJoin',
       finalPrep:'finalPrep',
       finalPrepFree:'finalPrepFree',
-      yunoCombo:'yunoCombo',volcanoBearQuest:'volcanoBearQuest',finalBearField:'finalBearField',volcanoBearAfter:'volcanoBearAfter',finalEve:'finalEve',finalEveFree:'finalEveFree',finalLaunch:'finalLaunch',
+      yunoCombo:'yunoCombo',volcanoBearQuest:'volcanoBearQuest',finalBearField:'finalBearField',volcanoBearAfter:'volcanoBearAfter',finalEve:'finalEve',finalEveFree:'finalEveFree',finalLaunch:'finalLaunch',finalBattleGround:'finalBattleGround',finalBalloon:'finalBalloon',
       gyouTraining:'gyouTraining',
       finalWeapon:'finalWeapon',
       end:lastFieldScene
@@ -1175,7 +1234,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.49',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.50',480,121,18,'center','#eef8ff');
   const canContinue=hasSaveGame();
   const y1=350,y2=406;
   outlineRect(300,y1,360,46,titleSelection===0?'#e8f7fb':'rgba(15,35,60,.78)','#73b9d6',2);
@@ -3383,12 +3442,40 @@ function drawFinalPrepFree(){
   const item=finalPrepFreeDialog[Math.min(dialogIndex,finalPrepFreeDialog.length-1)];drawDialog(item[0],item[1]);
 }
 
+
+function drawFinalBattleGround(){
+  ctx.fillStyle='#aebfc8';ctx.fillRect(0,0,W,H);
+  rect(0,300,W,240,'#788b63');
+  // broken ice wall + earth wall
+  for(let x=30;x<930;x+=70){rect(x,255+(x%140?10:0),62,82,'#ccebf0');rect(x,315,62,46,'#816d4e');}
+  // mist and distant pirate formation
+  for(let i=0;i<8;i++)ellipse(520+i*55,220+(i%2)*22,72,30,'rgba(235,244,242,.55)');
+  for(let i=0;i<9;i++){ellipse(510+i*45,285+(i%3)*18,13,13,'#5c4b43');rect(501+i*45,298+(i%3)*18,18,24,'#c06c3f');}
+  drawHeroFox(130,420,.72);drawSuzumaru(220,424,.77);drawDashmiu(310,430,.70);drawYuno(400,424,.77);drawGyou(490,424,.79);
+  const item=finalBattleGroundDialog[Math.min(dialogIndex,finalBattleGroundDialog.length-1)];drawDialog(item[0],item[1]);
+}
+function drawFinalBalloon(){
+  ctx.fillStyle='#9fc7d1';ctx.fillRect(0,0,W,H);
+  // sea / battlefield below
+  rect(0,390,W,150,'#628ea1');
+  for(let i=0;i<6;i++)ellipse(90+i*170,355+(i%2)*18,110,38,'rgba(240,245,242,.42)');
+  // balloon
+  ellipse(480,145,120,88,'#d8b56d');rect(435,218,90,55,'#806047');
+  ctx.strokeStyle='#5d4b38';ctx.lineWidth=4;
+  ctx.beginPath();ctx.moveTo(410,185);ctx.lineTo(448,220);ctx.moveTo(550,185);ctx.lineTo(512,220);ctx.stroke();
+  drawHeroFox(450,250,.42);drawSuzumaru(480,252,.44);drawDashmiu(510,255,.40);drawYuno(540,252,.44);drawGyou(570,252,.45);
+  // enemy flagship marker
+  rect(725,330,150,42,'#51443e');rect(792,245,6,85,'#3f3632');
+  ctx.fillStyle='#8b3030';ctx.beginPath();ctx.moveTo(798,248);ctx.lineTo(870,272);ctx.lineTo(798,290);ctx.fill();
+  const item=finalBalloonDialog[Math.min(dialogIndex,finalBalloonDialog.length-1)];drawDialog(item[0],item[1]);
+}
+
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);
   drawHeroFox(245,270,1.15);drawSuzumaru(355,275,1.25);drawDashmiu(465,282,1.12);drawYuno(575,275,1.22);drawGyou(685,275,1.25);
-  text('Ver.0.49 ここまで',480,105,40,'center');
-  text('決戦前の準備が整った！',480,365,26,'center','#d8efff');
-  text('次は：ぶりふぉ村・海賊との最終決戦',480,407,23,'center','#d8efff');
+  text('Ver.0.50 ここまで',480,105,40,'center');
+  text('地上戦を突破し、海賊本陣の上空へ！',480,365,26,'center','#d8efff');
+  text('次は：海賊本陣への降下・船長戦',480,407,23,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,466,20,'center','#9fc8df');
 }
 function update(dt){
@@ -3881,6 +3968,20 @@ function pressAction(){
   if(scene==='finalLaunch'){
     dialogIndex++;
     if(dialogIndex>=finalLaunchDialog.length){
+      scene='finalBattleGround';dialogIndex=0;saveGame();
+    }
+    return;
+  }
+  if(scene==='finalBattleGround'){
+    dialogIndex++;
+    if(dialogIndex>=finalBattleGroundDialog.length){
+      scene='finalBalloon';dialogIndex=0;saveGame();
+    }
+    return;
+  }
+  if(scene==='finalBalloon'){
+    dialogIndex++;
+    if(dialogIndex>=finalBalloonDialog.length){
       scene='end';dialogIndex=0;saveGame();
     }
     return;
@@ -4007,6 +4108,8 @@ function frame(now){
   else if(scene==='finalEve')drawFinalEve();
   else if(scene==='finalEveFree')drawFinalEveFree();
   else if(scene==='finalLaunch')drawFinalLaunch();
+  else if(scene==='finalBattleGround')drawFinalBattleGround();
+  else if(scene==='finalBalloon')drawFinalBalloon();
   else if(scene==='sarubibiTown')drawSarubibiTown();
   else if(scene==='sarubibiShop')drawSarubibiShop();
   else if(scene==='sarubieTown')drawSarubieTown();

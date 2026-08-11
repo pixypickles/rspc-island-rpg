@@ -84,6 +84,16 @@ function suzumaruStats(){
   };
 }
 
+function yunoStats(){
+  const lv=partyLevel();
+  return {
+    maxHP:42+(lv-1)*5,
+    maxMP:30+(lv-1)*4,
+    atk:9+(lv-1)*2,
+    def:5+(lv-1)
+  };
+}
+
 function totalSPForLevel(level){
   // Lv1 starts with 0, each level-up grants 1.
   return Math.max(0, level-1);
@@ -100,6 +110,8 @@ if(progress.suzuSpentSP===undefined){
 }
   progress.suzuSP=Math.max(0,totalSPForLevel(progress.level)-progress.suzuSpentSP);
 }
+
+if(progress.yunoSP===undefined) progress.yunoSP=totalSPForLevel(progress.level);
 
 if(!progress.suzuSkills) progress.suzuSkills={
   single:0,   // 火炎斬り系：主力。伸び幅を大きくする
@@ -121,6 +133,8 @@ function gainExp(amount){
     progress.exp -= expNeeded(progress.level);
     progress.level++;
 progress.sp++;
+    if(progress.suzuSP!==undefined)progress.suzuSP++;
+    if(progress.yunoSP!==undefined)progress.yunoSP++;
     progress.maxHP += 6;
     progress.maxMP += 3;
     progress.atk += 2;
@@ -2009,10 +2023,18 @@ function enemiesDefeated(){
 
 function startTakezoBattle(mon){
   const ss=suzumaruStats();
+  const piratePool=[
+    {name:'海賊ネコ斥候',kind:'pirateCat',hp:48,maxHP:48},
+    {name:'海賊イヌ斥候',kind:'pirateDog',hp:52,maxHP:52},
+    {name:'海賊タヌキ斥候',kind:'pirateTanuki',hp:56,maxHP:56}
+  ];
+  const count=3+Math.floor(Math.random()*3);
+  const enemies=[{name:mon.name,kind:mon.kind,hp:mon.hp,maxHP:mon.maxHP}];
+  while(enemies.length<count)enemies.push({...piratePool[Math.floor(Math.random()*piratePool.length)]});
   battle={
     heroHP:progress.maxHP,heroMP:progress.maxMP,
     suzuHP:ss.maxHP,suzuMaxHP:ss.maxHP,suzuMP:ss.maxMP,suzuMaxMP:ss.maxMP,
-    enemies:[{name:mon.name,kind:mon.kind,hp:mon.hp,maxHP:mon.maxHP}],
+    enemies,
     enemyHP:mon.hp,enemyMaxHP:mon.maxHP,
     monsterId:mon.id,enemyName:mon.name,enemyKind:mon.kind,
     turn:'player',defending:false
@@ -2091,51 +2113,49 @@ function drawMenu(){
   text('とじる',832,95,17,'center','#d9e6ef');
 
   if(menuPage==='status'){
-    // Hero panel
-    outlineRect(45,140,410,315,'#182b48','#6ea9c8',2);
-    drawHeroFox(120,280,1.55);
-    text(heroName,205,180,24,'left','#ffffff');
-    text(`Lv.${progress.level}`,205,215,18,'left','#d9edf7');
-    text(`EXP ${progress.exp}/${expNeeded(progress.level)}`,205,245,15,'left','#bcd7e5');
-    text(`HP ${progress.maxHP}`,205,282,18,'left','#ffffff');
-    text(`MP ${progress.maxMP}`,325,282,18,'left','#ffffff');
-    text(`こうげき ${progress.atk}`,205,320,17,'left','#ffffff');
-    text(`ぼうぎょ ${progress.def}`,325,320,17,'left','#ffffff');
-    text(`SP ${progress.sp}`,205,360,18,'left','#ffe7a5');
-    text('水・氷 / 短剣・小剣',205,400,15,'left','#bcd7e5');
-
-    // Suzumaru panel once he has joined / is active
-    if(suzumaruActive || suzumaruJoined){
-      outlineRect(505,140,410,315,'#182b48','#b56a5a',2);
-      drawSuzumaru(580,280,1.55);
-      text('スズマル',665,180,24,'left','#ffffff');
-      text('火 / 剣・大剣',665,215,16,'left','#f4c9bc');
-      const ss=suzumaruStats();
-      text(`HP ${ss.maxHP}`,665,260,18,'left','#ffffff');
-      text(`MP ${ss.maxMP}`,785,260,18,'left','#ffffff');
-      text(`こうげき ${ss.atk}`,665,300,16,'left','#ffffff');
-      text(`ぼうぎょ ${ss.def}`,785,300,16,'left','#ffffff');
-      text(`SP ${progress.suzuSP||0}`,665,330,17,'left','#ffe7a5');
-      text('単体攻撃が得意',665,360,16,'left','#ffd4c4');
-      text('全体攻撃も習得可能',665,388,14,'left','#d9c5be');
-      text(`単体系 Lv.${progress.suzuSkills?.single||0}`,665,414,15,'left','#ffffff');
-      text(`全体系 Lv.${progress.suzuSkills?.all||0}`,785,414,15,'left','#ffffff');
-    }else{
-      outlineRect(505,140,410,315,'#14243c','#44556d',2);
-      text('仲間はまだいません',710,295,19,'center','#8295a8');
+    const members=[
+      {key:'hero',name:heroName,draw:drawHeroFox,stats:{maxHP:progress.maxHP,maxMP:progress.maxMP,atk:progress.atk,def:progress.def},sp:progress.sp,desc:'水・氷 / 短剣・小剣',border:'#6ea9c8'},
+    ];
+    if(suzumaruActive||suzumaruJoined){
+      members.push({key:'suzu',name:'スズマル',draw:drawSuzumaru,stats:suzumaruStats(),sp:progress.suzuSP||0,desc:'火 / 剣・大剣　単体攻撃型',border:'#b56a5a'});
+    }
+    if(yunoJoined){
+      members.push({key:'yuno',name:'ユーノ',draw:drawYuno,stats:yunoStats(),sp:progress.yunoSP||0,desc:'風 / 弓　補助・遠距離型',border:'#55aaa8'});
     }
 
-    text('戦闘終了後はHP・MPが全回復します。',480,492,15,'center','#bad9e7');
+    const n=members.length;
+    const gap=14, left=35, totalW=890;
+    const pw=(totalW-gap*(n-1))/n;
+    members.forEach((m,i)=>{
+      const x=left+i*(pw+gap);
+      outlineRect(x,140,pw,315,'#182b48',m.border,2);
+      m.draw(x+pw/2,225,n>=3?1.18:1.5);
+      text(m.name,x+18,292,21,'left','#ffffff',800);
+      text(`Lv.${progress.level}`,x+pw-18,292,15,'right','#d9edf7');
+      text(`HP ${m.stats.maxHP}　MP ${m.stats.maxMP}`,x+18,327,15,'left','#ffffff');
+      text(`攻 ${m.stats.atk}　防 ${m.stats.def}`,x+18,357,15,'left','#ffffff');
+      text(`SP ${m.sp}`,x+18,387,16,'left','#ffe7a5');
+      text(m.desc,x+18,420,n>=3?12:14,'left','#bcd7e5');
+    });
+    text('レベルはパーティ共通。戦闘終了後はHP・MPが全回復します。',480,492,15,'center','#bad9e7');
   }else if(menuPage==='skill'){
     // character switch buttons
-    outlineRect(75,140,320,42,menuCharacter==='hero'?'#dff4fb':'#31455f','#78b9d7',2);
-    text(heroName,235,161,17,'center',menuCharacter==='hero'?'#17324a':'#d9e6ef');
     const suzuEnabled=(suzumaruActive||suzumaruJoined);
-    outlineRect(565,140,320,42,menuCharacter==='suzu'?'#ffe1d7':'#31455f',suzuEnabled?'#c76e58':'#536273',2);
-    text(suzuEnabled?'スズマル':'スズマル（未加入）',725,161,17,'center',
-         suzuEnabled?(menuCharacter==='suzu'?'#65291f':'#e9d8d3'):'#758596');
+    const yunoEnabled=yunoJoined;
+    outlineRect(55,140,260,42,menuCharacter==='hero'?'#dff4fb':'#31455f','#78b9d7',2);
+    text(heroName,185,161,16,'center',menuCharacter==='hero'?'#17324a':'#d9e6ef');
+    outlineRect(350,140,260,42,menuCharacter==='suzu'?'#ffe1d7':'#31455f',suzuEnabled?'#c76e58':'#536273',2);
+    text(suzuEnabled?'スズマル':'スズマル（未加入）',480,161,16,'center',suzuEnabled?(menuCharacter==='suzu'?'#65291f':'#e9d8d3'):'#758596');
+    outlineRect(645,140,260,42,menuCharacter==='yuno'?'#d8f2ed':'#31455f',yunoEnabled?'#59aaa6':'#536273',2);
+    text(yunoEnabled?'ユーノ':'ユーノ（未加入）',775,161,16,'center',yunoEnabled?(menuCharacter==='yuno'?'#174c4b':'#d6ece8'):'#758596');
 
-    if(menuCharacter==='suzu' && suzuEnabled){
+    if(menuCharacter==='yuno' && yunoEnabled){
+      text(`ユーノ SP：${progress.yunoSP||0}`,70,215,18,'left','#d8fff5');
+      outlineRect(70,245,820,125,'#183a43','#59aaa6',2);
+      text('風 / 弓　補助・遠距離型',95,278,21,'left','#d8fff5');
+      text('ユーノのスキルツリーは次の実装で追加予定',95,318,17,'left','#b9dfd9');
+      text('加入時点のSPは共通レベルに合わせて所持しています。',95,350,15,'left','#b9dfd9');
+    }else if(menuCharacter==='suzu' && suzuEnabled){
       text(`スズマル SP：${progress.suzuSP||0}`,70,215,18,'left','#ffe5c8');
 
       outlineRect(70,245,385,82,'#ffe0d6','#c95f48',2);
@@ -2192,8 +2212,9 @@ function menuTap(x,y){
   }
 
   if(menuPage==='skill' && y>=135 && y<=190){
-    if(x<450){menuCharacter='hero';return;}
-    if(x>510 && (suzumaruActive||suzumaruJoined)){menuCharacter='suzu';return;}
+    if(x<325){menuCharacter='hero';return;}
+    if(x>=325 && x<630 && (suzumaruActive||suzumaruJoined)){menuCharacter='suzu';return;}
+    if(x>=630 && yunoJoined){menuCharacter='yuno';return;}
   }
 
   if(menuPage==='skill' && menuCharacter==='suzu' && (suzumaruActive||suzumaruJoined)){
@@ -2291,7 +2312,10 @@ function drawTakezoDeparture(){
 function drawTakezoArrival(){
   drawTakezoVillageGate();
   // defensive clash in the distance
-  for(const p of [[540,310],[585,350]])drawPirateAnimal(p[0],p[1],'pirateCat',.9);
+  [
+    [525,300,'pirateCat'],[575,335,'pirateDog'],[625,295,'pirateTanuki'],
+    [675,345,'pirateCat'],[720,305,'pirateDog']
+  ].forEach(p=>drawPirateAnimal(p[0],p[1],p[2],.82));
   drawHeroFox(235,390,1.15);drawSuzumaru(340,395,1.05);drawDashmiu(440,402,.95);drawYuno(535,395,1.05);
   const item=takezoArrivalDialog[Math.min(dialogIndex,takezoArrivalDialog.length-1)];
   drawDialog(item[0],item[1]);

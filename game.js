@@ -32,6 +32,7 @@ let progress = JSON.parse(localStorage.getItem('risupekuProgress') || 'null') ||
 };
 if(progress.gold===undefined) progress.gold=90;
 if(!progress.items) progress.items={potion:0};
+if(progress.suzuLevel===undefined) progress.suzuLevel=progress.level;
 if(!progress.suzuSkills) progress.suzuSkills={
   single:0,   // 火炎斬り系：主力。伸び幅を大きくする
   all:0       // 火走り系：全体攻撃。伸ばせるが単体ほど火力効率は上がらない
@@ -50,6 +51,9 @@ function gainExp(amount){
   while(progress.exp >= expNeeded(progress.level)){
     progress.exp -= expNeeded(progress.level);
     progress.level++;
+    if(typeof suzumaruJoined!=='undefined' && (suzumaruJoined||suzumaruActive)){
+      progress.suzuLevel=(progress.suzuLevel||progress.level-1)+1;
+    }
     progress.sp++;
     progress.maxHP += 6;
     progress.maxMP += 3;
@@ -88,9 +92,9 @@ let battleChoiceText={hero:'未選択',suzu:'未選択'};
 let damagePopups=[];
 let route3Hero={x:210,y:760,speed:220};
 let route3Mobs=[
-  {id:301,name:'ハネダイコン',kind:'radishFerret',x:620,y:590,spawnX:620,spawnY:590,alive:true,hp:46,maxHP:46,respawn:0},
+  {id:301,name:'ダイコンフェレット',kind:'radishFerret',x:620,y:590,spawnX:620,spawnY:590,alive:true,hp:46,maxHP:46,respawn:0},
   {id:302,name:'ソラマメテン',kind:'beanMarten',x:1120,y:420,spawnX:1120,spawnY:420,alive:true,hp:50,maxHP:50,respawn:0},
-  {id:303,name:'ワタゲイタチ',kind:'fluffWeasel',x:1600,y:300,spawnX:1600,spawnY:300,alive:true,hp:54,maxHP:54,respawn:0}
+  {id:303,name:'モモイタチ',kind:'peachWeasel',x:1600,y:300,spawnX:1600,spawnY:300,alive:true,hp:54,maxHP:54,respawn:0}
 ];
 let sarubibiQuestStarted=false;
 let sarubibiHero={x:330,y:390,speed:210};
@@ -212,6 +216,10 @@ const monsters = [
   {id:3,name:'カボチャガニ',kind:'pumpkinCrab',x:1710,y:1190,spawnX:1710,spawnY:1190,alive:true,hp:38,maxHP:38,respawn:0}
 ];
 
+function battleTop(){
+  // Keep battle status below mobile browser chrome on short landscape screens.
+  return hudTop()+34;
+}
 function hudTop(){
   const h = window.innerHeight || 540;
   return h < 500 ? 74 : 20;
@@ -500,7 +508,7 @@ function drawPirate(x,y,s=1,variant=0){
 }
 
 function drawWildMonster(mon){
-  if(mon.kind==='radishFerret'||mon.kind==='beanMarten'||mon.kind==='fluffWeasel'){
+  if(mon.kind==='radishFerret'||mon.kind==='beanMarten'||mon.kind==='peachWeasel'){
     drawRoute3Mob(mon);return;
   }
 
@@ -573,7 +581,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.22.2',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.23',480,121,18,'center','#eef8ff');
   const canContinue=hasSaveGame();
   const y1=350,y2=406;
   outlineRect(300,y1,360,46,titleSelection===0?'#e8f7fb':'rgba(15,35,60,.78)','#73b9d6',2);
@@ -844,8 +852,9 @@ function isSuzumaruTurn(){
 function drawBattle(){
   const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#9cd8ef');g.addColorStop(1,'#b9dc8c');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
   if((battle.monsterId===99||battle.monsterId>=200) && suzumaruActive){
-    drawHeroFox(185,255,1.65);
-    drawSuzumaru(335,258,1.65);
+    const py=(window.innerHeight||540)<500?285:255;
+    drawHeroFox(185,py,1.65);
+    drawSuzumaru(335,py+3,1.65);
   }else{
     drawHeroFox(250,260,2.0);
   }
@@ -870,25 +879,31 @@ function drawBattle(){
   drawDamagePopups();
   // status
   ctx.fillStyle='rgba(14,30,55,.9)';
+  const bt=battleTop();
   if((battle.monsterId===99||battle.monsterId>=200) && suzumaruActive){
-    ctx.fillRect(35,28,430,122);
-    text(heroName,55,52,20);
-    text(`HP ${battle.heroHP}/${progress.maxHP}  MP ${battle.heroMP}/${progress.maxMP}`,55,82,16);
-    text('スズマル',55,113,20);
-    text(`HP ${battle.suzuHP}/${battle.suzuMaxHP}  MP ${battle.suzuMP}/${battle.suzuMaxMP}`,185,113,16);
+    ctx.fillRect(35,bt,500,126);
+
+    text(heroName,58,bt+30,20,'left','#ffffff',800);
+    text(`HP ${battle.heroHP}/${progress.maxHP}`,58,bt+61,17,'left','#ffffff');
+    text(`MP ${battle.heroMP}/${progress.maxMP}`,260,bt+61,17,'left','#ffffff');
+
+    text('スズマル',58,bt+93,20,'left','#ffffff',800);
+    text(`Lv.${progress.suzuLevel||progress.level}`,260,bt+93,15,'left','#f6e6df');
+    text(`HP ${battle.suzuHP}/${battle.suzuMaxHP}`,58,bt+120,17,'left','#ffffff');
+    text(`MP ${battle.suzuMP}/${battle.suzuMaxMP}`,260,bt+120,17,'left','#ffffff');
   }else{
-    ctx.fillRect(45,35,330,105);
-    text(heroName,68,62,22);
-    text(`Lv.${progress.level}  HP ${battle.heroHP}/${progress.maxHP}`,68,93,18);
-    text(`MP ${battle.heroMP}/${progress.maxMP}`,68,119,18);
+    ctx.fillRect(45,bt,390,100);
+    text(heroName,68,bt+30,20,'left','#ffffff',800);
+    text(`HP ${battle.heroHP}/${progress.maxHP}`,68,bt+64,17,'left','#ffffff');
+    text(`MP ${battle.heroMP}/${progress.maxMP}`,260,bt+64,17,'left','#ffffff');
   }
-  ctx.fillRect(585,35,330,105);
+  ctx.fillRect(585,bt,330,100);
   if(battle.enemies){
-    text(`敵グループ　残り ${livingEnemies().length}体`,610,62,20);
-    text('各敵のHPは敵の下に表示',610,96,15);
+    text(`敵グループ　残り ${livingEnemies().length}体`,610,bt+30,20);
+    text('各敵のHPは敵の下に表示',610,bt+64,15);
   }else{
-    text(battle.enemyName,610,62,22);
-    text(`HP ${Math.max(0,battle.enemyHP)}/${battle.enemyMaxHP}`,610,96,19);
+    text(battle.enemyName,610,bt+30,22);
+    text(`HP ${Math.max(0,battle.enemyHP)}/${battle.enemyMaxHP}`,610,bt+64,19);
   }
   // battle phase
   if(battle.turn==='enemy'){
@@ -1487,12 +1502,13 @@ function drawRoute3Mob(mon){
     ctx.strokeStyle='#b89568';ctx.lineWidth=6;ctx.beginPath();ctx.arc(18,7,18,-1.1,1.15);ctx.stroke();
     ellipse(-5,2,5,8,'#a6d69a');ellipse(6,2,5,8,'#a6d69a');
   }else{
-    ellipse(0,2,20,15,'#d8c59c');
-    ellipse(-9,-11,5,6,'#b89468');ellipse(9,-11,5,6,'#b89468');
+    // Peach + weasel
+    ellipse(0,2,20,15,'#e6ad88');
+    ellipse(-9,-11,5,6,'#b98a67');ellipse(9,-11,5,6,'#b98a67');
     rect(-7,-2,3,4,'#263149');rect(5,-2,3,4,'#263149');
-    // cotton fluff
-    ellipse(-10,-18,9,8,'#f4f1e8');ellipse(0,-22,10,9,'#f4f1e8');ellipse(10,-18,9,8,'#f4f1e8');
-    ctx.strokeStyle='#b89468';ctx.lineWidth=6;ctx.beginPath();ctx.arc(18,8,18,-1.1,1.15);ctx.stroke();
+    // peach crown / leaf
+    ctx.fillStyle='#70a95f';ctx.beginPath();ctx.ellipse(6,-18,9,5,-.45,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#b98a67';ctx.lineWidth=6;ctx.beginPath();ctx.arc(18,8,18,-1.1,1.15);ctx.stroke();
   }
   ctx.restore();
 }
@@ -1678,9 +1694,9 @@ function enemiesDefeated(){
 
 function startRoute3Battle(mon){
   const pool=[
-    {name:'ハネダイコン',kind:'radishFerret',hp:46,maxHP:46},
+    {name:'ダイコンフェレット',kind:'radishFerret',hp:46,maxHP:46},
     {name:'ソラマメテン',kind:'beanMarten',hp:50,maxHP:50},
-    {name:'ワタゲイタチ',kind:'fluffWeasel',hp:54,maxHP:54}
+    {name:'モモイタチ',kind:'peachWeasel',hp:54,maxHP:54}
   ];
   const count=2+Math.floor(Math.random()*3);
   const enemies=[{name:mon.name,kind:mon.kind,hp:mon.hp,maxHP:mon.maxHP}];
@@ -1760,13 +1776,14 @@ function drawMenu(){
       outlineRect(505,140,410,315,'#182b48','#b56a5a',2);
       drawSuzumaru(580,280,1.55);
       text('スズマル',665,180,24,'left','#ffffff');
-      text('火 / 剣・大剣',665,215,16,'left','#f4c9bc');
-      text('HP 56',665,260,18,'left','#ffffff');
-      text('MP 22',785,260,18,'left','#ffffff');
-      text('単体攻撃が得意',665,305,17,'left','#ffd4c4');
-      text('全体攻撃も習得可能',665,340,15,'left','#d9c5be');
-      text(`単体系 Lv.${progress.suzuSkills?.single||0}`,665,382,16,'left','#ffffff');
-      text(`全体系 Lv.${progress.suzuSkills?.all||0}`,665,414,16,'left','#ffffff');
+      text(`Lv.${progress.suzuLevel||progress.level}`,665,210,17,'left','#ffffff');
+      text('火 / 剣・大剣',665,235,16,'left','#f4c9bc');
+      text('HP 56',665,275,18,'left','#ffffff');
+      text('MP 22',785,275,18,'left','#ffffff');
+      text('単体攻撃が得意',665,315,17,'left','#ffd4c4');
+      text('全体攻撃も習得可能',665,345,15,'left','#d9c5be');
+      text(`単体系 Lv.${progress.suzuSkills?.single||0}`,665,385,16,'left','#ffffff');
+      text(`全体系 Lv.${progress.suzuSkills?.all||0}`,665,415,16,'left','#ffffff');
     }else{
       outlineRect(505,140,410,315,'#14243c','#44556d',2);
       text('仲間はまだいません',710,295,19,'center','#8295a8');
@@ -1843,7 +1860,7 @@ function menuTap(x,y){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.22.2 ここまで',480,112,42,'center');
+  text('Ver.0.23 ここまで',480,112,42,'center');
   text(`さるびび村の問題を解決し、ユーノの協力を得よう。`,480,365,22,'center','#d8efff');
   text('次は：夜の尾行とツキポポの秘密へ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');

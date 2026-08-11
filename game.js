@@ -198,6 +198,9 @@ let volcanoSurveyMobs=[
 ];
 
 let takezoPrepStage=0; // 0 plan, 1 coast survey, 2 volcano survey, 3 construction review
+let secondWaveStage=0;
+let secondWaveHero={x:160,y:450,speed:205};
+
 
 let takezoWave=0;
 let takezoIntroDone=false;
@@ -416,19 +419,15 @@ const bananaSharkAfterDialog=[
 const takezoVolcanoDialog=[
   ['narrator','魔物を退けながら、一行は中央火山を望める高台へたどり着いた。'],
   ['yuno','……やっぱり。この斜面、ぶりふぉ村の氷壁側までかなり長く続いてる。'],
-  ['hero','何かに使えそう？'],
-  ['yuno','岩を大量に転がすこともできる。氷の道を作って、大きな氷の船を滑らせることもできる。'],
-  ['dash','氷壁の前にいる海賊を、一気に吹き飛ばせるかも！'],
-  ['suzu','問題は狙いを外さないことだな。'],
-  ['yuno','それと、この上昇気流。火と風を組み合わせれば、気球も使えそうだ。'],
-  ['hero','気球？'],
-  ['yuno','地上の戦力は土壁と霧で海賊本隊を足止めする。霧は火と水で作って、風で本陣へ流す。'],
-  ['yuno','その間に少人数だけ空から抜けて、海賊船へ直接入る。'],
-  ['dash','船長を上から奇襲するってこと？'],
-  ['yuno','まだ先の話だけど、その形が一番きれいかもしれない。'],
-  ['suzu','浮かせる熱は俺、進路はお前の風か。'],
-  ['yuno','うん。まずは次の襲撃を落とし穴で止める。その後に考えよう。'],
-  ['narrator','ユーノは火山の斜面、風向き、ぶりふぉ村側の地形を細かく記録した。']
+  ['hero','何か気になる？'],
+  ['yuno','うん。傾斜と距離を覚えておきたい。'],
+  ['narrator','ユーノはしばらく黙って斜面の先を見つめ、地図に何かを書き込んだ。'],
+  ['yuno','それと、この時間は海側から火山へ風が上がってくる。上昇気流もあるね。'],
+  ['dash','風まで調べるの？'],
+  ['yuno','念のため。今はそれだけ分かれば十分。'],
+  ['suzu','……何か考えてそうな顔だな。'],
+  ['yuno','まだ考えがまとまってないんだ。戻ろう。落とし穴の工事も気になる。'],
+  ['narrator','ユーノは斜面と気流だけを記録し、一行はたけぞ村へ戻った。']
 ];
 
 const takezoConstructionDialog=[
@@ -442,6 +441,58 @@ const takezoConstructionDialog=[
   ['suzu','自分たちで落ちるなよ。'],
   ['yuno','目印は決めてある。あとは海賊が来るまで、休める人は休もう。'],
   ['narrator','巨大落とし穴が完成した。次の襲撃まで、あと数日――。']
+];
+
+const secondWaveIntroDialog=[
+  ['narrator','数日後――。見張り台の鐘が、たけぞ村中に鳴り響いた。'],
+  ['guard','海賊だ！ 今度は大部隊だぞ！'],
+  ['dash','……多い。先行部隊の何倍いるの？'],
+  ['yuno','想定内。みんな、予定通りに。'],
+  ['guard','土組！ 第一防壁を上げろ！'],
+  ['narrator','たけぞ村の村人たちが一斉に土魔法を放ち、村の前に分厚い土壁がせり上がった。'],
+  ['yuno','風、氷、炎の組は壁の隙間から応戦。倒し切ろうとしなくていい。少しずつ下がって。'],
+  ['suzu','落とし穴の上まで誘い込むんだな。'],
+  ['yuno','そう。絶対に早く仕掛けないで。']
+];
+
+const secondWaveRetreatDialog=[
+  ['narrator','海賊の大軍が土壁を越え、一気に押し寄せる。'],
+  ['guard','第二線まで後退！'],
+  ['narrator','氷の礫と炎弾が飛び、風が海賊の進路を少しずつ中央へ曲げていく。'],
+  ['dash','押されてるようにしか見えない……。'],
+  ['yuno','それでいい。右側をもう少し開けて。中央へ集める。'],
+  ['suzu','そろそろ半分以上が入ったぞ。'],
+  ['yuno','……まだ。'],
+  ['narrator','海賊たちは勝ちを確信したように、後退する島民たちを追って前へ出た。'],
+  ['guard','最終線！'],
+  ['yuno','よし。全員、合図の位置まで下がって！']
+];
+
+const secondWaveTrapDialog=[
+  ['yuno','炎組――敵じゃなくて、地面を狙って！'],
+  ['narrator','炎魔法が偽装された地面を焼き、土の表面に次々と亀裂が走る。'],
+  ['yuno','風組！ 海賊を中央へ！ 同時に亀裂の土を吹き飛ばして！'],
+  ['narrator','横から吹きつける強風に押され、海賊たちが広い地面の中央へ密集していく。'],
+  ['pirate','な、なんだ！？ 地面が――！'],
+  ['narrator','バキッ――巨大な音とともに、土の下に隠されていた氷の蓋が崩壊した。'],
+  ['narrator','広範囲の地面が一斉に抜け、大勢の海賊が水を満たした巨大落とし穴へ落ちていく。'],
+  ['dash','うわぁ……本当に全部落ちた……！'],
+  ['narrator','海賊たちの銃や重い装備も手を離れ、そのまま穴の水底へ沈んでいった。'],
+  ['suzu','これじゃ、もうまともに戦えないな。'],
+  ['yuno','穴の縁に残った部隊も混乱してる。今なら追い返せる！']
+];
+
+const secondWaveVictoryDialog=[
+  ['narrator','武器を失った海賊たちは救助された仲間を連れ、海岸方面へ撤退していった。'],
+  ['guard','……勝った。たけぞ村を守り切ったぞ！'],
+  ['dash','作戦、大成功だね！'],
+  ['yuno','うん。でも、これで終わりじゃない。'],
+  ['narrator','その時、ぶりふぉ村から息を切らした伝令が駆け込んできた。'],
+  ['messenger','緊急です！ ぶりふぉ村の氷壁が……もう長く持ちません！'],
+  ['hero','ついに……。'],
+  ['suzu','本隊が動くか。'],
+  ['yuno','みんなを集めよう。ここからは、島全体で戦うことになる。'],
+  ['narrator','海賊との最終決戦が迫っていた――。']
 ];
 
 const sarubibiNightDialog = [
@@ -531,6 +582,7 @@ function saveGame(){
     yunoJoined,
     takezoIntroDone,
     takezoPrepStage,
+    secondWaveStage,
     bananaSharkAlive,
     coastSurveyHero:{x:coastSurveyHero.x,y:coastSurveyHero.y},
     volcanoSurveyHero:{x:volcanoSurveyHero.x,y:volcanoSurveyHero.y},
@@ -582,7 +634,7 @@ function loadGame(){
     if(Number.isFinite(d.caveBossHP))caveBoss.hp=d.caveBossHP;
     sarubibiQuestStarted=!!d.sarubibiQuestStarted;
     yunoJoined=!!d.yunoJoined;
-    takezoIntroDone=!!d.takezoIntroDone;takezoPrepStage=d.takezoPrepStage||0;
+    takezoIntroDone=!!d.takezoIntroDone;takezoPrepStage=d.takezoPrepStage||0;secondWaveStage=d.secondWaveStage||0;
     if(typeof d.bananaSharkAlive==='boolean')bananaSharkAlive=d.bananaSharkAlive;
     takezoScoutDefeated=!!d.takezoScoutDefeated;
     if(typeof d.takezoScoutAlive==='boolean')takezoScout.alive=d.takezoScoutAlive;
@@ -614,6 +666,10 @@ function loadGame(){
       bananaSharkAfter:'bananaSharkAfter',
       takezoVolcanoSurvey:'takezoVolcanoSurvey',
       takezoConstruction:'takezoConstruction',
+      secondWaveIntro:'secondWaveIntro',
+      secondWaveRetreat:'secondWaveRetreat',
+      secondWaveTrap:'secondWaveTrap',
+      secondWaveVictory:'secondWaveVictory',
       end:lastFieldScene
     };
     if(safeMap[target])target=safeMap[target];
@@ -2827,12 +2883,47 @@ function drawTakezoConstruction(){
   const item=takezoConstructionDialog[Math.min(dialogIndex,takezoConstructionDialog.length-1)];drawDialog(item[0],item[1]);
 }
 
+
+function drawSecondWaveIntro(){
+  const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#8799a7');gr.addColorStop(1,'#b7aa82');ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
+  rect(0,350,W,190,'#7f9d69');
+  // earth wall
+  rect(510,210,70,230,'#80634a');rect(580,235,75,205,'#765b45');rect(655,200,80,240,'#83674c');
+  // defenders
+  drawHeroFox(220,400,1.02);drawSuzumaru(315,405,.94);drawDashmiu(395,412,.84);drawYuno(475,405,.94);
+  // pirate mass behind wall
+  for(let i=0;i<10;i++)drawPirateAnimal(630+(i%5)*58,330+Math.floor(i/5)*55,i%3===0?'pirateCat':i%3===1?'pirateDog':'pirateTanuki',.68);
+  const item=secondWaveIntroDialog[Math.min(dialogIndex,secondWaveIntroDialog.length-1)];drawDialog(item[0],item[1]);
+}
+function drawSecondWaveRetreat(){
+  const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#9aa7aa');gr.addColorStop(1,'#aaa477');ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);rect(0,260,W,280,'#8aa06b');
+  // fake ground/trap area
+  ellipse(545,400,300,88,'#8b9f69');
+  drawHeroFox(200,390,1);drawSuzumaru(285,395,.92);drawDashmiu(360,405,.83);drawYuno(435,395,.94);
+  for(let i=0;i<13;i++)drawPirateAnimal(560+(i%5)*65,330+Math.floor(i/5)*55,i%3===0?'pirateCat':i%3===1?'pirateDog':'pirateTanuki',.68);
+  const item=secondWaveRetreatDialog[Math.min(dialogIndex,secondWaveRetreatDialog.length-1)];drawDialog(item[0],item[1]);
+}
+function drawSecondWaveTrap(){
+  const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#9aa7aa');gr.addColorStop(1,'#aaa477');ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);rect(0,250,W,290,'#849b68');
+  // opened water-filled pit
+  ellipse(560,390,350,118,'#4c4037');ellipse(560,405,305,88,'#559bb5');
+  for(let i=0;i<10;i++)drawPirateAnimal(410+(i%5)*70,385+Math.floor(i/5)*45,i%3===0?'pirateCat':i%3===1?'pirateDog':'pirateTanuki',.62);
+  drawHeroFox(120,390,.92);drawSuzumaru(190,395,.85);drawDashmiu(255,403,.76);drawYuno(320,395,.86);
+  const item=secondWaveTrapDialog[Math.min(dialogIndex,secondWaveTrapDialog.length-1)];drawDialog(item[0],item[1]);
+}
+function drawSecondWaveVictory(){
+  ctx.fillStyle='#a9d5d9';ctx.fillRect(0,0,W,H);rect(0,310,W,230,'#86a66d');
+  ellipse(680,400,230,70,'#4b4037');ellipse(680,410,195,50,'#5799ae');
+  drawHeroFox(245,390,1.08);drawSuzumaru(350,395,1);drawDashmiu(450,405,.9);drawYuno(550,395,1);
+  const item=secondWaveVictoryDialog[Math.min(dialogIndex,secondWaveVictoryDialog.length-1)];drawDialog(item[0],item[1]);
+}
+
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);
   drawHeroFox(300,270,1.55);drawSuzumaru(420,275,1.45);drawDashmiu(540,282,1.3);drawYuno(655,275,1.4);
-  text('Ver.0.31 ここまで',480,105,40,'center');
-  text('巨大落とし穴の準備が完了！',480,365,22,'center','#d8efff');
-  text('次は：数日後――海賊第2陣の襲撃',480,405,20,'center','#d8efff');
+  text('Ver.0.34 ここまで',480,105,40,'center');
+  text('たけぞ村・第2陣撃退！',480,365,22,'center','#d8efff');
+  text('次は：ぶりふぉ村へ――最終決戦の準備',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
 }
 function update(dt){
@@ -3232,7 +3323,27 @@ function pressAction(){
   }
   if(scene==='takezoConstruction'){
     dialogIndex++;
-    if(dialogIndex>=takezoConstructionDialog.length){scene='end';dialogIndex=0;saveGame();}
+    if(dialogIndex>=takezoConstructionDialog.length){secondWaveStage=1;scene='secondWaveIntro';dialogIndex=0;saveGame();}
+    return;
+  }
+  if(scene==='secondWaveIntro'){
+    dialogIndex++;
+    if(dialogIndex>=secondWaveIntroDialog.length){secondWaveStage=2;scene='secondWaveRetreat';dialogIndex=0;saveGame();}
+    return;
+  }
+  if(scene==='secondWaveRetreat'){
+    dialogIndex++;
+    if(dialogIndex>=secondWaveRetreatDialog.length){secondWaveStage=3;scene='secondWaveTrap';dialogIndex=0;saveGame();}
+    return;
+  }
+  if(scene==='secondWaveTrap'){
+    dialogIndex++;
+    if(dialogIndex>=secondWaveTrapDialog.length){secondWaveStage=4;scene='secondWaveVictory';dialogIndex=0;saveGame();}
+    return;
+  }
+  if(scene==='secondWaveVictory'){
+    dialogIndex++;
+    if(dialogIndex>=secondWaveVictoryDialog.length){secondWaveStage=5;scene='end';dialogIndex=0;saveGame();}
     return;
   }
   if(scene==='sarubibiArrival'){
@@ -3337,6 +3448,10 @@ function frame(now){
   else if(scene==='volcanoSurveyField')drawVolcanoSurveyField();
   else if(scene==='takezoVolcanoSurvey')drawTakezoVolcanoSurvey();
   else if(scene==='takezoConstruction')drawTakezoConstruction();
+  else if(scene==='secondWaveIntro')drawSecondWaveIntro();
+  else if(scene==='secondWaveRetreat')drawSecondWaveRetreat();
+  else if(scene==='secondWaveTrap')drawSecondWaveTrap();
+  else if(scene==='secondWaveVictory')drawSecondWaveVictory();
   else if(scene==='sarubibiTown')drawSarubibiTown();
   else if(scene==='sarubibiShop')drawSarubibiShop();
   else if(scene==='sarubieTown')drawSarubieTown();

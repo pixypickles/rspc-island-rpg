@@ -188,6 +188,7 @@ let route3Mobs=[
 let sarubibiQuestStarted=false;
 let yunoJoined=false;
 let gyouJoined=false;
+let gyouJoinConfirmed=false;
 let nightTrailStep=0;
 let nightHero={x:170,y:760,speed:205};
 
@@ -697,6 +698,7 @@ function saveGame(){
     sarubibiQuestStarted,
     yunoJoined,
     gyouJoined,
+    gyouJoinConfirmed,
     takezoIntroDone,
     takezoPrepStage,
     secondWaveStage,
@@ -752,14 +754,16 @@ function loadGame(){
     if(Number.isFinite(d.caveBossHP))caveBoss.hp=d.caveBossHP;
     sarubibiQuestStarted=!!d.sarubibiQuestStarted;
     yunoJoined=!!d.yunoJoined;
-    if(typeof d.gyouJoined==='boolean'){
-      gyouJoined=d.gyouJoined;
+    const postGyouScenes=['finalPrep','finalPrepFree','gyouTraining','finalWeapon','yunoCombo','volcanoBearQuest','finalBearField','volcanoBearAfter'];
+    if(typeof d.gyouJoinConfirmed==='boolean'){
+      gyouJoinConfirmed=d.gyouJoinConfirmed;
     }else{
-      // Older saves forgot to persist Gyou's join flag.
-      // Any checkpoint after his join means he must already be a party member.
-      const postGyouScenes=['finalPrep','finalPrepFree','gyouTraining','finalWeapon','yunoCombo','volcanoBearQuest','finalBearField','volcanoBearAfter','end'];
-      gyouJoined=postGyouScenes.includes(d.scene) || !!progress.gyouGrandGuard || !!progress.finalFlameBlade || !!progress.heroYunoComboUnlocked;
+      // Conservative migration: only clearly post-join story checkpoints count.
+      // Do not infer from progress/skills, because those persist separately and
+      // caused Gyou to appear before his actual join event.
+      gyouJoinConfirmed=postGyouScenes.includes(d.scene);
     }
+    gyouJoined=gyouJoinConfirmed;
     takezoIntroDone=!!d.takezoIntroDone;takezoPrepStage=d.takezoPrepStage||0;secondWaveStage=d.secondWaveStage||0;
     if(typeof d.bananaSharkAlive==='boolean')bananaSharkAlive=d.bananaSharkAlive;
     takezoScoutDefeated=!!d.takezoScoutDefeated;
@@ -775,6 +779,21 @@ function loadGame(){
 
     lastFieldScene=d.lastFieldScene||'world';
     let target=d.scene||lastFieldScene;
+
+    // If the save is clearly before Gyou's joining chapter, remove any stale
+    // joined state left by v0.43/v0.44 migration logic.
+    const preGyouScenes=[
+      'world','road2','cave','route3','sarubieTown','sarubibiTown',
+      'takezoDeparture','takezoTravel','takezoScoutAfter','takezoArrival',
+      'takezoRoute','takezoRelief','takezoPlan','takezoCoastSurvey',
+      'coastSurveyField','bananaSharkAfter','volcanoSurveyField',
+      'takezoVolcanoSurvey','takezoConstruction','secondWaveIntro',
+      'secondWaveRetreat','secondWaveTrap','secondWaveVictory'
+    ];
+    if(preGyouScenes.includes(target)){
+      gyouJoinConfirmed=false;
+      gyouJoined=false;
+    }
 
     // Dialogue/cutscene checkpoints resume from the nearest safe playable area.
     const safeMap={
@@ -1406,7 +1425,7 @@ function drawBattleFx(){
 }
 
 function ensureGyouBattle(){
-  if(!battle || !gyouJoined)return;
+  if(!battle || !gyouJoinConfirmed)return;
   const gs=gyouStats();
   if(battle.gyouMaxHP===undefined){battle.gyouMaxHP=gs.maxHP;battle.gyouHP=gs.maxHP;}
   if(battle.gyouMaxMP===undefined){battle.gyouMaxMP=gs.maxMP;battle.gyouMP=gs.maxMP;}
@@ -1418,7 +1437,7 @@ function ensureGyouBattle(){
   if(battle.gyouGrandGuard===undefined)battle.gyouGrandGuard=false;
 }
 function isGyouTurn(){
-  return !!(battle && gyouJoined && battle.monsterId>=400 && battleActor==='gyou');
+  return !!(battle && gyouJoinConfirmed && battle.monsterId>=400 && battleActor==='gyou');
 }
 
 function isPartyBattle(){
@@ -1435,12 +1454,12 @@ function advancePartyTurn(){
   if(battleActor==='suzu' && yunoJoined && battle.monsterId>=400){
     if(battle.skipYunoThisRound){
       battle.skipYunoThisRound=false;
-      if(gyouJoined){ensureGyouBattle();battleActor='gyou';return;}
+      if(gyouJoinConfirmed){ensureGyouBattle();battleActor='gyou';return;}
       beginEnemyTurn();return;
     }
     battleActor='yuno';return;
   }
-  if(battleActor==='yuno' && gyouJoined && battle.monsterId>=400){
+  if(battleActor==='yuno' && gyouJoinConfirmed && battle.monsterId>=400){
     ensureGyouBattle();battleActor='gyou';return;
   }
   beginEnemyTurn();
@@ -1452,7 +1471,7 @@ function drawBattle(){
     drawHeroFox(135,py,1.20);
     drawSuzumaru(245,py+3,1.30);
     if(yunoJoined && battle.monsterId>=400)drawYuno(350,py+3,1.24);
-    if(gyouJoined && battle.monsterId>=400){ensureGyouBattle();drawGyou(455,py+3,1.24);}
+    if(gyouJoinConfirmed && battle.monsterId>=400){ensureGyouBattle();drawGyou(455,py+3,1.24);}
   }else{
     drawHeroFox(250,260,2.0);
   }
@@ -1487,7 +1506,7 @@ function drawBattle(){
   if(yunoJoined && battle.monsterId>=400){
     partyRows.push({name:'ユーノ',hp:battle.yunoHP,maxHP:battle.yunoMaxHP,mp:battle.yunoMP,maxMP:battle.yunoMaxMP});
   }
-  if(gyouJoined && battle.monsterId>=400){
+  if(gyouJoinConfirmed && battle.monsterId>=400){
     ensureGyouBattle();
     partyRows.push({name:'ギョウ',hp:battle.gyouHP,maxHP:battle.gyouMaxHP,mp:battle.gyouMP,maxMP:battle.gyouMaxMP});
   }
@@ -1846,7 +1865,7 @@ function enemyTurn(){
   attackers.forEach((foe,idx)=>{
     const baseDmg=5+Math.floor(Math.random()*5);
     let target='hero';
-    if(gyouJoined && battle.monsterId>=400){
+    if(gyouJoinConfirmed && battle.monsterId>=400){
       if(battle.gyouGrandGuard||battle.gyouTauntTurns>0)target='gyou';
       else {const r=Math.random();target=r<.24?'hero':r<.46?'suzu':r<.68?'yuno':'gyou';}
     }else if(yunoJoined && battle.monsterId>=400){
@@ -2700,9 +2719,9 @@ function startCaveBossBattle(){
 }
 
 function syncStoryParty(){
-  if(!gyouJoined && (progress.gyouGrandGuard || progress.finalFlameBlade || progress.heroYunoComboUnlocked || ['finalPrep','finalPrepFree','gyouTraining','finalWeapon','yunoCombo','volcanoBearQuest','finalBearField','volcanoBearAfter','end'].includes(scene))){
-    gyouJoined=true;
-  }
+  // Gyou must never appear before his actual join event.
+  // The confirmed story flag is the single source of truth.
+  gyouJoined=!!gyouJoinConfirmed;
 }
 function drawMenu(){
   syncStoryParty();
@@ -2729,7 +2748,7 @@ function drawMenu(){
     if(yunoJoined){
       members.push({key:'yuno',name:'ユーノ',draw:drawYuno,stats:yunoStats(),sp:progress.yunoSP||0,desc:'風 / 弓　補助・遠距離型',border:'#55aaa8'});
     }
-    if(gyouJoined){
+    if(gyouJoinConfirmed){
       members.push({key:'gyou',name:'ギョウ',draw:drawGyou,stats:gyouStats(),sp:progress.gyouSP||0,desc:'土 / 戦闘型は調整中',border:'#8e8b62'});
     }
 
@@ -3697,6 +3716,7 @@ function pressAction(){
     dialogIndex++;
     if(dialogIndex>=gyouJoinDialog.length){
       gyouJoined=true;
+      gyouJoinConfirmed=true;
       progress.gyouSP=Math.max(progress.gyouSP||0,totalSPForLevel(progress.level));
       scene='finalPrep';dialogIndex=0;saveProgress();saveGame();
     }

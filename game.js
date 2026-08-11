@@ -67,7 +67,7 @@ function heroStats(){
   return {
     maxHP:progress.maxHP,
     maxMP:progress.maxMP,
-    atk:progress.atk,
+    atk:progress.atk+(progress.finalIceBlade?12:0),
     def:progress.def
   };
 }
@@ -534,6 +534,20 @@ const finalPrepDialog=[
   ['narrator','作戦が決まった。決戦までのわずかな時間、一行は装備と技を整えることになった。']
 ];
 
+const finalWeaponDialog=[
+  ['narrator','ギョウの特訓が終わった頃、さるびえ村から一人の鍛冶職人が大きな包みを抱えてやって来た。'],
+  ['smith','間に合った！ 火山の炉を止めるわけにはいかなくてな。最後まで鍛えていた。'],
+  ['suzu','その包み……まさか。'],
+  ['smith','ぴくるす用だ。炎で何度も鍛え、最後はぶりふぉ村の氷で一気に締めた。'],
+  ['hero','火と氷、両方の力で作った剣……？'],
+  ['smith','ああ。「霜炎の剣」だ。水と氷の魔力を流しても刃が鈍らない。'],
+  ['dash','名前からして強そう！'],
+  ['yuno','火の村と氷の村が一緒に作った武器か。今の島らしくていいね。'],
+  ['gyou','決戦で頼りになりそうだ。'],
+  ['narrator','ぴくるすは「霜炎の剣」を装備した！ 攻撃力が12上がった！'],
+  ['smith','壊すなよ。決戦が終わったら、ちゃんと感想を聞かせろ。']
+];
+
 const gyouTrainingDialog=[
   ['narrator','準備を進めていると、たけぞ村の老村長がギョウを呼び止めた。'],
   ['elder','ギョウ。守るというのは、ただ硬くなることではない。'],
@@ -734,6 +748,7 @@ function loadGame(){
       finalPrep:'finalPrep',
       finalPrepFree:'finalPrepFree',
       gyouTraining:'gyouTraining',
+      finalWeapon:'finalWeapon',
       end:lastFieldScene
     };
     if(safeMap[target])target=safeMap[target];
@@ -770,7 +785,10 @@ function outlineRect(x,y,w,h,fill,stroke='#20324b',lw=2){
   rect(x,y,w,h,fill);ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.strokeRect(Math.round(x)+.5,Math.round(y)+.5,Math.round(w)-1,Math.round(h)-1);
 }
 function text(t,x,y,size=24,align='left',color='#fff',weight=700){
-  ctx.font=`${weight} ${size}px system-ui,-apple-system,"Yu Gothic",sans-serif`;
+  // Small text was hard to read on phone screens. Enlarge UI text slightly,
+  // while keeping big titles essentially unchanged.
+  const uiSize=size<=20?Math.ceil(size*1.10):size<=24?Math.ceil(size*1.06):size;
+  ctx.font=`${weight} ${uiSize}px system-ui,-apple-system,"Yu Gothic",sans-serif`;
   ctx.textAlign=align;ctx.textBaseline='middle';
   ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillText(t,x+2,y+3);ctx.fillStyle=color;ctx.fillText(t,x,y);
 }
@@ -826,9 +844,9 @@ function drawGyou(x,y,s=1){
   ctx.fillStyle='#e7e0cf';ctx.beginPath();ctx.moveTo(-13,-22);ctx.lineTo(-5,-25);ctx.lineTo(-2,-7);ctx.lineTo(-9,-5);ctx.closePath();ctx.fill();
   ctx.beginPath();ctx.moveTo(13,-22);ctx.lineTo(5,-25);ctx.lineTo(2,-7);ctx.lineTo(9,-5);ctx.closePath();ctx.fill();
   rect(-8,-14,4,5,'#172235');rect(4,-14,4,5,'#172235');
-  rect(-16,4,32,25,'#6e7048');rect(-14,5,28,7,'#8a8c5a');rect(-3,10,6,17,'#d8d0ad');
+  rect(-16,4,32,25,'#172844');rect(-14,5,28,7,'#273c62');rect(-3,10,6,17,'#ef8fb2');
   rect(-18,8,5,17,'#8a806c');rect(13,8,5,17,'#8a806c');
-  rect(-13,24,26,4,'#4d493c');rect(-12,28,9,12,'#48483b');rect(3,28,9,12,'#48483b');
+  rect(-13,24,26,4,'#e66f9d');rect(-12,28,9,12,'#14243d');rect(3,28,9,12,'#14243d');
   ctx.restore();
 }
 
@@ -1058,7 +1076,7 @@ function drawTitle(){
        canContinue?(titleSelection===1?'#17324a':'#e8f4fa'):'#8193a2');
 }
 function speakerName(who){
-  return ({narrator:'語り',dash:'ダッシュミウ',pirate:'海賊',elder:'ぶりふぉ村長',hero:heroName,suzu:'スズマル',yuno:'ユーノ',captain:'防衛隊長',lover:'防衛隊長の恋人'})[who]||who;
+  return ({narrator:'語り',dash:'ダッシュミウ',pirate:'海賊',elder:'ぶりふぉ村長',hero:heroName,suzu:'スズマル',yuno:'ユーノ',captain:'防衛隊長',lover:'防衛隊長の恋人',smith:'さるびえ村の鍛冶職人'})[who]||who;
 }
 function drawDialog(who,line){
   ctx.fillStyle='rgba(7,17,36,.92)';ctx.fillRect(46,380,868,132);
@@ -1066,7 +1084,7 @@ function drawDialog(who,line){
   ctx.strokeStyle='#6db8d1';ctx.lineWidth=1;ctx.strokeRect(54.5,388.5,851,115);
   const n=speakerName(who);
   if(n){ctx.fillStyle='#eaf7fb';ctx.fillRect(72,363,208,37);ctx.strokeStyle='#6db8d1';ctx.strokeRect(72.5,363.5,207,36);text(n,88,382,18,'left','#19324b');}
-  wrapText(line,78,422,805,27,22);text('▼',875,486,17,'center','#d9ecff');
+  wrapText(line,78,420,805,30,24);text('▼',875,486,18,'center','#d9ecff');
 }
 function wrapText(str,x,y,maxWidth,lineHeight,size){
   ctx.font=`700 ${size}px system-ui,-apple-system,"Yu Gothic",sans-serif`;ctx.fillStyle='#fff';ctx.textAlign='left';ctx.textBaseline='top';
@@ -1328,7 +1346,7 @@ function drawBattle(){
   const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#9cd8ef');g.addColorStop(1,'#b9dc8c');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
   if((battle.monsterId===99||battle.monsterId>=200) && suzumaruActive){
     const py=(window.innerHeight||540)<500?285:270;
-    drawHeroFox(145,py,1.45);
+    drawHeroFox(145,py,1.28);
     drawSuzumaru(265,py+3,1.45);
     if(yunoJoined && battle.monsterId>=400)drawYuno(380,py+3,1.35);
   }else{
@@ -2558,7 +2576,10 @@ function drawMenu(){
     members.forEach((m,i)=>{
       const x=left+i*(pw+gap);
       outlineRect(x,140,pw,315,'#182b48',m.border,2);
-      m.draw(x+pw/2,225,n>=4?1.0:n>=3?1.18:1.5);
+      {
+        const base=n>=4?1.0:n>=3?1.18:1.5;
+        m.draw(x+pw/2,225,m.key==='hero'?base*.86:base);
+      }
       text(m.name,x+18,292,21,'left','#ffffff',800);
       text(`Lv.${progress.level}`,x+pw-18,292,15,'right','#d9edf7');
       text(`HP ${m.stats.maxHP}　MP ${m.stats.maxMP}`,x+18,327,15,'left','#ffffff');
@@ -2785,10 +2806,12 @@ function drawTakezoVillageGate(){
   // hard stone-and-wood defenses
   rect(650,170,310,370,'#727c7d');
   for(let y=190;y<530;y+=45)for(let x=665;x<950;x+=55)outlineRect(x,y,48,35,'#9aa4a2','#5d686a',1);
-  rect(690,285,190,255,'#4f6063');rect(730,335,110,205,'#31484d');
+  rect(690,285,190,255,'#4f6063');rect(730,335,110,205,'#172844');
+  rect(730,335,110,12,'#ef8fb2');
   // banners
   rect(675,135,8,85,'#584a3c');rect(920,135,8,85,'#584a3c');
-  rect(683,142,45,28,'#d8c66e');rect(875,142,45,28,'#d8c66e');
+  rect(683,142,45,28,'#ef8fb2');rect(875,142,45,28,'#ef8fb2');
+  rect(690,148,31,7,'#172844');rect(882,148,31,7,'#172844');
 }
 function drawTakezoDeparture(){
   drawSarubibiVillageBG();
@@ -3007,15 +3030,28 @@ function drawSecondWaveVictory(){
 
 function drawGyouJoin(){
   ctx.fillStyle='#a9d5d9';ctx.fillRect(0,0,W,H);rect(0,310,W,230,'#86a66d');
-  drawHeroFox(180,395,1.02);drawSuzumaru(285,400,.95);drawDashmiu(385,408,.86);drawYuno(485,400,.95);drawGyou(610,400,1.0);
+  drawHeroFox(180,395,.88);drawSuzumaru(285,400,.95);drawDashmiu(385,408,.86);drawYuno(485,400,.95);drawGyou(610,400,1.0);
   const item=gyouJoinDialog[Math.min(dialogIndex,gyouJoinDialog.length-1)];drawDialog(item[0],item[1]);
 }
 function drawFinalPrep(){
   ctx.fillStyle='#c5d9d5';ctx.fillRect(0,0,W,H);rect(0,320,W,220,'#879f70');
   // planning table
   rect(230,255,500,80,'#74583d');rect(250,270,460,50,'#d6c79c');
-  drawHeroFox(180,400,.98);drawSuzumaru(285,405,.9);drawDashmiu(385,413,.82);drawYuno(485,405,.91);drawGyou(590,405,.94);
+  drawHeroFox(180,400,.84);drawSuzumaru(285,405,.9);drawDashmiu(385,413,.82);drawYuno(485,405,.91);drawGyou(590,405,.94);
   const item=finalPrepDialog[Math.min(dialogIndex,finalPrepDialog.length-1)];drawDialog(item[0],item[1]);
+}
+
+function drawFinalWeapon(){
+  ctx.fillStyle='#d8c8aa';ctx.fillRect(0,0,W,H);rect(0,330,W,210,'#8ca574');
+  // simple supply table and wrapped sword
+  rect(355,285,250,55,'#74583d');
+  rect(420,302,125,8,'#d9e5ed');rect(530,296,18,20,'#ef8fb2');
+  drawHeroFox(205,395,.88);drawSuzumaru(315,400,.94);drawDashmiu(420,408,.84);
+  drawYuno(520,400,.94);drawGyou(625,400,.97);
+  // Smith: reuse the established fire-village visual language.
+  drawSuzumaru(760,395,.9);
+  const item=finalWeaponDialog[Math.min(dialogIndex,finalWeaponDialog.length-1)];
+  drawDialog(item[0],item[1]);
 }
 
 function drawGyouTraining(){
@@ -3026,17 +3062,17 @@ function drawGyouTraining(){
 }
 function drawFinalPrepFree(){
   ctx.fillStyle='#b9d8d4';ctx.fillRect(0,0,W,H);rect(0,320,W,220,'#8ca574');
-  drawHeroFox(205,405,1.02);drawSuzumaru(315,410,.94);drawDashmiu(420,418,.84);drawYuno(520,410,.94);drawGyou(625,410,.97);
+  drawHeroFox(205,405,.88);drawSuzumaru(315,410,.94);drawDashmiu(420,418,.84);drawYuno(520,410,.94);drawGyou(625,410,.97);
   const item=finalPrepFreeDialog[Math.min(dialogIndex,finalPrepFreeDialog.length-1)];drawDialog(item[0],item[1]);
 }
 
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);
-  drawHeroFox(245,270,1.35);drawSuzumaru(355,275,1.25);drawDashmiu(465,282,1.12);drawYuno(575,275,1.22);drawGyou(685,275,1.25);
-  text('Ver.0.35 ここまで',480,105,40,'center');
-  text('ギョウが奥義「大守護」を習得！',480,365,22,'center','#d8efff');
-  text('次は：ほかの仲間の特訓・最高装備の準備',480,405,20,'center','#d8efff');
-  text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
+  drawHeroFox(245,270,1.15);drawSuzumaru(355,275,1.25);drawDashmiu(465,282,1.12);drawYuno(575,275,1.22);drawGyou(685,275,1.25);
+  text('Ver.0.38 ここまで',480,105,40,'center');
+  text('霜炎の剣を入手！　決戦装備が整ってきた',480,365,26,'center','#d8efff');
+  text('次は：仲間たちの決戦前特訓・最終作戦へ',480,407,23,'center','#d8efff');
+  text('タップ / Enter でタイトルへ',480,466,20,'center','#9fc8df');
 }
 function update(dt){
   if(scene==='world'){
@@ -3479,7 +3515,16 @@ function pressAction(){
   }
   if(scene==='gyouTraining'){
     dialogIndex++;
-    if(dialogIndex>=gyouTrainingDialog.length){progress.gyouGrandGuard=true;saveProgress();scene='end';dialogIndex=0;saveGame();}
+    if(dialogIndex>=gyouTrainingDialog.length){
+      progress.gyouGrandGuard=true;saveProgress();scene='finalWeapon';dialogIndex=0;saveGame();
+    }
+    return;
+  }
+  if(scene==='finalWeapon'){
+    dialogIndex++;
+    if(dialogIndex>=finalWeaponDialog.length){
+      progress.finalIceBlade=true;saveProgress();scene='end';dialogIndex=0;saveGame();
+    }
     return;
   }
   if(scene==='sarubibiArrival'){
@@ -3592,6 +3637,7 @@ function frame(now){
   else if(scene==='finalPrep')drawFinalPrep();
   else if(scene==='finalPrepFree')drawFinalPrepFree();
   else if(scene==='gyouTraining')drawGyouTraining();
+  else if(scene==='finalWeapon')drawFinalWeapon();
   else if(scene==='sarubibiTown')drawSarubibiTown();
   else if(scene==='sarubibiShop')drawSarubibiShop();
   else if(scene==='sarubieTown')drawSarubieTown();

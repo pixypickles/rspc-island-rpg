@@ -163,6 +163,10 @@ let route3Mobs=[
   {id:303,name:'モモイタチ',kind:'peachWeasel',x:1600,y:300,spawnX:1600,spawnY:300,alive:true,hp:54,maxHP:54,respawn:0}
 ];
 let sarubibiQuestStarted=false;
+let yunoJoined=false;
+let nightTrailStep=0;
+let nightHero={x:170,y:760,speed:205};
+
 let sarubibiHero={x:330,y:390,speed:210};
 let sarubibiShopType='weapon';
 
@@ -271,6 +275,51 @@ const sarubibiArrivalDialog = [
   ['narrator','今夜、防衛隊長の恋人をこっそり追うことになった。']
 ];
 
+const sarubibiNightDialog = [
+  ['narrator','夜。防衛隊長の恋人は、ひとりで村の外へ歩き出した。'],
+  ['dash','ほんとに毎晩出かけてる……。'],
+  ['yuno','距離を空けよう。近づきすぎると気づかれる。'],
+  ['suzu','こういうの、お前は得意そうだな。'],
+  ['yuno','観察は得意。恋愛は苦手。別の能力だよ。'],
+  ['dash','そこはきっぱり言うんだ……。'],
+  ['narrator','一行は物陰に隠れながら、静かに後を追った。']
+];
+
+const tsukipopoRevealDialog = [
+  ['narrator','恋人が向かった先には、淡く光る小さな花の群れがあった。'],
+  ['hero','……花？'],
+  ['yuno','ツキポポ。夜にだけ開いて、風の魔力を溜める植物だ。'],
+  ['dash','かわいい……って、これを見に来てたの？'],
+  ['lover','見に来てたんじゃないの。育ててたの。'],
+  ['dash','えっ。'],
+  ['lover','弱ってるツキポポを見つけて、毎晩こっそり世話してた。'],
+  ['hero','どうして隊長に言わなかったの？'],
+  ['lover','あの人、昔から光る植物が苦手だって言ってたから……。'],
+  ['yuno','なるほど。秘密の理由はそれだけか。'],
+  ['dash','それだけって言い方！ 隊長は人生終わったみたいになってたよ！'],
+  ['lover','えっ！？'],
+  ['narrator','事情を聞いた一行は、防衛隊長のもとへ戻った。']
+];
+
+const sarubibiResolveDialog = [
+  ['captain','……ツキポポ？'],
+  ['lover','ごめんね。嫌いだと思ってたから、言えなくて。'],
+  ['captain','苦手ではあるけど……そこまでじゃない。'],
+  ['lover','ほんと？'],
+  ['captain','それより、俺が勝手に変な想像して仕事まで放り出してたのが恥ずかしい……。'],
+  ['dash','そこは本当にそう。'],
+  ['yuno','ダッシュミウ、容赦ないね。'],
+  ['captain','ツキポポ、村で育ててもいいよ。夜の見回りついでに俺も手伝う。'],
+  ['lover','ありがとう！'],
+  ['narrator','防衛隊長は元気を取り戻し、防衛隊へ復帰した。'],
+  ['captain','海賊が来るなら、今度こそ仕事する。村は任せてくれ。'],
+  ['hero','ユーノ、次の村へ一緒に来てくれる？'],
+  ['yuno','もちろん。ここまで来たら、最後まで状況を見届けたい。'],
+  ['dash','仲間がまた増えた！'],
+  ['narrator','ユーノが正式に仲間になった！']
+];
+
+
 
 
 
@@ -310,6 +359,7 @@ function saveGame(){
     caveBossAlive:caveBoss.alive,
     caveBossHP:caveBoss.hp,
     sarubibiQuestStarted,
+    yunoJoined,
     dash:{x:dash.x,y:dash.y},
     hero:{x:hero.x,y:hero.y},
     caveHero:{x:caveHero.x,y:caveHero.y},
@@ -351,6 +401,7 @@ function loadGame(){
     if(typeof d.caveBossAlive==='boolean')caveBoss.alive=d.caveBossAlive;
     if(Number.isFinite(d.caveBossHP))caveBoss.hp=d.caveBossHP;
     sarubibiQuestStarted=!!d.sarubibiQuestStarted;
+    yunoJoined=!!d.yunoJoined;
 
     const apply=(obj,s)=>{if(s){if(Number.isFinite(s.x))obj.x=s.x;if(Number.isFinite(s.y))obj.y=s.y;}};
     apply(dash,d.dash);apply(hero,d.hero);apply(caveHero,d.caveHero);apply(route3Hero,d.route3Hero);
@@ -415,6 +466,21 @@ function ellipse(x,y,rx,ry,color){ctx.fillStyle=color;ctx.beginPath();ctx.ellips
 
 
 
+
+
+function drawCaptainLover(x,y,s=1){
+  ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.scale(s,s);
+  ellipse(0,34,18,6,'rgba(23,38,56,.18)');
+  ctx.strokeStyle='#c7a678';ctx.lineWidth=7;ctx.beginPath();ctx.arc(18,14,18,-1.25,1.15);ctx.stroke();
+  ellipse(-10,-25,5,6,'#d5b98c');ellipse(10,-25,5,6,'#d5b98c');
+  ellipse(0,-12,17,15,'#e0c69a');ellipse(0,-4,9,6,'#f1dfbd');
+  rect(-8,-14,4,5,'#243149');rect(4,-14,4,5,'#243149');
+  rect(-15,4,30,25,'#5bb6ae');rect(-13,5,26,7,'#77ccc0');rect(-3,10,6,17,'#f0efe3');
+  rect(-17,8,5,16,'#d5b98c');rect(12,8,5,16,'#d5b98c');
+  rect(-13,23,26,4,'#355f6a');
+  rect(-12,28,9,12,'#3e7678');rect(3,28,9,12,'#3e7678');
+  ctx.restore();
+}
 
 function drawDefenseCaptain(x,y,s=1){
   ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.scale(s,s);
@@ -647,7 +713,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.25',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.26',480,121,18,'center','#eef8ff');
   const canContinue=hasSaveGame();
   const y1=350,y2=406;
   outlineRect(300,y1,360,46,titleSelection===0?'#e8f7fb':'rgba(15,35,60,.78)','#73b9d6',2);
@@ -657,7 +723,7 @@ function drawTitle(){
        canContinue?(titleSelection===1?'#17324a':'#e8f4fa'):'#8193a2');
 }
 function speakerName(who){
-  return ({narrator:'語り',dash:'ダッシュミウ',pirate:'海賊',elder:'ぶりふぉ村長',hero:heroName,suzu:'スズマル',yuno:'ユーノ',captain:'防衛隊長'})[who]||who;
+  return ({narrator:'語り',dash:'ダッシュミウ',pirate:'海賊',elder:'ぶりふぉ村長',hero:heroName,suzu:'スズマル',yuno:'ユーノ',captain:'防衛隊長',lover:'防衛隊長の恋人'})[who]||who;
 }
 function drawDialog(who,line){
   ctx.fillStyle='rgba(7,17,36,.92)';ctx.fillRect(46,380,868,132);
@@ -1390,6 +1456,106 @@ function drawSarubibiVillageBG(){
 }
 
 
+
+function drawTsukipopo(x,y,s=1){
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+  ctx.strokeStyle='#6ba596';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(0,12);ctx.lineTo(0,-4);ctx.stroke();
+  ellipse(-6,-7,7,5,'rgba(224,247,164,.85)');
+  ellipse(6,-7,7,5,'rgba(224,247,164,.85)');
+  ellipse(0,-12,7,7,'#f6f0a4');
+  ellipse(0,-12,3,3,'#fff7c6');
+  ctx.restore();
+}
+
+function drawNightIntro(){
+  drawSarubibiVillageBG();
+  ctx.fillStyle='rgba(12,25,45,.54)';ctx.fillRect(0,0,W,H);
+  drawHeroFox(255,370,1.2);
+  drawSuzumaru(365,375,1.1);
+  drawDashmiu(470,383,1.0);
+  drawYuno(590,375,1.15);
+  drawDefenseCaptain(745,375,1.18);
+  const item=sarubibiNightDialog[Math.min(dialogIndex,sarubibiNightDialog.length-1)];
+  drawDialog(item[0],item[1]);
+}
+
+function drawNightTrail(){
+  camera.x=Math.max(0,Math.min(1700-W,nightHero.x-W*.46));
+  camera.y=Math.max(0,Math.min(980-H,nightHero.y-H*.46));
+  ctx.save();ctx.translate(-camera.x,-camera.y);
+
+  const sky=ctx.createLinearGradient(0,0,0,980);
+  sky.addColorStop(0,'#152640');sky.addColorStop(1,'#315969');
+  ctx.fillStyle=sky;ctx.fillRect(0,0,1700,980);
+
+  // grass and moonlit road
+  rect(0,260,1700,720,'#375f55');
+  ctx.fillStyle='#6d7464';ctx.beginPath();
+  ctx.moveTo(90,810);ctx.bezierCurveTo(430,760,700,620,980,500);ctx.bezierCurveTo(1260,380,1450,315,1630,290);
+  ctx.lineTo(1670,390);ctx.bezierCurveTo(1450,430,1280,490,1030,610);ctx.bezierCurveTo(720,760,450,880,100,925);ctx.closePath();ctx.fill();
+
+  // bushes for hiding
+  for(let x=120;x<1600;x+=170){
+    ellipse(x,515+(x%5)*48,38,23,'#294b47');
+    ellipse(x+35,525+(x%4)*42,33,20,'#315953');
+  }
+
+  // lover walking ahead
+  drawCaptainLover(1475,335,1.05);
+
+  // final Tsukipopo patch
+  for(let i=0;i<12;i++){
+    const x=1420+(i%4)*45;
+    const y=220+Math.floor(i/4)*30;
+    drawTsukipopo(x,y,1.0+(i%3)*.1);
+  }
+
+  drawHeroFox(nightHero.x,nightHero.y,1.12);
+  drawSuzumaru(nightHero.x-48,nightHero.y+18,1.0);
+  drawDashmiu(nightHero.x-92,nightHero.y+30,.92);
+  drawYuno(nightHero.x-134,nightHero.y+36,.92);
+
+  ctx.restore();
+
+  const ht=hudTop();
+  ctx.fillStyle='rgba(10,28,48,.88)';ctx.fillRect(18,ht,390,46);
+  text('目的：気づかれないように後を追う',35,ht+23,16);
+}
+
+function drawTsukipopoReveal(){
+  ctx.fillStyle='#172944';ctx.fillRect(0,0,W,H);
+  rect(0,250,W,290,'#365e55');
+
+  for(let i=0;i<24;i++){
+    const x=520+(i%6)*42;
+    const y=260+Math.floor(i/6)*38;
+    drawTsukipopo(x,y,1.15);
+  }
+
+  drawHeroFox(220,375,1.18);
+  drawSuzumaru(325,380,1.08);
+  drawDashmiu(420,388,1.0);
+  drawYuno(510,380,1.1);
+  drawCaptainLover(760,375,1.2);
+
+  const item=tsukipopoRevealDialog[Math.min(dialogIndex,tsukipopoRevealDialog.length-1)];
+  drawDialog(item[0],item[1]);
+}
+
+function drawSarubibiResolve(){
+  drawSarubibiVillageBG();
+  drawDefenseCaptain(275,360,1.25);
+  drawCaptainLover(390,360,1.2);
+  drawHeroFox(520,360,1.18);
+  drawDashmiu(615,368,1.0);
+  drawSuzumaru(710,360,1.12);
+  drawYuno(810,360,1.18);
+
+  const item=sarubibiResolveDialog[Math.min(dialogIndex,sarubibiResolveDialog.length-1)];
+  drawDialog(item[0],item[1]);
+}
+
 function drawSarubibiTown(){
   drawSarubibiVillageBG();
 
@@ -1998,9 +2164,9 @@ function menuTap(x,y){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.25 ここまで',480,112,42,'center');
-  text(`さるびび村の問題を解決し、ユーノの協力を得よう。`,480,365,22,'center','#d8efff');
-  text('次は：夜の尾行とツキポポの秘密へ',480,405,20,'center','#d8efff');
+  text('Ver.0.26 ここまで',480,112,42,'center');
+  text(`ユーノが正式加入！ 次はたけぞ村へ。`,480,365,22,'center','#d8efff');
+  text('次は：たけぞ村へ向かう',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
 }
 function update(dt){
@@ -2082,6 +2248,24 @@ function update(dt){
     }
     if(scene==='route3'&&route3Hero.x>1700&&route3Hero.y<430){
       scene='sarubibiArrival';dialogIndex=0;touchUI.classList.add('hidden');
+    }
+  } else if(scene==='nightTrail'){
+    let dx=0,dy=0;
+    if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;
+    if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;
+    dx+=touchVector.x;dy+=touchVector.y;
+    const l=Math.hypot(dx,dy);
+    if(l>.05){
+      dx/=Math.max(1,l);dy/=Math.max(1,l);
+      nightHero.x+=dx*nightHero.speed*dt;nightHero.y+=dy*nightHero.speed*dt;
+    }
+    nightHero.x=Math.max(80,Math.min(1600,nightHero.x));
+    nightHero.y=Math.max(250,Math.min(900,nightHero.y));
+
+    if(nightHero.x>1320 && nightHero.y<470){
+      scene='tsukipopoReveal';
+      dialogIndex=0;
+      touchUI.classList.add('hidden');
     }
   } else if(scene==='sarubibiTown'){
     let dx=0,dy=0;
@@ -2232,6 +2416,31 @@ function pressAction(){
     }
     return;
   }
+  if(scene==='nightIntro'){
+    dialogIndex++;
+    if(dialogIndex>=sarubibiNightDialog.length){
+      scene='nightTrail';dialogIndex=0;
+      nightHero.x=170;nightHero.y=760;
+      touchUI.classList.remove('hidden');
+    }
+    return;
+  }
+  if(scene==='tsukipopoReveal'){
+    dialogIndex++;
+    if(dialogIndex>=tsukipopoRevealDialog.length){
+      scene='sarubibiResolve';dialogIndex=0;
+    }
+    return;
+  }
+  if(scene==='sarubibiResolve'){
+    dialogIndex++;
+    if(dialogIndex>=sarubibiResolveDialog.length){
+      yunoJoined=true;
+      scene='end';dialogIndex=0;
+      saveGame();
+    }
+    return;
+  }
   if(scene==='sarubibiArrival'){
     dialogIndex++;
     if(dialogIndex>=sarubibiArrivalDialog.length){
@@ -2247,7 +2456,10 @@ function pressAction(){
   if(scene==='sarubibiTown'){
     if(Math.hypot(sarubibiHero.x-478,sarubibiHero.y-350)<105){openSarubibiShop('weapon');return;}
     if(Math.hypot(sarubibiHero.x-648,sarubibiHero.y-350)<105){openSarubibiShop('item');return;}
-    flashText='武器屋や道具屋を調べよう';flashTimer=1.6;
+    if(sarubibiQuestStarted && Math.hypot(sarubibiHero.x-832,sarubibiHero.y-335)<120){
+      scene='nightIntro';dialogIndex=0;touchUI.classList.add('hidden');return;
+    }
+    flashText='武器屋・道具屋・防衛隊詰所を調べよう';flashTimer=1.6;
     return;
   }
   if(scene==='sarubibiShop'){
@@ -2314,6 +2526,10 @@ function frame(now){
   else if(scene==='sarubieArrival')drawSarubieArrival();
   else if(scene==='route3')drawRoute3();
   else if(scene==='sarubibiArrival')drawSarubibiArrival();
+  else if(scene==='nightIntro')drawNightIntro();
+  else if(scene==='nightTrail')drawNightTrail();
+  else if(scene==='tsukipopoReveal')drawTsukipopoReveal();
+  else if(scene==='sarubibiResolve')drawSarubibiResolve();
   else if(scene==='sarubibiTown')drawSarubibiTown();
   else if(scene==='sarubibiShop')drawSarubibiShop();
   else if(scene==='sarubieTown')drawSarubieTown();
@@ -2321,7 +2537,7 @@ function frame(now){
   else if(scene==='sarubieRitual')drawSarubieRitual();
   else if(scene==='cave')drawCave();
   else drawEnd();
-  if(flashTimer>0 && ['title','road2','world','cave','route3','sarubieTown','shop','sarubibiTown','sarubibiShop'].includes(scene)){
+  if(flashTimer>0 && ['title','road2','world','cave','route3','sarubieTown','shop','sarubibiTown','sarubibiShop','nightTrail'].includes(scene)){
     ctx.fillStyle='rgba(0,0,0,.58)';ctx.fillRect(305,85,350,58);text(flashText,480,114,20,'center');
   }
   requestAnimationFrame(frame);
@@ -2415,7 +2631,7 @@ canvas.addEventListener('pointerdown',e=>{
         }
       }
     }
-  } else if(scene!=='world'&&scene!=='road2'&&scene!=='route3'&&scene!=='sarubieTown'&&scene!=='shop'&&scene!=='cave'&&scene!=='sarubibiTown'&&scene!=='sarubibiShop') pressAction();
+  } else if(scene!=='world'&&scene!=='road2'&&scene!=='route3'&&scene!=='sarubieTown'&&scene!=='shop'&&scene!=='cave'&&scene!=='sarubibiTown'&&scene!=='sarubibiShop'&&scene!=='nightTrail') pressAction();
 });
 let lastActionAt=0;
 function triggerActionButton(e){

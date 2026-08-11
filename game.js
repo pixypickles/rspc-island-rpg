@@ -100,6 +100,7 @@ let sarubibiShopType='weapon';
 
 
 let menuPage = 'status';
+let menuReturnScene='road2';
 
 const prologue = [
   ['narrator','島の外での巡業を終えた「ちぇすたぴサーカス団」は、故郷・りすぺく島へ帰ろうとしていた。'],
@@ -571,7 +572,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.21.2',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.22',480,121,18,'center','#eef8ff');
   const canContinue=hasSaveGame();
   const y1=350,y2=406;
   outlineRect(300,y1,360,46,titleSelection===0?'#e8f7fb':'rgba(15,35,60,.78)','#73b9d6',2);
@@ -888,6 +889,13 @@ function drawBattle(){
     text(battle.enemyName,610,62,22);
     text(`HP ${Math.max(0,battle.enemyHP)}/${battle.enemyMaxHP}`,610,96,19);
   }
+  // battle phase
+  if(battle.turn==='enemy'){
+    text('敵のターン',480,300,20,'center','#ffb1a4');
+  }else if(battle.turn==='player'){
+    const who=isSuzumaruTurn()?'スズマル':heroName;
+    text(`${who}のターン`,480,300,18,'center','#e8f6ff');
+  }
   // party command state
   if(battle.monsterId===99 && suzumaruActive && battle.turn==='player'){
     ctx.fillStyle='rgba(15,31,53,.9)';ctx.fillRect(120,322,720,38);
@@ -1004,7 +1012,8 @@ function usePotion(target){
     setBattleFx('heal',335,258);
     battleChoiceText.suzu='回復薬';
     battleActor='hero';
-    battle.turn='enemy';battleCooldown=.8;battleMenu='main';
+    battle.turn='enemy';battleCooldown=.65;battleMenu='main';
+    battleMessage+='　→ 敵の反撃！';
   }else{
     battle.heroHP=Math.min(progress.maxHP,battle.heroHP+25);
     battleMessage=`${heroName}は回復薬を使った！ HPが25回復！`;
@@ -1030,7 +1039,7 @@ function suzuAction(mode='attack'){
     battleMessage=`スズマルの「火走り」！ ${summary}`;
     setBattleFx('fire');addDamagePopup('FIRE ALL',700,155,'#ffb093');battleChoiceText.suzu='火走り';
     if(enemiesDefeated()){battle.turn='win';battleCooldown=1.0;return;}
-    battleActor='hero';battle.turn='enemy';battleCooldown=.8;battleMenu='main';return;
+    battleActor='hero';battle.turn='enemy';battleCooldown=.65;battleMenu='main';battleMessage+='　→ 敵の反撃！';return;
   }
   if(mode==='fire'){
     if(battle.suzuMP<5){battleMessage='MPが足りない！';return;}
@@ -1047,14 +1056,19 @@ function suzuAction(mode='attack'){
   }
   battleActor='hero';
   battle.turn='enemy';
-  battleCooldown=.8;
+  battleCooldown=.65;
   battleMenu='main';
+  battleMessage+='　→ 敵の反撃！';
 }
 function battleDefend(){
   if(!battle || battle.turn!=='player')return;
   if(isSuzumaruTurn()){
-    battleMessage='スズマルは身を守っている！';battleChoiceText.suzu='ぼうぎょ';
-    battleActor='hero';battleMenu='main';
+    battleMessage='スズマルは身を守っている！　→ 敵の反撃！';
+    battleChoiceText.suzu='ぼうぎょ';
+    battleActor='hero';
+    battle.turn='enemy';
+    battleCooldown=.65;
+    battleMenu='main';
     return;
   }
   battle.defending=true;
@@ -1075,6 +1089,7 @@ function battleRun(){
   battle.turn='run';battleCooldown=.6;battleMenu='main';
 }
 function enemyTurn(){
+  addDamagePopup('ENEMY TURN',480,175,'#ffb2a5');
   const attackers=battle.enemies?livingEnemies():[null];
   let totalHero=0,totalSuzu=0;
 
@@ -1167,7 +1182,7 @@ function finishBattle(){
   const goldGain=mon?({1:8,2:10,3:14}[mon.id]||6):6;
   progress.gold+=goldGain;
   const leveled=gainExp(expGain);saveProgress();
-  scene='road2';touchUI.classList.remove('hidden');
+  scene=menuReturnScene||'road2';touchUI.classList.remove('hidden');
   battle=null;
   flashText=leveled?`レベルアップ！ Lv.${progress.level}　SP+1`:`経験値 ${expGain} / ${goldGain}G 獲得！`;
   flashTimer=3.0;
@@ -1746,7 +1761,7 @@ function menuTap(x,y){
   if(y>=80 && y<=140){
     if(x<240)menuPage='status';
     else if(x<440)menuPage='skill';
-    else if(x>=640){scene='road2';touchUI.classList.remove('hidden');}
+    else if(x>=640){scene=menuReturnScene||'road2';touchUI.classList.remove('hidden');}
     return;
   }
   if(menuPage==='skill' && y>=215 && y<=307 && x>=65 && x<=455){
@@ -1758,7 +1773,7 @@ function menuTap(x,y){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.21.2 ここまで',480,112,42,'center');
+  text('Ver.0.22 ここまで',480,112,42,'center');
   text(`さるびび村の問題を解決し、ユーノの協力を得よう。`,480,365,22,'center','#d8efff');
   text('次は：夜の尾行とツキポポの秘密へ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
@@ -1966,9 +1981,6 @@ function pressAction(){
     }
     return;
   }
-  if(scene==='road2'){
-    scene='menu';menuPage='status';touchUI.classList.add('hidden');return;
-  }
   if(scene==='sarubieArrival'){
     dialogIndex++;
     if(dialogIndex>=sarubieArrivalDialog.length){
@@ -2034,6 +2046,14 @@ function pressAction(){
       touchUI.classList.remove('hidden');
       flashText='次は、さるびび村へ';flashTimer=2.0;
     }
+    return;
+  }
+
+  if(scene==='world' || scene==='road2' || scene==='route3' || scene==='cave'){
+    menuReturnScene=scene;
+    scene='menu';
+    menuPage='status';
+    touchUI.classList.add('hidden');
     return;
   }
   if(scene==='battle'){
@@ -2161,7 +2181,11 @@ canvas.addEventListener('pointerdown',e=>{
     }
   } else if(scene!=='world'&&scene!=='road2'&&scene!=='route3'&&scene!=='sarubieTown'&&scene!=='shop'&&scene!=='cave'&&scene!=='sarubibiTown'&&scene!=='sarubibiShop') pressAction();
 });
-actionBtn.addEventListener('pointerdown',e=>{e.preventDefault();pressAction();});
+actionBtn.addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  e.stopPropagation();
+  pressAction();
+});
 
 let touchVector={x:0,y:0},stickPointer=null;
 function stickMove(e){

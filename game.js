@@ -1618,10 +1618,10 @@ function drawBattle(){
     drawCaveBoss(700,245,1.75);
   }else if(battle.monsterId===900){
     const vice=battle.enemies&&battle.enemies[0], cap=battle.enemies&&battle.enemies[1];
-    // 副船長：イノシシ。太いヘアバンド＋大斧。
-    if(vice&&vice.hp>0){ctx.save();ctx.translate(650,245);ellipse(0,72,46,11,'rgba(0,0,0,.22)');ellipse(0,-18,31,29,'#8d674c');ellipse(-25,-26,12,14,'#72513e');ellipse(25,-26,12,14,'#72513e');rect(-32,-35,64,12,'#c94848');rect(-32,8,64,70,'#704b3d');ctx.strokeStyle='#d4d7d8';ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(40,-5);ctx.lineTo(72,75);ctx.stroke();ctx.fillStyle='#9ba2a5';ctx.beginPath();ctx.moveTo(58,-8);ctx.lineTo(92,8);ctx.lineTo(76,38);ctx.lineTo(45,20);ctx.closePath();ctx.fill();text(`副船長 ${vice.hp}/${vice.maxHP}`,0,-72,16,'center','#5b2020',900);ctx.restore();}
-    // 船長：タヌキ。後方指揮型で自分用の回復薬を持つ。
-    if(cap&&cap.hp>0){ctx.save();ctx.translate(785,240);ellipse(0,72,44,11,'rgba(0,0,0,.22)');ellipse(0,-18,30,29,'#8c765e');ellipse(-24,-28,11,13,'#5d5148');ellipse(24,-28,11,13,'#5d5148');ellipse(-12,-17,8,10,'#4d4540');ellipse(12,-17,8,10,'#4d4540');rect(-34,8,68,72,'#26364b');ctx.fillStyle='#243245';ctx.beginPath();ctx.moveTo(-48,-40);ctx.lineTo(48,-40);ctx.lineTo(28,-60);ctx.lineTo(-26,-60);ctx.closePath();ctx.fill();ctx.strokeStyle='#d8dce1';ctx.lineWidth=7;ctx.beginPath();ctx.arc(48,25,38,-1.1,1.1);ctx.stroke();text(`海賊船長 ${cap.hp}/${cap.maxHP}`,0,-78,16,'center','#5b2020',900);ctx.restore();}
+    // 副船長：シロクマ。太いヘアバンド＋大斧。
+    if(vice&&vice.hp>0){ctx.save();ctx.translate(650,245);ellipse(0,72,48,11,'rgba(0,0,0,.22)');ellipse(0,-18,32,30,'#f2f3ed');ellipse(-25,-34,11,11,'#e7e9e4');ellipse(25,-34,11,11,'#e7e9e4');ellipse(0,-11,16,12,'#d9ddd8');ellipse(0,-8,5,4,'#34383c');rect(-34,-39,68,13,'#c94848');rect(-34,8,68,72,'#53677b');ctx.strokeStyle='#d4d7d8';ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(40,-5);ctx.lineTo(72,75);ctx.stroke();ctx.fillStyle='#9ba2a5';ctx.beginPath();ctx.moveTo(58,-8);ctx.lineTo(92,8);ctx.lineTo(76,38);ctx.lineTo(45,20);ctx.closePath();ctx.fill();text(`副船長 ${vice.hp}/${vice.maxHP}`,0,-78,16,'center','#5b2020',900);ctx.restore();}
+    // 船長：ペンギン。後方指揮型で自分用の回復薬を持つ。
+    if(cap&&cap.hp>0){ctx.save();ctx.translate(785,240);ellipse(0,72,44,11,'rgba(0,0,0,.22)');ellipse(0,-18,30,31,'#202b39');ellipse(0,-13,20,23,'#f4f4eb');ctx.fillStyle='#e2a53a';ctx.beginPath();ctx.moveTo(-7,-9);ctx.lineTo(9,-9);ctx.lineTo(1,0);ctx.closePath();ctx.fill();rect(-34,8,68,72,'#26364b');ctx.fillStyle='#243245';ctx.beginPath();ctx.moveTo(-48,-40);ctx.lineTo(48,-40);ctx.lineTo(28,-60);ctx.lineTo(-26,-60);ctx.closePath();ctx.fill();ctx.strokeStyle='#d8dce1';ctx.lineWidth=7;ctx.beginPath();ctx.arc(48,25,38,-1.1,1.1);ctx.stroke();text(`海賊船長 ${cap.hp}/${cap.maxHP}`,0,-82,16,'center','#5b2020',900);ctx.restore();}
   }else if(battle.enemies){
     const live=livingEnemies();
     const spots=[
@@ -3578,15 +3578,16 @@ function drawFinalPrepFree(){
 
 
 function drawPirateCaptainIntro(){
-  ctx.fillStyle='#8faeb8';ctx.fillRect(0,0,W,H);rect(0,310,W,230,'#5f6d62');
+  ctx.fillStyle='#9fc7d1';ctx.fillRect(0,0,W,H);rect(0,185,W,95,'#628ea1');rect(0,280,W,260,'#9a8b67');
+  rect(600,305,300,125,'#7a694e');rect(615,320,270,95,'#aa956b');rect(855,205,7,115,'#403832');
+  ctx.fillStyle='#8b3030';ctx.beginPath();ctx.moveTo(862,210);ctx.lineTo(930,235);ctx.lineTo(862,255);ctx.fill();
   drawHeroFox(110,415,.72);drawSuzumaru(195,420,.77);drawDashmiu(280,427,.70);drawYuno(365,420,.77);drawGyou(450,420,.79);
-  // 前線本陣の船長（タヌキ）と副船長（イノシシ）
-  ellipse(700,286,27,26,'#8d674c');rect(670,310,60,90,'#704b3d');rect(666,273,68,11,'#c94848');
-  ellipse(790,286,27,26,'#8c765e');rect(760,310,60,90,'#26364b');rect(748,250,84,14,'#243245');
+  ellipse(700,286,27,27,'#f2f3ed');ellipse(679,269,9,9,'#e4e7e2');ellipse(721,269,9,9,'#e4e7e2');rect(668,272,64,12,'#c94848');rect(670,310,60,90,'#53677b');
+  ellipse(790,286,27,28,'#202b39');ellipse(790,291,18,20,'#f4f4eb');ctx.fillStyle='#e2a53a';ctx.beginPath();ctx.moveTo(783,286);ctx.lineTo(798,286);ctx.lineTo(790,294);ctx.closePath();ctx.fill();rect(760,310,60,90,'#26364b');rect(748,250,84,14,'#243245');
   const item=pirateCaptainIntroDialog[Math.min(dialogIndex,pirateCaptainIntroDialog.length-1)];drawDialog(item[0],item[1]);
 }
 function drawPirateCaptainAfter(){
-  ctx.fillStyle='#b4c7c8';ctx.fillRect(0,0,W,H);rect(0,320,W,220,'#78836d');
+  ctx.fillStyle='#b4c7c8';ctx.fillRect(0,0,W,H);rect(0,190,W,90,'#6f98a5');rect(0,280,W,260,'#9a8b67');
   drawHeroFox(120,420,.72);drawSuzumaru(210,425,.77);drawDashmiu(300,432,.70);drawYuno(390,425,.77);drawGyou(480,425,.79);
   rect(700,320,58,90,'#26364b');ellipse(729,302,25,27,'#b98b6b');ctx.strokeStyle='#d8dce1';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(770,405);ctx.lineTo(825,430);ctx.stroke();
   const item=pirateCaptainAfterDialog[Math.min(dialogIndex,pirateCaptainAfterDialog.length-1)];drawDialog(item[0],item[1]);
@@ -3605,8 +3606,8 @@ function drawFinalBattleGround(){
 }
 function drawFinalBalloon(){
   ctx.fillStyle='#9fc7d1';ctx.fillRect(0,0,W,H);
-  // sea / battlefield below
-  rect(0,390,W,150,'#628ea1');
+  // 奥が海、手前が海岸と前線本陣
+  rect(0,350,W,70,'#628ea1');rect(0,420,W,120,'#9a8b67');
   for(let i=0;i<6;i++)ellipse(90+i*170,355+(i%2)*18,110,38,'rgba(240,245,242,.42)');
   // balloon
   ellipse(480,145,120,88,'#d8b56d');rect(405,218,150,64,'#806047');
@@ -3622,7 +3623,7 @@ function drawFinalBalloon(){
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);
   drawHeroFox(245,270,1.15);drawSuzumaru(355,275,1.25);drawDashmiu(465,282,1.12);drawYuno(575,275,1.22);drawGyou(685,275,1.25);
-  text('Ver.0.53 ここまで',480,105,40,'center');
+  text('Ver.0.54 ここまで',480,105,40,'center');
   text('海賊船長を撃破！ 最終決戦に勝利した！',480,365,26,'center','#d8efff');
   text('次は：戦いの後・エンディング',480,407,23,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,466,20,'center','#9fc8df');

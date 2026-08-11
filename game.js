@@ -696,6 +696,7 @@ function saveGame(){
     caveBossHP:caveBoss.hp,
     sarubibiQuestStarted,
     yunoJoined,
+    gyouJoined,
     takezoIntroDone,
     takezoPrepStage,
     secondWaveStage,
@@ -750,7 +751,15 @@ function loadGame(){
     if(typeof d.caveBossAlive==='boolean')caveBoss.alive=d.caveBossAlive;
     if(Number.isFinite(d.caveBossHP))caveBoss.hp=d.caveBossHP;
     sarubibiQuestStarted=!!d.sarubibiQuestStarted;
-    yunoJoined=!!d.yunoJoined;gyouJoined=!!d.gyouJoined;
+    yunoJoined=!!d.yunoJoined;
+    if(typeof d.gyouJoined==='boolean'){
+      gyouJoined=d.gyouJoined;
+    }else{
+      // Older saves forgot to persist Gyou's join flag.
+      // Any checkpoint after his join means he must already be a party member.
+      const postGyouScenes=['finalPrep','finalPrepFree','gyouTraining','finalWeapon','yunoCombo','volcanoBearQuest','finalBearField','volcanoBearAfter','end'];
+      gyouJoined=postGyouScenes.includes(d.scene) || !!progress.gyouGrandGuard || !!progress.finalFlameBlade || !!progress.heroYunoComboUnlocked;
+    }
     takezoIntroDone=!!d.takezoIntroDone;takezoPrepStage=d.takezoPrepStage||0;secondWaveStage=d.secondWaveStage||0;
     if(typeof d.bananaSharkAlive==='boolean')bananaSharkAlive=d.bananaSharkAlive;
     takezoScoutDefeated=!!d.takezoScoutDefeated;
@@ -1306,6 +1315,7 @@ for(const mon of monsters) drawWildMonster(mon);
 }
 
 function startFinalBearBattle(){
+  syncStoryParty();
   const ss=suzumaruStats(),ys=yunoStats(),gs=gyouStats();
   battle={
     heroHP:progress.maxHP,heroMP:progress.maxMP,
@@ -1414,15 +1424,19 @@ function advancePartyTurn(){
     }
     battleActor='yuno';return;
   }
+  if(battleActor==='yuno' && gyouJoined && battle.monsterId>=400){
+    ensureGyouBattle();battleActor='gyou';return;
+  }
   beginEnemyTurn();
 }
 function drawBattle(){
   const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#9cd8ef');g.addColorStop(1,'#b9dc8c');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
   if((battle.monsterId===99||battle.monsterId>=200) && suzumaruActive){
     const py=(window.innerHeight||540)<500?285:270;
-    drawHeroFox(145,py,1.28);
-    drawSuzumaru(265,py+3,1.45);
-    if(yunoJoined && battle.monsterId>=400)drawYuno(380,py+3,1.35);
+    drawHeroFox(135,py,1.20);
+    drawSuzumaru(245,py+3,1.30);
+    if(yunoJoined && battle.monsterId>=400)drawYuno(350,py+3,1.24);
+    if(gyouJoined && battle.monsterId>=400){ensureGyouBattle();drawGyou(455,py+3,1.24);}
   }else{
     drawHeroFox(250,260,2.0);
   }
@@ -1457,18 +1471,22 @@ function drawBattle(){
   if(yunoJoined && battle.monsterId>=400){
     partyRows.push({name:'ユーノ',hp:battle.yunoHP,maxHP:battle.yunoMaxHP,mp:battle.yunoMP,maxMP:battle.yunoMaxMP});
   }
+  if(gyouJoined && battle.monsterId>=400){
+    ensureGyouBattle();
+    partyRows.push({name:'ギョウ',hp:battle.gyouHP,maxHP:battle.gyouMaxHP,mp:battle.gyouMP,maxMP:battle.gyouMaxMP});
+  }
 
   const rosterX=32, rosterY=bt, rosterW=350;
-  const rowH=43;
-  const rosterH=18+partyRows.length*rowH;
+  const rowH=34;
+  const rosterH=12+partyRows.length*rowH;
   ctx.fillStyle='rgba(14,30,55,.90)';
   ctx.fillRect(rosterX,rosterY,rosterW,rosterH);
 
   partyRows.forEach((m,i)=>{
-    const y=rosterY+26+i*rowH;
-    text(m.name,rosterX+18,y,16,'left','#ffffff',800);
-    text(`HP ${m.hp}/${m.maxHP}`,rosterX+130,y,14,'left','#ffffff');
-    text(`MP ${m.mp}/${m.maxMP}`,rosterX+248,y,14,'left','#ffffff');
+    const y=rosterY+20+i*rowH;
+    text(m.name,rosterX+14,y,14,'left','#ffffff',800);
+    text(`HP ${m.hp}/${m.maxHP}`,rosterX+112,y,12,'left','#ffffff');
+    text(`MP ${m.mp}/${m.maxMP}`,rosterX+235,y,12,'left','#ffffff');
   });
 
   // Enemy information gets its own small panel above/right of the monsters.
@@ -1487,7 +1505,7 @@ function drawBattle(){
   }else if(battle.turn==='enemyResult'){
     text('敵の攻撃',480,300,20,'center','#ff9d91');
   }else if(battle.turn==='player'){
-    const who=isYunoTurn()?'ユーノ':isSuzumaruTurn()?'スズマル':heroName;
+    const who=isGyouTurn()?'ギョウ':isYunoTurn()?'ユーノ':isSuzumaruTurn()?'スズマル':heroName;
     text(`${who}のターン`,480,300,18,'center','#e8f6ff');
   }
   // party command state
@@ -2663,7 +2681,13 @@ function startCaveBossBattle(){
   scene='battle';touchUI.classList.add('hidden');
 }
 
+function syncStoryParty(){
+  if(!gyouJoined && (progress.gyouGrandGuard || progress.finalFlameBlade || progress.heroYunoComboUnlocked || ['finalPrep','finalPrepFree','gyouTraining','finalWeapon','yunoCombo','volcanoBearQuest','finalBearField','volcanoBearAfter','end'].includes(scene))){
+    gyouJoined=true;
+  }
+}
 function drawMenu(){
+  syncStoryParty();
   ctx.fillStyle='#0e1d37';ctx.fillRect(0,0,W,H);
   text('メニュー',55,42,28,'left','#ffffff',800);
 

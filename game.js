@@ -32,6 +32,7 @@ let progress = JSON.parse(localStorage.getItem('risupekuProgress') || 'null') ||
 };
 if(progress.gold===undefined) progress.gold=90;
 if(!progress.items) progress.items={potion:0};
+if(progress.items.highPotion===undefined)progress.items.highPotion=0;
 
 
 
@@ -1684,15 +1685,19 @@ function drawBattle(){
       }else{
         outlineRect(40,378,170,48,'#dff4fb','#71bad7',2);text('水のいやし',125,402,14,'center','#17324a');
         outlineRect(220,378,170,48,'#dff4fb','#71bad7',2);text('氷のつぶて',305,402,14,'center','#17324a');
-        outlineRect(400,378,170,48,'#dff4fb','#71bad7',2);text('氷結斬り',485,402,14,'center','#17324a');
+        outlineRect(400,378,170,48,'#dff4fb','#71bad7',2);
+        const iceCost=(progress.heroIceSkill||1)>=3?11:(progress.heroIceSkill||1)>=2?9:7;
+        text(`${heroIceSkillName()} MP${iceCost}`,485,402,12,'center','#17324a');
         outlineRect(580,378,170,48,'#d9f4ff','#62afd1',2);text('氷晶波 MP8',665,402,14,'center','#17324a');
         outlineRect(760,378,160,48,'#fff0d0','#d2a24d',2);text(`回復薬 x${progress.items.potion}`,840,402,13,'center','#5f4623');
         if(yunoJoined && progress.heroYunoComboUnlocked && battle.monsterId>=400){
           outlineRect(40,438,250,44,'#d8f2ed','#59aaa6',2);text('合体：蒼風大癒 MP12+12',165,460,12,'center','#174c4b');
           outlineRect(305,438,300,44,'#d8eef7','#5d9fbd',2);text('合体：氷嵐大旋風 MP12+12',455,460,12,'center','#173f57');
-          outlineRect(620,438,300,44,'#dff4fb','#71bad7',2);text('もどる',770,460,15,'center','#17324a');
+          outlineRect(620,438,145,44,'#ffe7c7','#c47b45',2);text(`高級薬 x${progress.items.highPotion||0}`,692,460,12,'center','#63371d');
+          outlineRect(775,438,145,44,'#dff4fb','#71bad7',2);text('もどる',847,460,14,'center','#17324a');
         }else{
-          outlineRect(330,442,300,42,'#dff4fb','#71bad7',2);text('もどる',480,463,15,'center','#17324a');
+          outlineRect(330,442,210,42,'#ffe7c7','#c47b45',2);text(`高級回復薬 x${progress.items.highPotion||0}`,435,463,12,'center','#63371d');
+          outlineRect(560,442,210,42,'#dff4fb','#71bad7',2);text('もどる',665,463,15,'center','#17324a');
         }
       }
       text('スキルを選択',480,474,15,'center','#c8e7f4');
@@ -1730,12 +1735,21 @@ function battleAttack(mode='attack'){
   }
   if(mode==='iceSlash'){
     if(!progress.learned.iceSlash){battleMessage='まだ覚えていない！';return;}
-    if(battle.heroMP<7){battleMessage='MPが足りない！';return;}
-    battle.heroMP-=7;
-    dmg=progress.atk+15+Math.floor(Math.random()*7);
-    battleMessage=`${heroName}の「氷結斬り」！ ${dmg}ダメージ！`;setBattleFx('ice');
-    addDamagePopup('ICE',700,155,'#bdefff');
-    if(battle.monsterId===99)battleChoiceText.hero='氷結斬り';
+    const il=Math.max(1,progress.heroIceSkill||1);
+    const cost=il>=3?11:il>=2?9:7;
+    if(battle.heroMP<cost){battleMessage='MPが足りない！';return;}
+    battle.heroMP-=cost;
+    const hits=heroIceHits();
+    let total=0,parts=[];
+    for(let i=0;i<hits;i++){
+      const hit=Math.max(1,progress.atk+(il>=3?11:il>=2?9:15)+Math.floor(Math.random()*7));
+      total+=hit;parts.push(hit);
+    }
+    dmg=total;
+    const skillName=heroIceSkillName();
+    battleMessage=`${heroName}の「${skillName}」！ ${parts.join(' + ')} = ${dmg}ダメージ！`;setBattleFx('ice');
+    addDamagePopup(`${hits} HIT ${dmg}`,700,155,'#bdefff');
+    if(battle.monsterId===99||battle.monsterId>=200)battleChoiceText.hero=skillName;
   }else if(mode==='ice'){
     if(battle.heroMP<4){battleMessage='MPが足りない！';return;}
     battle.heroMP-=4;
@@ -1759,6 +1773,28 @@ function battleAttack(mode='attack'){
   }else{battle.turn='enemy';battleCooldown=.8;battleMenu='main';}
 }
 
+
+function useHighPotion(target){
+  if(!battle || battle.turn!=='player')return;
+  if((progress.items.highPotion||0)<=0){battleMessage='高級回復薬を持っていない！';return;}
+  progress.items.highPotion--;saveProgress();
+  const heal=70;
+  if(target==='suzu'){
+    battle.suzuHP=Math.min(battle.suzuMaxHP,battle.suzuHP+heal);
+    battleMessage=`スズマルは高級回復薬を使った！ HPが${heal}回復！`;battleChoiceText.suzu='高級回復薬';
+  }else if(target==='yuno'){
+    battle.yunoHP=Math.min(battle.yunoMaxHP,battle.yunoHP+heal);
+    battleMessage=`ユーノは高級回復薬を使った！ HPが${heal}回復！`;battleChoiceText.yuno='高級回復薬';
+  }else if(target==='gyou'){
+    ensureGyouBattle();battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+heal);
+    battleMessage=`ジュウは高級回復薬を使った！ HPが${heal}回復！`;battleChoiceText.gyou='高級回復薬';
+  }else{
+    battle.heroHP=Math.min(progress.maxHP,battle.heroHP+heal);
+    battleMessage=`${heroName}は高級回復薬を使った！ HPが${heal}回復！`;battleChoiceText.hero='高級回復薬';
+  }
+  setBattleFx('heal',360,255);
+  if(isPartyBattle())advancePartyTurn();else{battle.turn='enemy';battleCooldown=.8;battleMenu='main';}
+}
 
 function usePotion(target){
   if(!battle || battle.turn!=='player')return;
@@ -1816,17 +1852,19 @@ function suzuAction(mode='attack'){
     battle.suzuMP-=5;
     {
       const sl=progress.suzuSkills.single||0;
-      const bonus=sl>=3?30:sl>=2?20:10;
+      const bonus=sl>=3?68:sl>=2?28:12;
       dmg=ss.atk+bonus+Math.floor(Math.random()*7);
     }
-    battleMessage=`スズマルの「火炎斬り」！ ${dmg}ダメージ！`;setBattleFx('fire');addDamagePopup('FIRE',700,155,'#ffb093');battleChoiceText.suzu='火炎斬り';
+    const skillName=suzuSingleSkillName();
+    battleMessage=`スズマルの「${skillName}」！ ${dmg}ダメージ！`;setBattleFx('fire');addDamagePopup(skillName,700,155,'#ffb093');battleChoiceText.suzu=skillName;
   }else{
     dmg=ss.atk+2+Math.floor(Math.random()*5);
     battleMessage=`スズマルのこうげき！ ${dmg}ダメージ！`;setBattleFx('slash');battleChoiceText.suzu='こうげき';
   }
   damageEnemy(dmg);
   if(progress.finalFlameBlade && !enemiesDefeated()){
-    const follow=7+Math.floor(ss.atk*.28)+Math.floor(Math.random()*5);
+    const sl=progress.suzuSkills?.single||0;
+    const follow=(sl>=3?18:7)+Math.floor(ss.atk*(sl>=3?.45:.28))+Math.floor(Math.random()*(sl>=3?9:5));
     damageEnemy(follow);
     battleMessage+=`　爆炎大剣の炎が追撃！ ${follow}ダメージ！`;
     setBattleFx('fire');addDamagePopup(`+炎 ${follow}`,700,185,'#ff9b70');
@@ -3418,10 +3456,11 @@ function drawFinalEveFree(){
   text('たけぞ村　決戦前の準備',480,72,30,'center','#17324a',800);
   text('装備・回復薬・スキルを確認してから出撃できます',480,112,17,'center','#29485b');
   drawHeroFox(145,250,.78);drawSuzumaru(245,255,.84);drawDashmiu(345,262,.75);drawYuno(445,255,.84);drawGyou(545,255,.87);
-  outlineRect(105,350,220,62,'#dff4fb','#71bad7',2);text('メニュー',215,381,20,'center','#17324a');
-  outlineRect(370,350,220,62,'#fff0cf','#c89d55',2);text('回復薬を補充',480,381,19,'center','#5a3c18');
-  outlineRect(635,350,220,62,'#e5ead0','#9c9a62',2);text('ユーノに話す',745,381,19,'center','#394126');
-  text(`回復薬 ${progress.potions||0}個　所持金 ${progress.gold||0}G`,480,455,17,'center','#213b4b');
+  outlineRect(35,340,190,62,'#dff4fb','#71bad7',2);text('メニュー',130,371,19,'center','#17324a');
+  outlineRect(245,340,210,62,'#fff0cf','#c89d55',2);text('回復薬 20G',350,371,17,'center','#5a3c18');
+  outlineRect(475,340,210,62,'#ffe7c7','#c47b45',2);text('高級回復薬 75G',580,371,16,'center','#63371d');
+  outlineRect(705,340,220,62,'#e5ead0','#9c9a62',2);text('ユーノに話す',815,371,18,'center','#394126');
+  text(`回復薬 ${progress.items.potion||0}　高級 ${progress.items.highPotion||0}　所持金 ${progress.gold||0}G`,480,445,16,'center','#213b4b');
   text('ユーノに話すと最終決戦へ進みます',480,492,15,'center','#425b68');
 }
 function drawFinalLaunch(){
@@ -4159,14 +4198,18 @@ canvas.addEventListener('pointerdown',e=>{
     const r=canvas.getBoundingClientRect();
     const x=(e.clientX-r.left)/r.width*W;
     const y=(e.clientY-r.top)/r.height*H;
-    if(y>=335&&y<=430){
-      if(x<345){openFieldMenu('finalEveFree');return;}
-      if(x<615){
-        const cost=25;
-        if((progress.gold||0)>=cost){
-          progress.gold-=cost;progress.potions=(progress.potions||0)+1;saveProgress();saveGame();
-          flashText='回復薬を1個補充した（25G）';flashTimer=1.5;
-        }else{flashText='お金が足りない';flashTimer=1.5;}
+    if(y>=330&&y<=415){
+      if(x<235){openFieldMenu('finalEveFree');return;}
+      if(x<465){
+        const cost=20;
+        if((progress.gold||0)>=cost){progress.gold-=cost;progress.items.potion=(progress.items.potion||0)+1;saveProgress();saveGame();flashText='回復薬を1個補充した（20G）';flashTimer=1.5;}
+        else{flashText='お金が足りない';flashTimer=1.5;}
+        return;
+      }
+      if(x<695){
+        const cost=75;
+        if((progress.gold||0)>=cost){progress.gold-=cost;progress.items.highPotion=(progress.items.highPotion||0)+1;saveProgress();saveGame();flashText='高級回復薬を1個補充した（75G）';flashTimer=1.5;}
+        else{flashText='お金が足りない';flashTimer=1.5;}
         return;
       }
       scene='finalLaunch';dialogIndex=0;saveGame();return;
@@ -4250,7 +4293,8 @@ canvas.addEventListener('pointerdown',e=>{
         }else if(isSuzumaruTurn()){
           if(x<305)suzuAction('fire');
           else if(x<565)suzuAction('fireRun');
-          else if(x<760)usePotion('suzu');
+          else if(x<715)usePotion('suzu');
+          else if(x<865)useHighPotion('suzu');
           else battleMenu='main';
         }else{
           if(y>=370&&y<=432){
@@ -4262,7 +4306,10 @@ canvas.addEventListener('pointerdown',e=>{
           }else if(yunoJoined && progress.heroYunoComboUnlocked && battle.monsterId>=400 && y>=435&&y<=485){
             if(x<300)heroYunoCombo('grandHeal');
             else if(x<615)heroYunoCombo('grandDamage');
+            else if(x<770)useHighPotion('hero');
             else battleMenu='main';
+          }else if(y>=435&&y<=490){
+            if(x>=320&&x<550)useHighPotion('hero');else battleMenu='main';
           }else battleMenu='main';
         }
       }

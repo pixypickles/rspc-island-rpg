@@ -194,20 +194,27 @@ let takezoMobs=[
 ];
 
 
+function resetTakezoSquads(){
+  const defs=[
+    {id:401,x:650,y:430,spawnX:650,spawnY:430,alive:true,name:'海賊ネコ斥候',kind:'pirateCat',hp:58,maxHP:58},
+    {id:402,x:900,y:390,spawnX:900,spawnY:390,alive:true,name:'海賊イヌ斥候',kind:'pirateDog',hp:62,maxHP:62},
+    {id:403,x:1150,y:345,spawnX:1150,spawnY:345,alive:true,name:'海賊タヌキ斥候',kind:'pirateTanuki',hp:66,maxHP:66}
+  ];
+  takezoMobs=defs.map(d=>({...d}));
+  takezoHero.x=430;takezoHero.y=455;
+}
 function repairTakezoSquads(){
   const defs=[
-    {id:401,x:620,y:480,spawnX:620,spawnY:480,alive:true,name:'海賊ネコ斥候',kind:'pirateCat',hp:58,maxHP:58},
-    {id:402,x:980,y:420,spawnX:980,spawnY:420,alive:true,name:'海賊イヌ斥候',kind:'pirateDog',hp:62,maxHP:62},
-    {id:403,x:1280,y:350,spawnX:1280,spawnY:350,alive:true,name:'海賊タヌキ斥候',kind:'pirateTanuki',hp:66,maxHP:66}
+    {id:401,x:650,y:430,spawnX:650,spawnY:430,alive:true,name:'海賊ネコ斥候',kind:'pirateCat',hp:58,maxHP:58},
+    {id:402,x:900,y:390,spawnX:900,spawnY:390,alive:true,name:'海賊イヌ斥候',kind:'pirateDog',hp:62,maxHP:62},
+    {id:403,x:1150,y:345,spawnX:1150,spawnY:345,alive:true,name:'海賊タヌキ斥候',kind:'pirateTanuki',hp:66,maxHP:66}
   ];
   for(const d of defs){
-    if(!takezoMobs.some(m=>m.id===d.id))takezoMobs.push({...d});
-  }
-  // v0.28 saves could leave only two accessible squads. If the third was never
-  // actually defeated, keep it present and accessible.
-  const third=takezoMobs.find(m=>m.id===403);
-  if(third && !takezoIntroDone && takezoMobs.filter(m=>!m.alive).length<3){
-    third.x=1280;third.y=350;
+    let m=takezoMobs.find(x=>x.id===d.id);
+    if(!m){takezoMobs.push({...d});continue;}
+    m.spawnX=d.spawnX;m.spawnY=d.spawnY;
+    // Alive squads are always returned to a reachable point on the road.
+    if(m.alive){m.x=d.x;m.y=d.y;}
   }
 }
 repairTakezoSquads();
@@ -2453,6 +2460,9 @@ function drawTakezoRoute(){
   ctx.restore();
   const ht=hudTop();ctx.fillStyle='rgba(10,28,48,.88)';ctx.fillRect(18,ht,420,46);
   text(`目的：海賊の先行小隊を撃退する　残り ${takezoMobs.filter(m=>m.alive).length}`,35,ht+23,15);
+  // Event recovery controls. These stay available even if a save gets into a bad state.
+  outlineRect(590,ht,155,42,'#e9f6fb','#4f93ad',2);text('小隊をやり直す',667,ht+22,14,'center','#17324a');
+  outlineRect(755,ht,170,42,'#fff1d6','#b68a42',2);text('いったん村へ戻る',840,ht+22,14,'center','#5b421e');
 }
 function drawTakezoRelief(){
   drawTakezoVillageGate();
@@ -2527,6 +2537,10 @@ function update(dt){
       touchUI.classList.add('hidden');
     }
   } else if(scene==='takezoRoute'){
+    // Defensive repair for old/partial saves: no living squad can remain off the road.
+    for(const m of takezoMobs){
+      if(m.alive && (m.x<500 || m.x>1250 || m.y<300 || m.y>480))repairTakezoSquads();
+    }
     let dx=0,dy=0;
     if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;
     if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;
@@ -2935,6 +2949,20 @@ canvas.addEventListener('pointerdown',e=>{
     const y=(e.clientY-r.top)/r.height*H;
     if(y>=325&&y<=410){shopBuy();return;}
     if(y>=410&&y<=495){scene='sarubieTown';touchUI.classList.remove('hidden');return;}
+  } else if(scene==='takezoRoute'){
+    const r=canvas.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width*W;
+    const y=(e.clientY-r.top)/r.height*H;
+    const ht=hudTop();
+    if(y>=ht && y<=ht+48 && x>=590 && x<750){
+      resetTakezoSquads();saveGame();
+      flashText='先行小隊を3部隊に戻しました';flashTimer=2.2;return;
+    }
+    if(y>=ht && y<=ht+48 && x>=750){
+      scene='sarubibiTown';sarubibiHero.x=520;sarubibiHero.y=430;
+      touchUI.classList.remove('hidden');saveGame();
+      flashText='いったん村へ戻りました';flashTimer=2.0;return;
+    }
   } else if(scene==='menu'){
     const r=canvas.getBoundingClientRect();
     const x=(e.clientX-r.left)/r.width*W;

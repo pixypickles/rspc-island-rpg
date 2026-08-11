@@ -184,6 +184,9 @@ let nightTrailStep=0;
 let nightHero={x:170,y:760,speed:205};
 
 let sarubibiHero={x:330,y:390,speed:210};
+let takezoTravelHero={x:180,y:470,speed:210};
+let takezoScoutDefeated=false;
+let takezoScout={id:450,x:1120,y:315,alive:true,name:'海賊ネコ偵察兵',kind:'pirateCat',hp:64,maxHP:64};
 let takezoHero={x:150,y:760,speed:210};
 let takezoWave=0;
 let takezoIntroDone=false;
@@ -328,11 +331,19 @@ const sarubibiArrivalDialog = [
 
 
 const takezoDepartureDialog=[
-  ['narrator','翌朝。一行は島の外周路を急ぎ、最後の村――たけぞ村へ向かった。'],
-  ['dash','ここまで来れば、あと少し！'],
-  ['yuno','待って。海の方から魔力反応が続いてる。'],
-  ['suzu','……戦ってるな。'],
-  ['hero','急ごう。']
+  ['narrator','翌朝。一行はさるびび村を出て、北北東にある最後の村――たけぞ村へ向かった。'],
+  ['dash','この道を抜ければ、たけぞ村だね。'],
+  ['yuno','海沿いは見通しがいい。偵察に気をつけよう。'],
+  ['suzu','海賊が先に回り込んでてもおかしくない。'],
+  ['hero','急ぎつつ、周りも見て進もう。']
+];
+
+const takezoScoutAfterDialog=[
+  ['dash','偵察小隊まで、こんなところに……。'],
+  ['yuno','ここはまだ、たけぞ村の外だ。ここまで海賊が来ているなら――'],
+  ['suzu','まさか、たけぞ村はもう……？'],
+  ['hero','急ごう！'],
+  ['narrator','一行は海岸沿いの道を駆け抜け、たけぞ村へ急いだ。']
 ];
 
 const takezoArrivalDialog=[
@@ -422,7 +433,7 @@ function hudTop(){
 function saveGame(){
   if(scene==='title'||scene==='cutscene'||scene==='battle'||scene==='shop'||scene==='sarubibiShop')return;
 
-  if(['world','road2','cave','route3','sarubieTown','sarubibiTown','takezoRoute'].includes(scene)){
+  if(['world','road2','cave','route3','sarubieTown','sarubibiTown','takezoTravel','takezoRoute'].includes(scene)){
     lastFieldScene=scene;
   }
 
@@ -440,6 +451,9 @@ function saveGame(){
     sarubibiQuestStarted,
     yunoJoined,
     takezoIntroDone,
+    takezoScoutDefeated,
+    takezoScoutAlive:takezoScout.alive,
+    takezoTravelHero:{x:takezoTravelHero.x,y:takezoTravelHero.y},
     takezoHero:{x:takezoHero.x,y:takezoHero.y},
     takezoMobs:takezoMobs.map(m=>({id:m.id,alive:m.alive,x:m.x,y:m.y})),
     dash:{x:dash.x,y:dash.y},
@@ -485,10 +499,12 @@ function loadGame(){
     sarubibiQuestStarted=!!d.sarubibiQuestStarted;
     yunoJoined=!!d.yunoJoined;
     takezoIntroDone=!!d.takezoIntroDone;
+    takezoScoutDefeated=!!d.takezoScoutDefeated;
+    if(typeof d.takezoScoutAlive==='boolean')takezoScout.alive=d.takezoScoutAlive;
 
     const apply=(obj,s)=>{if(s){if(Number.isFinite(s.x))obj.x=s.x;if(Number.isFinite(s.y))obj.y=s.y;}};
     apply(dash,d.dash);apply(hero,d.hero);apply(caveHero,d.caveHero);apply(route3Hero,d.route3Hero);
-    apply(townHero,d.townHero);apply(sarubibiHero,d.sarubibiHero);apply(takezoHero,d.takezoHero);
+    apply(townHero,d.townHero);apply(sarubibiHero,d.sarubibiHero);apply(takezoTravelHero,d.takezoTravelHero);apply(takezoHero,d.takezoHero);
 
     restoreList(monsters,d.monsters);
     restoreList(caveMobs,d.caveMobs);
@@ -504,7 +520,8 @@ function loadGame(){
       sarubieArrival:'sarubieTown',
       sarubieRitual:'route3',
       sarubibiArrival:'sarubibiTown',
-      takezoDeparture:'takezoRoute',
+      takezoDeparture:'takezoTravel',
+      takezoScoutAfter:'takezoTravel',
       takezoArrival:'takezoRoute',
       takezoRelief:'takezoRoute',
       end:lastFieldScene
@@ -1477,6 +1494,14 @@ function finishBattle(){
     flashTimer=3.0;return;
   }
 
+  if(battle && battle.monsterId===450){
+    takezoScout.alive=false;takezoScoutDefeated=true;
+    const expGain=32,goldGain=24;
+    progress.gold+=goldGain;const leveled=gainExp(expGain);saveProgress();
+    battle=null;scene='takezoScoutAfter';dialogIndex=0;touchUI.classList.add('hidden');
+    saveGame();return;
+  }
+
   if(battle && battle.monsterId>=400){
     const mon=takezoMobs.find(m=>m.id===battle.monsterId);
     if(mon)mon.alive=false;
@@ -2118,6 +2143,28 @@ function enemiesDefeated(){
 
 
 
+
+function startTakezoScoutBattle(){
+  const ss=suzumaruStats(),ys=yunoStats();
+  const enemies=[
+    {name:'海賊ネコ偵察兵',kind:'pirateCat',hp:64,maxHP:64},
+    {name:'海賊イヌ偵察兵',kind:'pirateDog',hp:55,maxHP:55},
+    {name:'海賊タヌキ偵察兵',kind:'pirateTanuki',hp:58,maxHP:58}
+  ];
+  battle={
+    heroHP:progress.maxHP,heroMP:progress.maxMP,
+    suzuHP:ss.maxHP,suzuMaxHP:ss.maxHP,suzuMP:ss.maxMP,suzuMaxMP:ss.maxMP,
+    yunoHP:ys.maxHP,yunoMaxHP:ys.maxHP,yunoMP:ys.maxMP,yunoMaxMP:ys.maxMP,
+    regenTurns:0,hasteTarget:null,evadeTarget:null,evadeAllTurns:0,
+    enemies,enemyHP:64,enemyMaxHP:64,
+    monsterId:450,enemyName:'海賊偵察小隊',enemyKind:'pirateCat',
+    turn:'player',defending:false
+  };
+  damagePopups=[];battleMenu='main';battleActor='hero';
+  battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択'};
+  battleMessage='海賊団の偵察小隊に見つかった！';
+  scene='battle';touchUI.classList.add('hidden');
+}
 function startTakezoBattle(mon){
   const ss=suzumaruStats(),ys=yunoStats();
   const piratePool=[
@@ -2428,6 +2475,57 @@ function drawTakezoDeparture(){
   const item=takezoDepartureDialog[Math.min(dialogIndex,takezoDepartureDialog.length-1)];
   drawDialog(item[0],item[1]);
 }
+
+function drawTakezoTravel(){
+  camera.x=Math.max(0,Math.min(1450-W,takezoTravelHero.x-W*.43));camera.y=0;
+  ctx.save();ctx.translate(-camera.x,0);
+  const sky=ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#9fdaea');sky.addColorStop(1,'#d9e9bd');
+  ctx.fillStyle=sky;ctx.fillRect(0,0,1450,H);
+
+  // Sea on the north side and grassy coast.
+  rect(0,0,1450,175,'#66afd0');
+  for(let x=0;x<1450;x+=100){
+    ctx.strokeStyle='rgba(240,252,255,.55)';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(x,145+(x%3)*6);ctx.lineTo(x+65,150+(x%3)*6);ctx.stroke();
+  }
+  rect(0,175,1450,365,'#83b77b');
+
+  // North-northeast route: visually climbs up/right.
+  ctx.fillStyle='#c5b483';ctx.beginPath();
+  ctx.moveTo(70,500);ctx.lineTo(1370,220);ctx.lineTo(1440,315);ctx.lineTo(95,540);ctx.closePath();ctx.fill();
+
+  // Low shrubs and rocks make it feel like a distinct travel map.
+  for(let x=120;x<1370;x+=145){
+    ellipse(x,205+(x%4)*52,24,13,'#6d9d6d');
+    ellipse(x+34,212+(x%5)*43,19,11,'#769f72');
+  }
+  for(const p of [[360,400],[720,330],[980,265],[1290,215]])ellipse(p[0],p[1],18,10,'#8b9386');
+
+  if(takezoScout.alive){
+    drawPirateAnimal(takezoScout.x,takezoScout.y,'pirateCat',1.05);
+    drawPirateAnimal(takezoScout.x+52,takezoScout.y+22,'pirateDog',.92);
+    drawPirateAnimal(takezoScout.x-48,takezoScout.y+30,'pirateTanuki',.9);
+  }
+
+  drawHeroFox(takezoTravelHero.x,takezoTravelHero.y,1.1);
+  drawSuzumaru(takezoTravelHero.x-44,takezoTravelHero.y+18,.98);
+  drawDashmiu(takezoTravelHero.x-84,takezoTravelHero.y+28,.9);
+  drawYuno(takezoTravelHero.x-124,takezoTravelHero.y+34,.91);
+  ctx.restore();
+
+  const ht=hudTop();ctx.fillStyle='rgba(10,28,48,.88)';ctx.fillRect(18,ht,405,46);
+  text('目的：北北東のたけぞ村へ向かう',35,ht+23,16);
+}
+function drawTakezoScoutAfter(){
+  const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#9fdaea');sky.addColorStop(1,'#d9e9bd');
+  ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);rect(0,225,W,315,'#83b77b');
+  ctx.fillStyle='#c5b483';ctx.beginPath();ctx.moveTo(0,480);ctx.lineTo(W,260);ctx.lineTo(W,380);ctx.lineTo(0,540);ctx.closePath();ctx.fill();
+  drawHeroFox(250,375,1.14);drawSuzumaru(360,380,1.04);drawDashmiu(465,388,.95);drawYuno(570,380,1.06);
+  const item=takezoScoutAfterDialog[Math.min(dialogIndex,takezoScoutAfterDialog.length-1)];
+  drawDialog(item[0],item[1]);
+}
+
 function drawTakezoArrival(){
   drawTakezoVillageGate();
   // defensive clash in the distance
@@ -2474,7 +2572,7 @@ function drawTakezoRelief(){
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);
   drawHeroFox(300,270,1.55);drawSuzumaru(420,275,1.45);drawDashmiu(540,282,1.3);drawYuno(655,275,1.4);
-  text('Ver.0.27 ここまで',480,105,40,'center');
+  text('Ver.0.31 ここまで',480,105,40,'center');
   text('たけぞ村の先行部隊を撃退！',480,365,22,'center','#d8efff');
   text('次は：第2陣を迎え撃つ準備',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
@@ -2535,6 +2633,23 @@ function update(dt){
       scene='sarubieArrival';
       dialogIndex=0;
       touchUI.classList.add('hidden');
+    }
+  } else if(scene==='takezoTravel'){
+    let dx=0,dy=0;
+    if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;
+    if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;
+    dx+=touchVector.x;dy+=touchVector.y;
+    const l=Math.hypot(dx,dy);
+    if(l>.05){
+      dx/=Math.max(1,l);dy/=Math.max(1,l);
+      takezoTravelHero.x+=dx*takezoTravelHero.speed*dt;takezoTravelHero.y+=dy*takezoTravelHero.speed*dt;
+    }
+    takezoTravelHero.x=Math.max(80,Math.min(1380,takezoTravelHero.x));
+    takezoTravelHero.y=Math.max(210,Math.min(520,takezoTravelHero.y));
+    if(takezoScout.alive && Math.hypot(takezoTravelHero.x-takezoScout.x,takezoTravelHero.y-takezoScout.y)<72){
+      startTakezoScoutBattle();
+    }else if(!takezoScout.alive && takezoTravelHero.x>1320){
+      scene='takezoArrival';dialogIndex=0;touchUI.classList.add('hidden');
     }
   } else if(scene==='takezoRoute'){
     // Defensive repair for old/partial saves: no living squad can remain off the road.
@@ -2662,7 +2777,7 @@ function update(dt){
         }
         else if(battle.turn==='win')finishBattle();
         else if(battle.turn==='run'){
-          scene=(battle&&battle.monsterId>=400)?'takezoRoute':'road2';
+          scene=(battle&&battle.monsterId===450)?'takezoTravel':(battle&&battle.monsterId>=400)?'takezoRoute':'road2';
           touchUI.classList.remove('hidden');
           battle=null;
           flashText='戦闘から離脱した';
@@ -2770,6 +2885,17 @@ function pressAction(){
   if(scene==='takezoDeparture'){
     dialogIndex++;
     if(dialogIndex>=takezoDepartureDialog.length){
+      scene='takezoTravel';dialogIndex=0;
+      takezoTravelHero.x=180;takezoTravelHero.y=470;
+      takezoScout.alive=!takezoScoutDefeated;
+      touchUI.classList.remove('hidden');
+      flashText='北北東へ進み、たけぞ村を目指そう';flashTimer=2.0;
+    }
+    return;
+  }
+  if(scene==='takezoScoutAfter'){
+    dialogIndex++;
+    if(dialogIndex>=takezoScoutAfterDialog.length){
       scene='takezoArrival';dialogIndex=0;
     }
     return;
@@ -2851,7 +2977,7 @@ function pressAction(){
     return;
   }
 
-  if(scene==='world' || scene==='road2' || scene==='route3' || scene==='cave' || scene==='takezoRoute'){
+  if(scene==='world' || scene==='road2' || scene==='route3' || scene==='cave' || scene==='takezoTravel' || scene==='takezoRoute'){
     openFieldMenu(scene);
     return;
   }
@@ -2882,6 +3008,8 @@ function frame(now){
   else if(scene==='tsukipopoReveal')drawTsukipopoReveal();
   else if(scene==='sarubibiResolve')drawSarubibiResolve();
   else if(scene==='takezoDeparture')drawTakezoDeparture();
+  else if(scene==='takezoTravel')drawTakezoTravel();
+  else if(scene==='takezoScoutAfter')drawTakezoScoutAfter();
   else if(scene==='takezoArrival')drawTakezoArrival();
   else if(scene==='takezoRoute')drawTakezoRoute();
   else if(scene==='takezoRelief')drawTakezoRelief();
@@ -2892,7 +3020,7 @@ function frame(now){
   else if(scene==='sarubieRitual')drawSarubieRitual();
   else if(scene==='cave')drawCave();
   else drawEnd();
-  if(flashTimer>0 && ['title','road2','world','cave','route3','sarubieTown','shop','sarubibiTown','sarubibiShop','nightTrail','takezoRoute'].includes(scene)){
+  if(flashTimer>0 && ['title','road2','world','cave','route3','sarubieTown','shop','sarubibiTown','sarubibiShop','nightTrail','takezoTravel','takezoRoute'].includes(scene)){
     ctx.fillStyle='rgba(0,0,0,.58)';ctx.fillRect(305,85,350,58);text(flashText,480,114,20,'center');
   }
   requestAnimationFrame(frame);
@@ -3011,7 +3139,7 @@ canvas.addEventListener('pointerdown',e=>{
         }
       }
     }
-  } else if(scene!=='world'&&scene!=='road2'&&scene!=='route3'&&scene!=='sarubieTown'&&scene!=='shop'&&scene!=='cave'&&scene!=='sarubibiTown'&&scene!=='sarubibiShop'&&scene!=='nightTrail'&&scene!=='takezoRoute') pressAction();
+  } else if(scene!=='world'&&scene!=='road2'&&scene!=='route3'&&scene!=='sarubieTown'&&scene!=='shop'&&scene!=='cave'&&scene!=='sarubibiTown'&&scene!=='sarubibiShop'&&scene!=='nightTrail'&&scene!=='takezoTravel'&&scene!=='takezoRoute') pressAction();
 });
 let lastActionAt=0;
 function triggerActionButton(e){

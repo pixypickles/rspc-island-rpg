@@ -713,6 +713,36 @@ const pirateCaptainAfterDialog=[
 ['narrator','海賊旗が下ろされ、島を覆っていた戦いは終わりへ向かい始めた――。']
 ];
 
+const endingDialog=[
+['narrator','海賊船が水平線の向こうへ消えていく。ぶりふぉ村の氷壁には、久しぶりに静かな風が吹いていた。'],
+['dash','……本当に帰っていったね。'],
+['suzu','腹減った。勝った後くらい、でかい飯にしようぜ。'],
+['yuno','賛成。作戦会議より平和な相談だ。'],
+['gyou','たけぞ村のみんなにも伝えてくる。今度は守るためじゃなく、祝いに集まろう。'],
+['hero','うん。みんなで帰ろう。'],
+['narrator','その夜、五つの村から料理と灯りが集まり、島じゅうを巻き込んだ宴が開かれた。'],
+['narrator','土も、風も、水も、氷も、炎も。違う力は、争うためではなく島を守るために重なった。'],
+['narrator','そして、ぴくるすたちの旅はひとまず終わる。――けれど、火山の奥ではまだ何かが眠っているらしい。']
+];
+
+const dragonIntroDialog=[
+['narrator','海賊との戦いが終わった後。火山の麓で、地面を揺らす低い咆哮が聞こえた。'],
+['suzu','……クマの声じゃないな、これ。'],
+['yuno','古い話では、この火山には島ができる前からドラゴンが棲んでいるらしい。'],
+['gyou','戦いに行く必要はない。もう島は平和なんだからな。'],
+['dash','でも、腕試しなら……ちょっと気になる。'],
+['hero','準備してから行こう。これは戦争じゃなくて、私たちの挑戦だ。'],
+['narrator','クリア後モード「火山の古竜」が解放された！']
+];
+
+function startPostDragonBattle(){
+  const lv=Math.max(1,progress.level||1),hp=1050+Math.max(0,lv-15)*35;
+  battle={heroHP:progress.maxHP,heroMP:progress.maxMP,enemyHP:hp,enemyMaxHP:hp,enemyName:'火山の古竜',enemyKind:'dragon',monsterId:950,turn:'player',defending:false,bossPhase:1,bossTurn:0};
+  const ss=suzumaruStats(),ys=yunoStats(),gs=gyouStats();
+  Object.assign(battle,{suzuMaxHP:ss.maxHP,suzuHP:ss.maxHP,suzuMaxMP:ss.maxMP,suzuMP:ss.maxMP,yunoMaxHP:ys.maxHP,yunoHP:ys.maxHP,yunoMaxMP:ys.maxMP,yunoMP:ys.maxMP,gyouMaxHP:gs.maxHP,gyouHP:gs.maxHP,gyouMaxMP:gs.maxMP,gyouMP:gs.maxMP});
+  damagePopups=[];battleMenu='main';battleActor='hero';battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
+  battleMessage='火山の古竜が目を覚ました！';scene='battle';touchUI.classList.add('hidden');
+}
 const gyouTrainingDialog=[
   ['narrator','準備を進めていると、たけぞ村の老村長がジュウを呼び止めた。'],
   ['elder','ジュウ。守るというのは、ただ硬くなることではない。'],
@@ -940,7 +970,7 @@ function loadGame(){
       gyouJoin:'gyouJoin',
       finalPrep:'finalPrep',
       finalPrepFree:'finalPrepFree',
-      yunoCombo:'yunoCombo',volcanoBearQuest:'volcanoBearQuest',finalBearField:'finalBearField',volcanoBearAfter:'volcanoBearAfter',finalEve:'finalEve',finalEveFree:'finalEveFree',finalLaunch:'finalLaunch',finalBattleGround:'finalBattleGround',finalBalloon:'finalBalloon',pirateCaptainIntro:'pirateCaptainIntro',pirateCaptainAfter:'pirateCaptainAfter',
+      yunoCombo:'yunoCombo',volcanoBearQuest:'volcanoBearQuest',finalBearField:'finalBearField',volcanoBearAfter:'volcanoBearAfter',finalEve:'finalEve',finalEveFree:'finalEveFree',finalLaunch:'finalLaunch',finalBattleGround:'finalBattleGround',finalBalloon:'finalBalloon',pirateCaptainIntro:'pirateCaptainIntro',pirateCaptainAfter:'pirateCaptainAfter',ending:'ending',dragonIntro:'dragonIntro',postDragonClear:'postDragonClear',
       gyouTraining:'gyouTraining',
       finalWeapon:'finalWeapon',
       end:lastFieldScene
@@ -1619,9 +1649,18 @@ function drawBattle(){
   }else if(battle.monsterId===900){
     const vice=battle.enemies&&battle.enemies[0], cap=battle.enemies&&battle.enemies[1];
     // 副船長：シロクマ。太いヘアバンド＋大斧。
-    if(vice&&vice.hp>0){ctx.save();ctx.translate(650,245);ellipse(0,72,48,11,'rgba(0,0,0,.22)');ellipse(0,-18,32,30,'#f2f3ed');ellipse(-25,-34,11,11,'#e7e9e4');ellipse(25,-34,11,11,'#e7e9e4');ellipse(0,-11,16,12,'#d9ddd8');ellipse(0,-8,5,4,'#34383c');rect(-34,-39,68,13,'#c94848');rect(-34,8,68,72,'#53677b');ctx.strokeStyle='#d4d7d8';ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(40,-5);ctx.lineTo(72,75);ctx.stroke();ctx.fillStyle='#9ba2a5';ctx.beginPath();ctx.moveTo(58,-8);ctx.lineTo(92,8);ctx.lineTo(76,38);ctx.lineTo(45,20);ctx.closePath();ctx.fill();text(`副船長 ${vice.hp}/${vice.maxHP}`,0,-78,16,'center','#5b2020',900);ctx.restore();}
+    if(vice&&vice.hp>0){ctx.save();ctx.translate(650,245);ellipse(0,72,48,11,'rgba(0,0,0,.22)');ellipse(0,-18,32,30,'#f2f3ed');ellipse(-25,-34,11,11,'#e7e9e4');ellipse(25,-34,11,11,'#e7e9e4');ellipse(0,-11,16,12,'#d9ddd8');ellipse(0,-8,5,4,'#34383c');rect(-34,-39,68,13,'#c94848');rect(-34,8,68,72,'#d97832');ctx.strokeStyle='#d4d7d8';ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(40,-5);ctx.lineTo(72,75);ctx.stroke();ctx.fillStyle='#9ba2a5';ctx.beginPath();ctx.moveTo(58,-8);ctx.lineTo(92,8);ctx.lineTo(76,38);ctx.lineTo(45,20);ctx.closePath();ctx.fill();text(`副船長 ${vice.hp}/${vice.maxHP}`,0,-78,16,'center','#5b2020',900);ctx.restore();}
     // 船長：ペンギン。後方指揮型で自分用の回復薬を持つ。
-    if(cap&&cap.hp>0){ctx.save();ctx.translate(785,240);ellipse(0,72,44,11,'rgba(0,0,0,.22)');ellipse(0,-18,30,31,'#202b39');ellipse(0,-13,20,23,'#f4f4eb');ctx.fillStyle='#e2a53a';ctx.beginPath();ctx.moveTo(-7,-9);ctx.lineTo(9,-9);ctx.lineTo(1,0);ctx.closePath();ctx.fill();rect(-34,8,68,72,'#26364b');ctx.fillStyle='#243245';ctx.beginPath();ctx.moveTo(-48,-40);ctx.lineTo(48,-40);ctx.lineTo(28,-60);ctx.lineTo(-26,-60);ctx.closePath();ctx.fill();ctx.strokeStyle='#d8dce1';ctx.lineWidth=7;ctx.beginPath();ctx.arc(48,25,38,-1.1,1.1);ctx.stroke();text(`海賊船長 ${cap.hp}/${cap.maxHP}`,0,-82,16,'center','#5b2020',900);ctx.restore();}
+    if(cap&&cap.hp>0){ctx.save();ctx.translate(785,240);ellipse(0,72,44,11,'rgba(0,0,0,.22)');ellipse(0,-18,30,31,'#202b39');ellipse(0,-13,20,23,'#f4f4eb');ctx.fillStyle='#e2a53a';ctx.beginPath();ctx.moveTo(-7,-9);ctx.lineTo(9,-9);ctx.lineTo(1,0);ctx.closePath();ctx.fill();rect(-34,8,68,72,'#d97832');ctx.fillStyle='#243245';ctx.beginPath();ctx.moveTo(-48,-40);ctx.lineTo(48,-40);ctx.lineTo(28,-60);ctx.lineTo(-26,-60);ctx.closePath();ctx.fill();ctx.strokeStyle='#d8dce1';ctx.lineWidth=7;ctx.beginPath();ctx.arc(48,25,38,-1.1,1.1);ctx.stroke();text(`海賊船長 ${cap.hp}/${cap.maxHP}`,0,-82,16,'center','#5b2020',900);ctx.restore();}
+  }else if(battle.monsterId===950){
+    ctx.save();ctx.translate(735,240);
+    ellipse(0,80,88,14,'rgba(0,0,0,.24)');
+    ellipse(0,12,68,52,'#8e3e2f');ellipse(42,-30,40,34,'#a94b35');
+    ctx.fillStyle='#d38a45';ctx.beginPath();ctx.moveTo(65,-38);ctx.lineTo(108,-23);ctx.lineTo(69,-10);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#6e2f29';ctx.beginPath();ctx.moveTo(-45,-4);ctx.lineTo(-112,-65);ctx.lineTo(-92,25);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(-25,-8);ctx.lineTo(5,-88);ctx.lineTo(28,-8);ctx.closePath();ctx.fill();
+    ellipse(54,-37,5,5,'#f5d56b');rect(-38,50,22,62,'#74342d');rect(24,50,22,62,'#74342d');
+    text(`火山の古竜 ${battle.enemyHP}/${battle.enemyMaxHP}`,0,-105,18,'center','#6b241e',900);ctx.restore();
   }else if(battle.enemies){
     const live=livingEnemies();
     const spots=[
@@ -2080,6 +2119,20 @@ function pirateCaptainTurn(){
   battle.turn='enemyResult';battleCooldown=1.3;
 }
 function enemyTurn(){
+  if(battle&&battle.monsterId===950){
+    battle.bossTurn=(battle.bossTurn||0)+1;
+    const all=battle.bossTurn%3===0, base=all?30:24;
+    const targets=all?['hero','suzu','yuno','gyou']:[['hero','suzu','yuno','gyou'][Math.floor(Math.random()*4)]];
+    let lines=[];
+    for(const t of targets){let d=base+Math.floor(Math.random()*9);
+      if(t==='hero'){d=Math.max(1,d-Math.floor(progress.def/5));battle.heroHP=Math.max(1,battle.heroHP-d);}
+      else if(t==='suzu'){d=Math.max(1,d-Math.floor(suzumaruStats().def/5));battle.suzuHP=Math.max(1,battle.suzuHP-d);}
+      else if(t==='yuno'){d=Math.max(1,d-Math.floor(yunoStats().def/5));battle.yunoHP=Math.max(1,battle.yunoHP-d);}
+      else {d=Math.max(1,d-Math.floor(gyouStats().def/5));battle.gyouHP=Math.max(1,battle.gyouHP-d);}
+      lines.push(`${t==='hero'?heroName:t==='suzu'?'スズマル':t==='yuno'?'ユーノ':'ジュウ'} -${d}`);}
+    battleMessage=`火山の古竜の${all?'「灼熱の咆哮」':'爪撃'}！ ${lines.join(' / ')}`;
+    battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};battle.turn='enemyResult';battleCooldown=1.3;return;
+  }
   if(battle&&battle.monsterId===900){pirateCaptainTurn();return;}
   const ss=suzumaruStats(),ys=yunoStats(),gs=gyouStats();ensureGyouBattle();
   const attackers=battle.enemies?livingEnemies():[{name:battle.enemyName||'敵',kind:battle.enemyKind||''}];
@@ -2159,6 +2212,9 @@ function finishBattle(){
     battle=null;scene='volcanoBearAfter';dialogIndex=0;touchUI.classList.add('hidden');saveGame();return;
   }
 
+  if(battle && battle.monsterId===950){
+    progress.postDragonDefeated=true;saveProgress();battle=null;scene='postDragonClear';dialogIndex=0;saveGame();return;
+  }
   if(battle && battle.monsterId===900){
     progress.pirateCaptainDefeated=true;saveProgress();
     battle=null;scene='pirateCaptainAfter';dialogIndex=0;touchUI.classList.add('hidden');saveGame();return;
@@ -3582,14 +3638,14 @@ function drawPirateCaptainIntro(){
   rect(600,305,300,125,'#7a694e');rect(615,320,270,95,'#aa956b');rect(855,205,7,115,'#403832');
   ctx.fillStyle='#8b3030';ctx.beginPath();ctx.moveTo(862,210);ctx.lineTo(930,235);ctx.lineTo(862,255);ctx.fill();
   drawHeroFox(110,415,.72);drawSuzumaru(195,420,.77);drawDashmiu(280,427,.70);drawYuno(365,420,.77);drawGyou(450,420,.79);
-  ellipse(700,286,27,27,'#f2f3ed');ellipse(679,269,9,9,'#e4e7e2');ellipse(721,269,9,9,'#e4e7e2');rect(668,272,64,12,'#c94848');rect(670,310,60,90,'#53677b');
-  ellipse(790,286,27,28,'#202b39');ellipse(790,291,18,20,'#f4f4eb');ctx.fillStyle='#e2a53a';ctx.beginPath();ctx.moveTo(783,286);ctx.lineTo(798,286);ctx.lineTo(790,294);ctx.closePath();ctx.fill();rect(760,310,60,90,'#26364b');rect(748,250,84,14,'#243245');
+  ellipse(700,286,27,27,'#f2f3ed');ellipse(679,269,9,9,'#e4e7e2');ellipse(721,269,9,9,'#e4e7e2');rect(668,272,64,12,'#c94848');rect(670,310,60,90,'#d97832');
+  ellipse(790,286,27,28,'#202b39');ellipse(790,291,18,20,'#f4f4eb');ctx.fillStyle='#e2a53a';ctx.beginPath();ctx.moveTo(783,286);ctx.lineTo(798,286);ctx.lineTo(790,294);ctx.closePath();ctx.fill();rect(760,310,60,90,'#d97832');rect(748,250,84,14,'#243245');
   const item=pirateCaptainIntroDialog[Math.min(dialogIndex,pirateCaptainIntroDialog.length-1)];drawDialog(item[0],item[1]);
 }
 function drawPirateCaptainAfter(){
   ctx.fillStyle='#b4c7c8';ctx.fillRect(0,0,W,H);rect(0,190,W,90,'#6f98a5');rect(0,280,W,260,'#9a8b67');
   drawHeroFox(120,420,.72);drawSuzumaru(210,425,.77);drawDashmiu(300,432,.70);drawYuno(390,425,.77);drawGyou(480,425,.79);
-  rect(700,320,58,90,'#26364b');ellipse(729,302,25,27,'#b98b6b');ctx.strokeStyle='#d8dce1';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(770,405);ctx.lineTo(825,430);ctx.stroke();
+  rect(700,320,58,90,'#d97832');ellipse(729,302,25,27,'#202b39');ellipse(729,307,17,19,'#f4f4eb');ctx.strokeStyle='#d8dce1';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(770,405);ctx.lineTo(825,430);ctx.stroke();
   const item=pirateCaptainAfterDialog[Math.min(dialogIndex,pirateCaptainAfterDialog.length-1)];drawDialog(item[0],item[1]);
 }
 
@@ -3620,13 +3676,32 @@ function drawFinalBalloon(){
   const item=finalBalloonDialog[Math.min(dialogIndex,finalBalloonDialog.length-1)];drawDialog(item[0],item[1]);
 }
 
+function drawEnding(){
+  ctx.fillStyle='#17253d';ctx.fillRect(0,0,W,H);rect(0,330,W,210,'#6f8b62');
+  for(let i=0;i<12;i++)ellipse(55+i*82,300+(i%2)*16,18,18,'#f2c86d');
+  drawHeroFox(255,390,.82);drawSuzumaru(365,395,.90);drawDashmiu(475,402,.82);drawYuno(585,395,.89);drawGyou(695,395,.91);
+  text('海賊との戦いが終わった夜',480,95,30,'center','#f4e5b7');
+  const item=endingDialog[Math.min(dialogIndex,endingDialog.length-1)];drawDialog(item[0],item[1]);
+}
+function drawDragonIntro(){
+  ctx.fillStyle='#7f6c62';ctx.fillRect(0,0,W,H);ctx.fillStyle='#343036';ctx.beginPath();ctx.moveTo(0,340);ctx.lineTo(480,85);ctx.lineTo(960,340);ctx.fill();rect(0,340,W,200,'#594b3f');
+  drawHeroFox(250,415,.72);drawSuzumaru(345,420,.77);drawDashmiu(440,427,.70);drawYuno(535,420,.77);drawGyou(630,420,.79);
+  const item=dragonIntroDialog[Math.min(dialogIndex,dragonIntroDialog.length-1)];drawDialog(item[0],item[1]);
+}
+function drawPostDragonClear(){
+  ctx.fillStyle='#241d2a';ctx.fillRect(0,0,W,H);text('火山の古竜　撃破！',480,160,42,'center','#f0c47a');
+  text('島の伝説に、新しい一頁が加わった。',480,235,24,'center','#e8e2da');
+  text('A / Enter でクリア後メニューへ',480,350,19,'center','#b9cad8');
+}
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);
-  drawHeroFox(245,270,1.15);drawSuzumaru(355,275,1.25);drawDashmiu(465,282,1.12);drawYuno(575,275,1.22);drawGyou(685,275,1.25);
-  text('Ver.0.54 ここまで',480,105,40,'center');
-  text('海賊船長を撃破！ 最終決戦に勝利した！',480,365,26,'center','#d8efff');
-  text('次は：戦いの後・エンディング',480,407,23,'center','#d8efff');
-  text('タップ / Enter でタイトルへ',480,466,20,'center','#9fc8df');
+  drawHeroFox(245,250,1.05);drawSuzumaru(355,255,1.14);drawDashmiu(465,262,1.03);drawYuno(575,255,1.12);drawGyou(685,255,1.14);
+  text('THE END',480,82,44,'center','#f1e2ad');
+  text('りすぺく島に平和が戻った',480,350,26,'center','#d8efff');
+  if(progress.gameCleared){
+    outlineRect(255,392,450,52,'#ffe2b8','#d8893b',2);text(progress.postDragonDefeated?'火山の古竜（再戦）':'クリア後：火山の古竜',480,418,19,'center','#60371f');
+    text('A / Enter：古竜へ　　画面下：タイトルへ',480,468,16,'center','#9fc8df');
+  }else text('A / Enter でタイトルへ',480,455,20,'center','#9fc8df');
 }
 function update(dt){
   if(scene==='finalBearField'){
@@ -4141,9 +4216,16 @@ function pressAction(){
   }
   if(scene==='pirateCaptainAfter'){
     dialogIndex++;
-    if(dialogIndex>=pirateCaptainAfterDialog.length){scene='end';dialogIndex=0;saveGame();}
+    if(dialogIndex>=pirateCaptainAfterDialog.length){scene='ending';dialogIndex=0;saveGame();}
     return;
   }
+  if(scene==='ending'){
+    dialogIndex++;if(dialogIndex>=endingDialog.length){progress.gameCleared=true;saveProgress();scene='end';dialogIndex=0;saveGame();}return;
+  }
+  if(scene==='dragonIntro'){
+    dialogIndex++;if(dialogIndex>=dragonIntroDialog.length){startPostDragonBattle();}return;
+  }
+  if(scene==='postDragonClear'){scene='end';dialogIndex=0;return;}
   if(scene==='sarubibiArrival'){
     dialogIndex++;
     if(dialogIndex>=sarubibiArrivalDialog.length){
@@ -4216,7 +4298,8 @@ function pressAction(){
     battleAttack('attack');return;
   }
   if(scene==='end'){
-    scene='title';dash.x=1960;dash.y=180;hero.x=360;hero.y=300;villageEventStarted=false;monsters.forEach(m=>{m.alive=true;m.respawn=0;m.x=m.spawnX;m.y=m.spawnY;});
+    if(progress.gameCleared){scene='dragonIntro';dialogIndex=0;touchUI.classList.add('hidden');}
+    else {scene='title';dash.x=1960;dash.y=180;hero.x=360;hero.y=300;villageEventStarted=false;monsters.forEach(m=>{m.alive=true;m.respawn=0;m.x=m.spawnX;m.y=m.spawnY;});}
   }
 }
 
@@ -4270,6 +4353,9 @@ function frame(now){
   else if(scene==='finalBalloon')drawFinalBalloon();
   else if(scene==='pirateCaptainIntro')drawPirateCaptainIntro();
   else if(scene==='pirateCaptainAfter')drawPirateCaptainAfter();
+  else if(scene==='ending')drawEnding();
+  else if(scene==='dragonIntro')drawDragonIntro();
+  else if(scene==='postDragonClear')drawPostDragonClear();
   else if(scene==='sarubibiTown')drawSarubibiTown();
   else if(scene==='sarubibiShop')drawSarubibiShop();
   else if(scene==='sarubieTown')drawSarubieTown();

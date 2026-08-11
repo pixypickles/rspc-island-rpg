@@ -100,6 +100,7 @@ let sarubibiShopType='weapon';
 
 
 let menuPage = 'status';
+let menuCharacter='hero';
 let menuReturnScene='road2';
 
 const prologue = [
@@ -572,7 +573,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.22.1',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.22.2',480,121,18,'center','#eef8ff');
   const canContinue=hasSaveGame();
   const y1=350,y2=406;
   outlineRect(300,y1,360,46,titleSelection===0?'#e8f7fb':'rgba(15,35,60,.78)','#73b9d6',2);
@@ -1728,55 +1729,121 @@ function startCaveBossBattle(){
 
 function drawMenu(){
   ctx.fillStyle='#0e1d37';ctx.fillRect(0,0,W,H);
-  text('メニュー',55,45,30,'left','#ffffff',800);
-  // Tabs
-  outlineRect(55,80,180,52,menuPage==='status'?'#dff4fb':'#31455f','#78b9d7',2);
-  text('ステータス',145,106,19,'center',menuPage==='status'?'#17324a':'#d9e6ef');
-  outlineRect(250,80,180,52,menuPage==='skill'?'#dff4fb':'#31455f','#78b9d7',2);
-  text('スキル習得',340,106,19,'center',menuPage==='skill'?'#17324a':'#d9e6ef');
-  outlineRect(445,80,180,52,'#31455f','#78b9d7',2);text('もちもの',535,106,19,'center','#8ea5b7');
-  outlineRect(640,80,180,52,'#31455f','#78b9d7',2);text('とじる',730,106,19,'center','#d9e6ef');
+  text('メニュー',55,42,28,'left','#ffffff',800);
+
+  // tabs
+  outlineRect(45,72,165,46,menuPage==='status'?'#dff4fb':'#31455f','#78b9d7',2);
+  text('ステータス',127,95,17,'center',menuPage==='status'?'#17324a':'#d9e6ef');
+  outlineRect(225,72,165,46,menuPage==='skill'?'#dff4fb':'#31455f','#78b9d7',2);
+  text('スキル',307,95,17,'center',menuPage==='skill'?'#17324a':'#d9e6ef');
+  outlineRect(405,72,165,46,'#31455f','#78b9d7',2);
+  text('もちもの',487,95,17,'center','#8ea5b7');
+  outlineRect(750,72,165,46,'#31455f','#78b9d7',2);
+  text('とじる',832,95,17,'center','#d9e6ef');
 
   if(menuPage==='status'){
-    drawHeroFox(190,290,2.0);
-    text(heroName,340,185,30,'left');
-    text(`Lv. ${progress.level}`,340,230,22,'left');
-    text(`EXP ${progress.exp} / ${expNeeded(progress.level)}`,340,267,20,'left');
-    text(`SP ${progress.sp}`,340,305,22,'left','#ffe8a8');
-    text(`HP ${progress.maxHP}`,340,350,20,'left');
-    text(`MP ${progress.maxMP}`,500,350,20,'left');
-    text(`こうげき ${progress.atk}`,340,388,20,'left');
-    text(`ぼうぎょ ${progress.def}`,500,388,20,'left');
-    text('戦闘終了後はHP・MPが全回復します。',340,447,17,'left','#bad9e7');
-  }else{
-    text(`スキルポイント：${progress.sp}`,65,170,23,'left','#ffe8a8');
-    outlineRect(65,215,390,92,progress.learned.iceSlash?'#536777':'#e7f5fb','#78b9d7',2);
-    text('氷結斬り',90,242,22,'left',progress.learned.iceSlash?'#c5d0d8':'#18334a');
-    text('MP7 / 氷をまとった小剣で強く斬る',90,277,16,'left',progress.learned.iceSlash?'#c5d0d8':'#3d5d73');
-    text(progress.learned.iceSlash?'習得済み':'必要SP：1',420,261,17,'right',progress.learned.iceSlash?'#c5d0d8':'#b66f31');
-    outlineRect(65,330,390,80,'#536777','#64798a',2);
-    text('いやしの水・強化',90,355,20,'left','#aebbc5');
-    text('まだ先のスキル',90,385,15,'left','#91a0ab');
-    text('※ 今回はスキルツリーの土台だけ実装',65,460,16,'left','#a9c5d2');
+    // Hero panel
+    outlineRect(45,140,410,315,'#182b48','#6ea9c8',2);
+    drawHeroFox(120,280,1.55);
+    text(heroName,205,180,24,'left','#ffffff');
+    text(`Lv.${progress.level}`,205,215,18,'left','#d9edf7');
+    text(`EXP ${progress.exp}/${expNeeded(progress.level)}`,205,245,15,'left','#bcd7e5');
+    text(`HP ${progress.maxHP}`,205,282,18,'left','#ffffff');
+    text(`MP ${progress.maxMP}`,325,282,18,'left','#ffffff');
+    text(`こうげき ${progress.atk}`,205,320,17,'left','#ffffff');
+    text(`ぼうぎょ ${progress.def}`,325,320,17,'left','#ffffff');
+    text(`SP ${progress.sp}`,205,360,18,'left','#ffe7a5');
+    text('水・氷 / 短剣・小剣',205,400,15,'left','#bcd7e5');
+
+    // Suzumaru panel once he has joined / is active
+    if(suzumaruActive || suzumaruJoined){
+      outlineRect(505,140,410,315,'#182b48','#b56a5a',2);
+      drawSuzumaru(580,280,1.55);
+      text('スズマル',665,180,24,'left','#ffffff');
+      text('火 / 剣・大剣',665,215,16,'left','#f4c9bc');
+      text('HP 56',665,260,18,'left','#ffffff');
+      text('MP 22',785,260,18,'left','#ffffff');
+      text('単体攻撃が得意',665,305,17,'left','#ffd4c4');
+      text('全体攻撃も習得可能',665,340,15,'left','#d9c5be');
+      text(`単体系 Lv.${progress.suzuSkills?.single||0}`,665,382,16,'left','#ffffff');
+      text(`全体系 Lv.${progress.suzuSkills?.all||0}`,665,414,16,'left','#ffffff');
+    }else{
+      outlineRect(505,140,410,315,'#14243c','#44556d',2);
+      text('仲間はまだいません',710,295,19,'center','#8295a8');
+    }
+
+    text('戦闘終了後はHP・MPが全回復します。',480,492,15,'center','#bad9e7');
+  }else if(menuPage==='skill'){
+    // character switch buttons
+    outlineRect(75,140,320,42,menuCharacter==='hero'?'#dff4fb':'#31455f','#78b9d7',2);
+    text(heroName,235,161,17,'center',menuCharacter==='hero'?'#17324a':'#d9e6ef');
+    const suzuEnabled=(suzumaruActive||suzumaruJoined);
+    outlineRect(565,140,320,42,menuCharacter==='suzu'?'#ffe1d7':'#31455f',suzuEnabled?'#c76e58':'#536273',2);
+    text(suzuEnabled?'スズマル':'スズマル（未加入）',725,161,17,'center',
+         suzuEnabled?(menuCharacter==='suzu'?'#65291f':'#e9d8d3'):'#758596');
+
+    if(menuCharacter==='suzu' && suzuEnabled){
+      text('スキルポイントは正式なスキルツリー実装時に使用',70,215,15,'left','#d9c5be');
+
+      outlineRect(70,245,385,82,'#ffe0d6','#c95f48',2);
+      text('単体攻撃系',95,270,20,'left','#6b231d');
+      text('火炎斬り → 高威力の単体技へ',95,300,15,'left','#8d4a3b');
+      text(`現在：Lv.${progress.suzuSkills?.single||0}`,420,285,15,'right','#6b231d');
+
+      outlineRect(505,245,385,82,'#ffe8dc','#d47b55',2);
+      text('全体攻撃系',530,270,20,'left','#703525');
+      text('火走り → 広範囲技へ',530,300,15,'left','#8d5847');
+      text(`現在：Lv.${progress.suzuSkills?.all||0}`,855,285,15,'right','#703525');
+
+      text('スズマルは全体系も伸ばせますが、単体系の伸び幅が大きい設計です。',480,375,16,'center','#ffd5c6');
+      text('現在の主力：火炎斬り / 火走り',480,420,17,'center','#ffffff');
+    }else{
+      text(`スキルポイント：${progress.sp}`,65,215,22,'left','#ffe8a8');
+
+      outlineRect(65,250,390,82,progress.learned.iceSlash?'#536777':'#e7f5fb','#78b9d7',2);
+      text('氷結斬り',90,277,21,'left',progress.learned.iceSlash?'#c5d0d8':'#18334a');
+      text('MP7 / 氷をまとった小剣で強く斬る',90,307,15,'left',progress.learned.iceSlash?'#c5d0d8':'#3d5d73');
+      text(progress.learned.iceSlash?'習得済み':'必要SP：1',420,292,16,'right',progress.learned.iceSlash?'#c5d0d8':'#b66f31');
+
+      outlineRect(505,250,390,82,'#dceffc','#6aaacb',2);
+      text('氷晶波',530,277,21,'left','#18334a');
+      text('MP8 / 敵全体へ氷属性攻撃',530,307,15,'left','#3d5d73');
+
+      text('主人公は回復・単体・全体を扱える万能型。',480,405,16,'center','#c8e1ec');
+    }
   }
 }
 function menuTap(x,y){
-  if(y>=80 && y<=140){
-    if(x<240)menuPage='status';
-    else if(x<440)menuPage='skill';
-    else if(x>=640){scene=menuReturnScene||'road2';touchUI.classList.remove('hidden');}
-    return;
+  if(y>=70 && y<=125){
+    if(x<215){menuPage='status';return;}
+    if(x<400){menuPage='skill';return;}
+    if(x>=740){
+      scene=menuReturnScene||'road2';
+      touchUI.classList.remove('hidden');
+      return;
+    }
   }
-  if(menuPage==='skill' && y>=215 && y<=307 && x>=65 && x<=455){
+
+  if(menuPage==='skill' && y>=135 && y<=190){
+    if(x<450){menuCharacter='hero';return;}
+    if(x>510 && (suzumaruActive||suzumaruJoined)){menuCharacter='suzu';return;}
+  }
+
+  // Hero's currently implemented learnable skill
+  if(menuPage==='skill' && menuCharacter==='hero' && y>=245 && y<=332 && x>=65 && x<=455){
     if(!progress.learned.iceSlash && progress.sp>=1){
-      progress.sp--;progress.learned.iceSlash=true;saveProgress();
-      flashText='「氷結斬り」を習得した！';flashTimer=2.3;
+      progress.sp--;
+      progress.learned.iceSlash=true;
+      saveProgress();
+      saveGame();
+      flashText='「氷結斬り」を習得した！';
+      flashTimer=2.3;
     }
   }
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.22.1 ここまで',480,112,42,'center');
+  text('Ver.0.22.2 ここまで',480,112,42,'center');
   text(`さるびび村の問題を解決し、ユーノの協力を得よう。`,480,365,22,'center','#d8efff');
   text('次は：夜の尾行とツキポポの秘密へ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
@@ -1967,6 +2034,7 @@ function openFieldMenu(fromScene){
   menuReturnScene=fromScene||scene;
   scene='menu';
   menuPage='status';
+  menuCharacter='hero';
   touchUI.classList.add('hidden');
 }
 function pressAction(){

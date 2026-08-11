@@ -581,7 +581,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.23',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.23.1',480,121,18,'center','#eef8ff');
   const canContinue=hasSaveGame();
   const y1=350,y2=406;
   outlineRect(300,y1,360,46,titleSelection===0?'#e8f7fb':'rgba(15,35,60,.78)','#73b9d6',2);
@@ -852,9 +852,9 @@ function isSuzumaruTurn(){
 function drawBattle(){
   const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#9cd8ef');g.addColorStop(1,'#b9dc8c');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
   if((battle.monsterId===99||battle.monsterId>=200) && suzumaruActive){
-    const py=(window.innerHeight||540)<500?285:255;
-    drawHeroFox(185,py,1.65);
-    drawSuzumaru(335,py+3,1.65);
+    const py=(window.innerHeight||540)<500?285:270;
+    drawHeroFox(165,py,1.55);
+    drawSuzumaru(305,py+3,1.55);
   }else{
     drawHeroFox(250,260,2.0);
   }
@@ -878,32 +878,37 @@ function drawBattle(){
   drawBattleFx();
   drawDamagePopups();
   // status
-  ctx.fillStyle='rgba(14,30,55,.9)';
+  // Compact party roster: leaves the enemy side completely unobstructed.
+  // This area is intentionally sized for up to four party members.
   const bt=battleTop();
+  const partyRows=[];
+  partyRows.push({name:heroName,hp:battle.heroHP,maxHP:progress.maxHP,mp:battle.heroMP,maxMP:progress.maxMP});
   if((battle.monsterId===99||battle.monsterId>=200) && suzumaruActive){
-    ctx.fillRect(35,bt,500,126);
-
-    text(heroName,58,bt+30,20,'left','#ffffff',800);
-    text(`HP ${battle.heroHP}/${progress.maxHP}`,58,bt+61,17,'left','#ffffff');
-    text(`MP ${battle.heroMP}/${progress.maxMP}`,260,bt+61,17,'left','#ffffff');
-
-    text('スズマル',58,bt+93,20,'left','#ffffff',800);
-    text(`Lv.${progress.suzuLevel||progress.level}`,260,bt+93,15,'left','#f6e6df');
-    text(`HP ${battle.suzuHP}/${battle.suzuMaxHP}`,58,bt+120,17,'left','#ffffff');
-    text(`MP ${battle.suzuMP}/${battle.suzuMaxMP}`,260,bt+120,17,'left','#ffffff');
-  }else{
-    ctx.fillRect(45,bt,390,100);
-    text(heroName,68,bt+30,20,'left','#ffffff',800);
-    text(`HP ${battle.heroHP}/${progress.maxHP}`,68,bt+64,17,'left','#ffffff');
-    text(`MP ${battle.heroMP}/${progress.maxMP}`,260,bt+64,17,'left','#ffffff');
+    partyRows.push({name:'スズマル',hp:battle.suzuHP,maxHP:battle.suzuMaxHP,mp:battle.suzuMP,maxMP:battle.suzuMaxMP});
   }
-  ctx.fillRect(585,bt,330,100);
+
+  const rosterX=32, rosterY=bt, rosterW=350;
+  const rowH=43;
+  const rosterH=18+partyRows.length*rowH;
+  ctx.fillStyle='rgba(14,30,55,.90)';
+  ctx.fillRect(rosterX,rosterY,rosterW,rosterH);
+
+  partyRows.forEach((m,i)=>{
+    const y=rosterY+26+i*rowH;
+    text(m.name,rosterX+18,y,16,'left','#ffffff',800);
+    text(`HP ${m.hp}/${m.maxHP}`,rosterX+130,y,14,'left','#ffffff');
+    text(`MP ${m.mp}/${m.maxMP}`,rosterX+248,y,14,'left','#ffffff');
+  });
+
+  // Enemy information gets its own small panel above/right of the monsters.
+  ctx.fillStyle='rgba(255,255,255,.88)';
+  ctx.fillRect(650,bt,265,72);
   if(battle.enemies){
-    text(`敵グループ　残り ${livingEnemies().length}体`,610,bt+30,20);
-    text('各敵のHPは敵の下に表示',610,bt+64,15);
+    text(`敵グループ　残り ${livingEnemies().length}体`,670,bt+28,17,'left','#243245',800);
+    text('HPは各敵の下に表示',670,bt+54,13,'left','#52606f');
   }else{
-    text(battle.enemyName,610,bt+30,22);
-    text(`HP ${Math.max(0,battle.enemyHP)}/${battle.enemyMaxHP}`,610,bt+64,19);
+    text(battle.enemyName,670,bt+28,18,'left','#243245',800);
+    text(`HP ${Math.max(0,battle.enemyHP)}/${battle.enemyMaxHP}`,670,bt+54,15,'left','#52606f');
   }
   // battle phase
   if(battle.turn==='enemy'){
@@ -1123,7 +1128,7 @@ function enemyTurn(){
     let target='hero';
     if(isPartyBattle() && Math.random()<0.4)target='suzu';
 
-    const enemySpots=[[650,205],[760,205],[600,285],[710,295],[820,285]];
+    const enemySpots=[[650,235],[770,235],[610,310],[720,320],[830,310]];
     const ep=enemySpots[Math.min(idx,enemySpots.length-1)]||[700,245];
     addDamagePopup('攻撃！',ep[0],ep[1]-45,'#ffcf9d');
 
@@ -1660,7 +1665,7 @@ function damageEnemy(amount,index=0){
   // map target to battle positions
   const allLiveBefore=battle.enemies.filter(e=>e.hp>0 || e===target);
   const idx=battle.enemies.indexOf(target);
-  const spots=[[650,205],[760,205],[600,285],[710,295],[820,285]];
+  const spots=[[650,235],[770,235],[610,310],[720,320],[830,310]];
   const p=spots[Math.min(idx,spots.length-1)]||[700,245];
   addDamagePopup(`${actual}`,p[0],p[1]-30,'#ffffff');
   syncPrimaryEnemy();
@@ -1674,7 +1679,7 @@ function damageAllEnemies(base){
     return [actual];
   }
   const damages=[];
-  const spots=[[650,205],[760,205],[600,285],[710,295],[820,285]];
+  const spots=[[650,235],[770,235],[610,310],[720,320],[830,310]];
   battle.enemies.forEach((e,idx)=>{
     if(e.hp<=0)return;
     const dmg=Math.max(1,base+Math.floor(Math.random()*5)-2);
@@ -1776,14 +1781,13 @@ function drawMenu(){
       outlineRect(505,140,410,315,'#182b48','#b56a5a',2);
       drawSuzumaru(580,280,1.55);
       text('スズマル',665,180,24,'left','#ffffff');
-      text(`Lv.${progress.suzuLevel||progress.level}`,665,210,17,'left','#ffffff');
-      text('火 / 剣・大剣',665,235,16,'left','#f4c9bc');
-      text('HP 56',665,275,18,'left','#ffffff');
-      text('MP 22',785,275,18,'left','#ffffff');
-      text('単体攻撃が得意',665,315,17,'left','#ffd4c4');
-      text('全体攻撃も習得可能',665,345,15,'left','#d9c5be');
-      text(`単体系 Lv.${progress.suzuSkills?.single||0}`,665,385,16,'left','#ffffff');
-      text(`全体系 Lv.${progress.suzuSkills?.all||0}`,665,415,16,'left','#ffffff');
+      text('火 / 剣・大剣',665,215,16,'left','#f4c9bc');
+      text('HP 56',665,260,18,'left','#ffffff');
+      text('MP 22',785,260,18,'left','#ffffff');
+      text('単体攻撃が得意',665,305,17,'left','#ffd4c4');
+      text('全体攻撃も習得可能',665,340,15,'left','#d9c5be');
+      text(`単体系 Lv.${progress.suzuSkills?.single||0}`,665,382,16,'left','#ffffff');
+      text(`全体系 Lv.${progress.suzuSkills?.all||0}`,665,414,16,'left','#ffffff');
     }else{
       outlineRect(505,140,410,315,'#14243c','#44556d',2);
       text('仲間はまだいません',710,295,19,'center','#8295a8');
@@ -1860,7 +1864,7 @@ function menuTap(x,y){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.23 ここまで',480,112,42,'center');
+  text('Ver.0.23.1 ここまで',480,112,42,'center');
   text(`さるびび村の問題を解決し、ユーノの協力を得よう。`,480,365,22,'center','#d8efff');
   text('次は：夜の尾行とツキポポの秘密へ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');

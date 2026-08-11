@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
   <meta name="theme-color" content="#101b36" />
-  <title>りすぺく島RPG Ver.0.22</title>
+  <title>りすぺく島RPG Ver.0.22.1</title>
   <link rel="stylesheet" href="styles.css" />
 
 
@@ -31,6 +31,21 @@ canvas{
     max-width:100vw !important;
     margin:0 auto !important;
   }
+}
+</style>
+
+<style>
+#actionBtn{
+  pointer-events:auto !important;
+  touch-action:manipulation !important;
+  z-index:30 !important;
+}
+#touchUI{
+  pointer-events:none;
+}
+#touchUI #stickBase,
+#touchUI #actionBtn{
+  pointer-events:auto;
 }
 </style>
 </head>
@@ -60,6 +75,6 @@ canvas{
       <button id="actionBtn" aria-label="決定">A</button>
     </div>
   </main>
-  <script src="game.js?v=022"></script>
+  <script src="game.js?v=0221"></script>
 </body>
 </html>

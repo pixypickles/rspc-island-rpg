@@ -572,7 +572,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.22',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.22.1',480,121,18,'center','#eef8ff');
   const canContinue=hasSaveGame();
   const y1=350,y2=406;
   outlineRect(300,y1,360,46,titleSelection===0?'#e8f7fb':'rgba(15,35,60,.78)','#73b9d6',2);
@@ -891,7 +891,9 @@ function drawBattle(){
   }
   // battle phase
   if(battle.turn==='enemy'){
-    text('敵のターン',480,300,20,'center','#ffb1a4');
+    text('敵が攻撃してくる！',480,300,20,'center','#ffb1a4');
+  }else if(battle.turn==='enemyResult'){
+    text('敵の攻撃',480,300,20,'center','#ff9d91');
   }else if(battle.turn==='player'){
     const who=isSuzumaruTurn()?'スズマル':heroName;
     text(`${who}のターン`,480,300,18,'center','#e8f6ff');
@@ -1011,9 +1013,8 @@ function usePotion(target){
     battleMessage='スズマルは回復薬を使った！ HPが25回復！';
     setBattleFx('heal',335,258);
     battleChoiceText.suzu='回復薬';
-    battleActor='hero';
-    battle.turn='enemy';battleCooldown=.65;battleMenu='main';
-    battleMessage+='　→ 敵の反撃！';
+    battleMessage+='　→ 敵の番';
+    beginEnemyTurn();
   }else{
     battle.heroHP=Math.min(progress.maxHP,battle.heroHP+25);
     battleMessage=`${heroName}は回復薬を使った！ HPが25回復！`;
@@ -1027,6 +1028,14 @@ function usePotion(target){
   }
 }
 
+
+function beginEnemyTurn(){
+  if(!battle)return;
+  battleActor='hero';
+  battle.turn='enemy';
+  battleCooldown=.55;
+  battleMenu='main';
+}
 function suzuAction(mode='attack'){
   if(!battle || battle.turn!=='player' || battleActor!=='suzu')return;
   let dmg=0;
@@ -1039,7 +1048,7 @@ function suzuAction(mode='attack'){
     battleMessage=`スズマルの「火走り」！ ${summary}`;
     setBattleFx('fire');addDamagePopup('FIRE ALL',700,155,'#ffb093');battleChoiceText.suzu='火走り';
     if(enemiesDefeated()){battle.turn='win';battleCooldown=1.0;return;}
-    battleActor='hero';battle.turn='enemy';battleCooldown=.65;battleMenu='main';battleMessage+='　→ 敵の反撃！';return;
+    battleMessage+='　→ 敵の番';beginEnemyTurn();return;
   }
   if(mode==='fire'){
     if(battle.suzuMP<5){battleMessage='MPが足りない！';return;}
@@ -1054,21 +1063,15 @@ function suzuAction(mode='attack'){
   if(enemiesDefeated()){
     battle.turn='win';battleCooldown=1.0;return;
   }
-  battleActor='hero';
-  battle.turn='enemy';
-  battleCooldown=.65;
-  battleMenu='main';
-  battleMessage+='　→ 敵の反撃！';
+  battleMessage+='　→ 敵の番';
+  beginEnemyTurn();
 }
 function battleDefend(){
   if(!battle || battle.turn!=='player')return;
   if(isSuzumaruTurn()){
     battleMessage='スズマルは身を守っている！　→ 敵の反撃！';
     battleChoiceText.suzu='ぼうぎょ';
-    battleActor='hero';
-    battle.turn='enemy';
-    battleCooldown=.65;
-    battleMenu='main';
+    beginEnemyTurn();
     return;
   }
   battle.defending=true;
@@ -1089,53 +1092,53 @@ function battleRun(){
   battle.turn='run';battleCooldown=.6;battleMenu='main';
 }
 function enemyTurn(){
-  addDamagePopup('ENEMY TURN',480,175,'#ffb2a5');
-  const attackers=battle.enemies?livingEnemies():[null];
-  let totalHero=0,totalSuzu=0;
+  const attackers=battle.enemies?livingEnemies():[{
+    name:battle.enemyName||'敵',
+    kind:battle.enemyKind||''
+  }];
 
-  for(const foe of attackers){
+  let totalHero=0,totalSuzu=0;
+  const attackLines=[];
+
+  attackers.forEach((foe,idx)=>{
     let dmg=Math.max(1,4+Math.floor(Math.random()*4)-Math.floor(progress.def/4));
     if(battle.defending)dmg=Math.max(1,Math.floor(dmg/2));
 
-    if(isPartyBattle() && Math.random()<0.4){
+    let target='hero';
+    if(isPartyBattle() && Math.random()<0.4)target='suzu';
+
+    const enemySpots=[[650,205],[760,205],[600,285],[710,295],[820,285]];
+    const ep=enemySpots[Math.min(idx,enemySpots.length-1)]||[700,245];
+    addDamagePopup('攻撃！',ep[0],ep[1]-45,'#ffcf9d');
+
+    if(target==='suzu'){
       battle.suzuHP=Math.max(1,battle.suzuHP-dmg);
       totalSuzu+=dmg;
+      attackLines.push(`${foe.name} → スズマル ${dmg}`);
     }else{
       battle.heroHP=Math.max(1,battle.heroHP-dmg);
       totalHero+=dmg;
+      attackLines.push(`${foe.name} → ${heroName} ${dmg}`);
     }
-  }
+  });
 
   battle.defending=false;
 
   if(totalHero>0){
-    addDamagePopup(`-${totalHero}`,185,215,'#ff8b7d');
+    addDamagePopup(`-${totalHero}`,185,215,'#ff796e');
     setBattleFx('hitHero',185,255);
   }
   if(totalSuzu>0){
-    addDamagePopup(`-${totalSuzu}`,335,215,'#ff8b7d');
+    addDamagePopup(`-${totalSuzu}`,335,215,'#ff796e');
     setBattleFx('hitSuzu',335,258);
   }
 
-  if(battle.monsterId===99){
-    if(totalHero>0 && totalSuzu>0)
-      battleMessage=`マグマガメの攻撃！ ${heroName}に${totalHero}、スズマルに${totalSuzu}ダメージ！`;
-    else if(totalSuzu>0)
-      battleMessage=`マグマガメの攻撃！ スズマルに${totalSuzu}ダメージ！`;
-    else
-      battleMessage=`マグマガメの攻撃！ ${heroName}に${totalHero}ダメージ！`;
-  }else if(battle.enemies){
-    const parts=[];
-    if(totalHero>0)parts.push(`${heroName} ${totalHero}`);
-    if(totalSuzu>0)parts.push(`スズマル ${totalSuzu}`);
-    battleMessage=`敵グループの攻撃！ ${parts.join(' / ')} ダメージ！`;
-  }else{
-    battleMessage=`${battle.enemyName}のこうげき！ ${totalHero}ダメージ！`;
-  }
-
+  // Keep this text on screen during enemyResult.
+  battleMessage=`敵の攻撃！ ${attackLines.join(' / ')}`;
   if(isPartyBattle())battleChoiceText={hero:'未選択',suzu:'未選択'};
-  battle.turn='player';
-  battleActor='hero';
+
+  battle.turn='enemyResult';
+  battleCooldown=1.15;
 }
 function finishBattle(){
   if(battle && battle.monsterId===99){
@@ -1773,7 +1776,7 @@ function menuTap(x,y){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.22 ここまで',480,112,42,'center');
+  text('Ver.0.22.1 ここまで',480,112,42,'center');
   text(`さるびび村の問題を解決し、ユーノの協力を得よう。`,480,365,22,'center','#d8efff');
   text('次は：夜の尾行とツキポポの秘密へ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
@@ -1920,6 +1923,12 @@ function update(dt){
       battleCooldown-=dt;
       if(battleCooldown<=0){
         if(battle.turn==='enemy')enemyTurn();
+        else if(battle.turn==='enemyResult'){
+          battle.turn='player';
+          battleActor='hero';
+          battleMenu='main';
+          battleCooldown=0;
+        }
         else if(battle.turn==='win')finishBattle();
         else if(battle.turn==='run'){
           scene='road2';
@@ -1953,6 +1962,13 @@ function confirmName(){
 nameOk.addEventListener('click',confirmName);
 nameInput.addEventListener('keydown',e=>{if(e.key==='Enter')confirmName();});
 
+
+function openFieldMenu(fromScene){
+  menuReturnScene=fromScene||scene;
+  scene='menu';
+  menuPage='status';
+  touchUI.classList.add('hidden');
+}
 function pressAction(){
   if(!nameOverlay.classList.contains('hidden'))return;
   if(scene==='title'){
@@ -2050,10 +2066,7 @@ function pressAction(){
   }
 
   if(scene==='world' || scene==='road2' || scene==='route3' || scene==='cave'){
-    menuReturnScene=scene;
-    scene='menu';
-    menuPage='status';
-    touchUI.classList.add('hidden');
+    openFieldMenu(scene);
     return;
   }
   if(scene==='battle'){
@@ -2181,11 +2194,23 @@ canvas.addEventListener('pointerdown',e=>{
     }
   } else if(scene!=='world'&&scene!=='road2'&&scene!=='route3'&&scene!=='sarubieTown'&&scene!=='shop'&&scene!=='cave'&&scene!=='sarubibiTown'&&scene!=='sarubibiShop') pressAction();
 });
-actionBtn.addEventListener('pointerdown',e=>{
-  e.preventDefault();
-  e.stopPropagation();
+let lastActionAt=0;
+function triggerActionButton(e){
+  if(e){e.preventDefault();e.stopPropagation();}
+  const now=performance.now();
+  if(now-lastActionAt<220)return;
+  lastActionAt=now;
+
+  // Route3 gets a direct path because some mobile browsers were
+  // dropping the general handler on this field.
+  if(scene==='route3'){
+    openFieldMenu('route3');
+    return;
+  }
   pressAction();
-});
+}
+actionBtn.addEventListener('pointerup',triggerActionButton);
+actionBtn.addEventListener('click',triggerActionButton);
 
 let touchVector={x:0,y:0},stickPointer=null;
 function stickMove(e){

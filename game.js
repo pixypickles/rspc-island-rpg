@@ -592,6 +592,42 @@ const volcanoBearAfterDialog=[
   ['narrator','最終作戦の成功率が上がった！']
 ];
 
+
+const finalEveDialog=[
+  ['narrator','火山から戻った一行を、たけぞ村に集まった各村の代表たちが迎えた。'],
+  ['suzu','爆炎大剣は問題ない。ドリアングマ相手でも十分通った。'],
+  ['gyou','火山の斜面も安全になった。これで作戦中に魔物に邪魔される心配もない。'],
+  ['yuno','じゃあ、最後に全員で作戦を確認しよう。'],
+  ['narrator','ユーノは島の地図を広げ、ぶりふぉ村、火山、海岸を順番に指した。'],
+  ['yuno','地上部隊は土壁を中心に防衛。海賊本隊を島の内側へ進ませない。'],
+  ['yuno','火と水の村人は霧を作る。風の村人は、その霧を海賊本陣へ流して視界を奪う。'],
+  ['dash','霧の中なら、向こうからこっちの動きも見えにくい。'],
+  ['yuno','うん。そして火山側では、あの斜面を使う。'],
+  ['suzu','この前、お前が斜面と風ばっかり見てた理由が、ようやく全部つながったな。'],
+  ['yuno','ぶりふぉ村の氷壁前に集まっている海賊を、上から一気に崩す。岩を使うか、氷の道を使うかは現地の状態で決める。'],
+  ['hero','僕たちは気球だね。'],
+  ['yuno','そう。スズマルの火で浮かせて、私の風で操縦する。霧に紛れて海賊本陣の上空へ入る。'],
+  ['gyou','地上の大軍は皆に任せて、俺たちは船長を直接叩く。'],
+  ['dash','島中のみんなで道を作って、最後のところだけ僕たちが突っ込むわけだ。'],
+  ['yuno','船長を止めれば、この戦いを終わらせられる。'],
+  ['narrator','作戦の確認が終わると、村人たちはそれぞれの持ち場へ散っていった。'],
+  ['elder','出る前に、装備も薬も確かめておけ。戦が始まってから忘れ物に気づいても遅いぞ。'],
+  ['suzu','だそうだ。最後にちゃんと準備していこう。'],
+  ['narrator','決戦前の自由時間になった。準備ができたらユーノに声をかけよう。']
+];
+
+const finalLaunchDialog=[
+  ['yuno','準備はできた？'],
+  ['hero','うん。行こう。'],
+  ['narrator','その時、ぶりふぉ村から新たな伝令が駆け込んできた。'],
+  ['messenger','氷壁に亀裂が！ 海賊本隊も動き始めています！'],
+  ['suzu','……時間切れだな。'],
+  ['gyou','ここから先は、やるだけだ。'],
+  ['dash','みんな、絶対に戻ってこよう。'],
+  ['yuno','最終作戦を開始する。ぶりふぉ村へ！'],
+  ['narrator','島中の村人たちが、それぞれの持ち場へ走り出した――。']
+];
+
 const gyouTrainingDialog=[
   ['narrator','準備を進めていると、たけぞ村の老村長がジュウを呼び止めた。'],
   ['elder','ジュウ。守るというのは、ただ硬くなることではない。'],
@@ -681,7 +717,7 @@ function hudTop(){
 function saveGame(){
   if(scene==='title'||scene==='cutscene'||scene==='battle'||scene==='shop'||scene==='sarubibiShop')return;
 
-  if(['world','road2','cave','route3','sarubieTown','sarubibiTown','takezoTravel','takezoRoute','coastSurveyField','volcanoSurveyField','finalBearField'].includes(scene)){
+  if(['world','road2','cave','route3','sarubieTown','sarubibiTown','takezoTravel','takezoRoute','coastSurveyField','volcanoSurveyField','finalBearField','finalEveFree'].includes(scene)){
     lastFieldScene=scene;
   }
 
@@ -819,7 +855,7 @@ function loadGame(){
       gyouJoin:'gyouJoin',
       finalPrep:'finalPrep',
       finalPrepFree:'finalPrepFree',
-      yunoCombo:'yunoCombo',volcanoBearQuest:'volcanoBearQuest',finalBearField:'finalBearField',volcanoBearAfter:'volcanoBearAfter',
+      yunoCombo:'yunoCombo',volcanoBearQuest:'volcanoBearQuest',finalBearField:'finalBearField',volcanoBearAfter:'volcanoBearAfter',finalEve:'finalEve',finalEveFree:'finalEveFree',finalLaunch:'finalLaunch',
       gyouTraining:'gyouTraining',
       finalWeapon:'finalWeapon',
       end:lastFieldScene
@@ -1139,7 +1175,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.26',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.49',480,121,18,'center','#eef8ff');
   const canContinue=hasSaveGame();
   const y1=350,y2=406;
   outlineRect(300,y1,360,46,titleSelection===0?'#e8f7fb':'rgba(15,35,60,.78)','#73b9d6',2);
@@ -3308,6 +3344,33 @@ function drawFinalWeapon(){
   drawDialog(item[0],item[1]);
 }
 
+
+function drawFinalEve(){
+  ctx.fillStyle='#b8d1c7';ctx.fillRect(0,0,W,H);rect(0,320,W,220,'#879f70');
+  rect(225,250,510,82,'#74583d');rect(247,267,466,50,'#d6c79c');
+  // Map marks: village, volcano, coast and arrows.
+  ellipse(345,292,11,8,'#688e62');ellipse(480,292,12,9,'#666258');ellipse(620,292,11,8,'#609bb0');
+  ctx.strokeStyle='#7d6b52';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(360,292);ctx.lineTo(465,292);ctx.lineTo(605,292);ctx.stroke();
+  drawHeroFox(165,402,.86);drawSuzumaru(275,407,.92);drawDashmiu(380,415,.82);drawYuno(485,407,.92);drawGyou(595,407,.95);
+  const item=finalEveDialog[Math.min(dialogIndex,finalEveDialog.length-1)];drawDialog(item[0],item[1]);
+}
+function drawFinalEveFree(){
+  ctx.fillStyle='#bdd7cf';ctx.fillRect(0,0,W,H);rect(0,305,W,235,'#8ca574');
+  text('たけぞ村　決戦前の準備',480,72,30,'center','#17324a',800);
+  text('装備・回復薬・スキルを確認してから出撃できます',480,112,17,'center','#29485b');
+  drawHeroFox(145,250,.78);drawSuzumaru(245,255,.84);drawDashmiu(345,262,.75);drawYuno(445,255,.84);drawGyou(545,255,.87);
+  outlineRect(105,350,220,62,'#dff4fb','#71bad7',2);text('メニュー',215,381,20,'center','#17324a');
+  outlineRect(370,350,220,62,'#fff0cf','#c89d55',2);text('回復薬を補充',480,381,19,'center','#5a3c18');
+  outlineRect(635,350,220,62,'#e5ead0','#9c9a62',2);text('ユーノに話す',745,381,19,'center','#394126');
+  text(`回復薬 ${progress.potions||0}個　所持金 ${progress.gold||0}G`,480,455,17,'center','#213b4b');
+  text('ユーノに話すと最終決戦へ進みます',480,492,15,'center','#425b68');
+}
+function drawFinalLaunch(){
+  ctx.fillStyle='#aebfc2';ctx.fillRect(0,0,W,H);rect(0,320,W,220,'#7e956c');
+  drawHeroFox(165,405,.88);drawSuzumaru(275,410,.94);drawDashmiu(385,418,.84);drawYuno(495,410,.94);drawGyou(605,410,.97);
+  const item=finalLaunchDialog[Math.min(dialogIndex,finalLaunchDialog.length-1)];drawDialog(item[0],item[1]);
+}
+
 function drawGyouTraining(){
   ctx.fillStyle='#c6d4bb';ctx.fillRect(0,0,W,H);rect(0,330,W,210,'#8f9d6b');
   drawGyou(390,395,1.25);drawGyou(590,395,1.12);
@@ -3323,9 +3386,9 @@ function drawFinalPrepFree(){
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);
   drawHeroFox(245,270,1.15);drawSuzumaru(355,275,1.25);drawDashmiu(465,282,1.12);drawYuno(575,275,1.22);drawGyou(685,275,1.25);
-  text('Ver.0.39 ここまで',480,105,40,'center');
-  text('合体技を習得し、火山の安全も確保！',480,365,26,'center','#d8efff');
-  text('次は：残る決戦前準備・ぶりふぉ村へ',480,407,23,'center','#d8efff');
+  text('Ver.0.49 ここまで',480,105,40,'center');
+  text('決戦前の準備が整った！',480,365,26,'center','#d8efff');
+  text('次は：ぶりふぉ村・海賊との最終決戦',480,407,23,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,466,20,'center','#9fc8df');
 }
 function update(dt){
@@ -3804,7 +3867,21 @@ function pressAction(){
   if(scene==='volcanoBearAfter'){
     dialogIndex++;
     if(dialogIndex>=volcanoBearAfterDialog.length){
-      progress.volcanoBearCleared=true;saveProgress();scene='end';dialogIndex=0;saveGame();
+      progress.volcanoBearCleared=true;saveProgress();scene='finalEve';dialogIndex=0;saveGame();
+    }
+    return;
+  }
+  if(scene==='finalEve'){
+    dialogIndex++;
+    if(dialogIndex>=finalEveDialog.length){
+      scene='finalEveFree';dialogIndex=0;touchUI.classList.add('hidden');saveGame();
+    }
+    return;
+  }
+  if(scene==='finalLaunch'){
+    dialogIndex++;
+    if(dialogIndex>=finalLaunchDialog.length){
+      scene='end';dialogIndex=0;saveGame();
     }
     return;
   }
@@ -3867,6 +3944,10 @@ function pressAction(){
     return;
   }
 
+  if(scene==='finalEveFree'){
+    scene='finalLaunch';dialogIndex=0;saveGame();return;
+  }
+
   if(scene==='world' || scene==='road2' || scene==='route3' || scene==='cave' || scene==='takezoTravel' || scene==='takezoRoute' || scene==='coastSurveyField' || scene==='volcanoSurveyField' || scene==='finalBearField'){
     openFieldMenu(scene);
     return;
@@ -3923,6 +4004,9 @@ function frame(now){
   else if(scene==='volcanoBearQuest')drawVolcanoBearQuest();
   else if(scene==='finalBearField')drawFinalBearField();
   else if(scene==='volcanoBearAfter')drawVolcanoBearAfter();
+  else if(scene==='finalEve')drawFinalEve();
+  else if(scene==='finalEveFree')drawFinalEveFree();
+  else if(scene==='finalLaunch')drawFinalLaunch();
   else if(scene==='sarubibiTown')drawSarubibiTown();
   else if(scene==='sarubibiShop')drawSarubibiShop();
   else if(scene==='sarubieTown')drawSarubieTown();
@@ -3930,7 +4014,7 @@ function frame(now){
   else if(scene==='sarubieRitual')drawSarubieRitual();
   else if(scene==='cave')drawCave();
   else drawEnd();
-  if(flashTimer>0 && ['title','road2','world','cave','route3','sarubieTown','shop','sarubibiTown','sarubibiShop','nightTrail','takezoTravel','takezoRoute','coastSurveyField','volcanoSurveyField'].includes(scene)){
+  if(flashTimer>0 && ['title','road2','world','cave','route3','sarubieTown','shop','sarubibiTown','sarubibiShop','nightTrail','takezoTravel','takezoRoute','coastSurveyField','volcanoSurveyField','finalEveFree'].includes(scene)){
     ctx.fillStyle='rgba(0,0,0,.58)';ctx.fillRect(305,85,350,58);text(flashText,480,114,20,'center');
   }
   requestAnimationFrame(frame);
@@ -3968,6 +4052,24 @@ addEventListener('keydown',e=>{
 });
 addEventListener('keyup',e=>{keys[e.key]=false;});
 canvas.addEventListener('pointerdown',e=>{
+  if(scene==='finalEveFree'){
+    const r=canvas.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width*W;
+    const y=(e.clientY-r.top)/r.height*H;
+    if(y>=335&&y<=430){
+      if(x<345){openFieldMenu('finalEveFree');return;}
+      if(x<615){
+        const cost=25;
+        if((progress.gold||0)>=cost){
+          progress.gold-=cost;progress.potions=(progress.potions||0)+1;saveProgress();saveGame();
+          flashText='回復薬を1個補充した（25G）';flashTimer=1.5;
+        }else{flashText='お金が足りない';flashTimer=1.5;}
+        return;
+      }
+      scene='finalLaunch';dialogIndex=0;saveGame();return;
+    }
+    return;
+  }
   if(scene==='title'){
     const r=canvas.getBoundingClientRect();
     const y=(e.clientY-r.top)/r.height*H;

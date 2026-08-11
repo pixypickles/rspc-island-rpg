@@ -209,6 +209,9 @@ let takezoPrepStage=0; // 0 plan, 1 coast survey, 2 volcano survey, 3 constructi
 let secondWaveStage=0;
 let secondWaveHero={x:160,y:450,speed:205};
 
+let finalBear={id:472,x:1050,y:330,alive:true,name:'大ドリアングマ',kind:'durianBear',hp:165,maxHP:165};
+let finalBearHero={x:150,y:430,speed:205};
+
 
 let takezoWave=0;
 let takezoIntroDone=false;
@@ -548,6 +551,45 @@ const finalWeaponDialog=[
   ['smith','決戦が終わったら返せとは言わん。ちゃんと使い込め。']
 ];
 
+const yunoComboDialog=[
+  ['narrator','爆炎大剣を受け取ったあと、ユーノがぴくるすを呼び止めた。'],
+  ['yuno','ぴくるす、ちょっと試したいことがあるんだけど。'],
+  ['hero','試したいこと？'],
+  ['yuno','ぴくるすは水と氷を使える。私は風を使える。'],
+  ['yuno','雨と風が合わさると、台風になりますね。'],
+  ['dash','急に授業みたいになった。'],
+  ['yuno','つまり、別々に魔法を撃つより、二人で一つの流れを作ったほうが大きな力になるかもしれない。'],
+  ['hero','攻撃だけじゃなくて、回復にも？'],
+  ['yuno','うん。水の回復魔法を風で広げれば、全員を一気に癒せるはず。'],
+  ['narrator','二人は魔力のタイミングを合わせる練習を始めた。'],
+  ['yuno','今。風を送る！'],
+  ['hero','――いくよ！'],
+  ['narrator','水と風が渦を作り、広場いっぱいに涼しい霧が広がった。'],
+  ['yuno','できた。これなら実戦でも使える。'],
+  ['narrator','合体技「蒼風大癒」と「氷嵐大旋風」が使用可能になった！']
+];
+
+const volcanoBearQuestDialog=[
+  ['suzu','……なあ。せっかく新しい剣をもらったんだ。試し斬りしておきたい。'],
+  ['dash','試し斬りって、何を斬るの？'],
+  ['suzu','火山にドリアングマが残ってただろ。あいつなら相手に不足はない。'],
+  ['yuno','なるほど。ちょうどいいかも。'],
+  ['hero','ちょうどいい？'],
+  ['yuno','決戦では火山の斜面を使う。作戦中にドリアングマが暴れたら危ないから、先に安全を確保しておきたかったんだ。'],
+  ['gyou','剣の試し斬りと、作戦の邪魔になる魔物の排除を一緒にやるわけか。'],
+  ['suzu','決まりだな。爆炎大剣がどれくらいやれるか、俺も知っておきたい。'],
+  ['dash','クマからしたら、とんでもない話だけどね……。'],
+  ['narrator','決戦前任務「爆炎大剣の試し斬り」が始まった！']
+];
+
+const volcanoBearAfterDialog=[
+  ['narrator','強いドリアングマを退け、火山斜面の安全を確保した。'],
+  ['yuno','これで斜面を使う作戦中に魔物が飛び込んでくる心配は減った。'],
+  ['suzu','あとは海賊にぶつけるだけだな。'],
+  ['dash','言い方が豪快すぎるよ。'],
+  ['narrator','最終作戦の成功率が上がった！']
+];
+
 const gyouTrainingDialog=[
   ['narrator','準備を進めていると、たけぞ村の老村長がギョウを呼び止めた。'],
   ['elder','ギョウ。守るというのは、ただ硬くなることではない。'],
@@ -637,7 +679,7 @@ function hudTop(){
 function saveGame(){
   if(scene==='title'||scene==='cutscene'||scene==='battle'||scene==='shop'||scene==='sarubibiShop')return;
 
-  if(['world','road2','cave','route3','sarubieTown','sarubibiTown','takezoTravel','takezoRoute','coastSurveyField','volcanoSurveyField'].includes(scene)){
+  if(['world','road2','cave','route3','sarubieTown','sarubibiTown','takezoTravel','takezoRoute','coastSurveyField','volcanoSurveyField','finalBearField'].includes(scene)){
     lastFieldScene=scene;
   }
 
@@ -661,6 +703,7 @@ function saveGame(){
     coastSurveyHero:{x:coastSurveyHero.x,y:coastSurveyHero.y},
     volcanoSurveyHero:{x:volcanoSurveyHero.x,y:volcanoSurveyHero.y},
     volcanoSurveyMobs:volcanoSurveyMobs.map(m=>({id:m.id,alive:m.alive,x:m.x,y:m.y})),
+    finalBear:{alive:finalBear.alive,x:finalBear.x,y:finalBear.y},finalBearHero:{x:finalBearHero.x,y:finalBearHero.y},
     takezoScoutDefeated,
     takezoScoutAlive:takezoScout.alive,
     takezoTravelHero:{x:takezoTravelHero.x,y:takezoTravelHero.y},
@@ -715,7 +758,7 @@ function loadGame(){
 
     const apply=(obj,s)=>{if(s){if(Number.isFinite(s.x))obj.x=s.x;if(Number.isFinite(s.y))obj.y=s.y;}};
     apply(dash,d.dash);apply(hero,d.hero);apply(caveHero,d.caveHero);apply(route3Hero,d.route3Hero);
-    apply(townHero,d.townHero);apply(sarubibiHero,d.sarubibiHero);apply(takezoTravelHero,d.takezoTravelHero);apply(takezoHero,d.takezoHero);apply(coastSurveyHero,d.coastSurveyHero);apply(volcanoSurveyHero,d.volcanoSurveyHero);
+    apply(townHero,d.townHero);apply(sarubibiHero,d.sarubibiHero);apply(takezoTravelHero,d.takezoTravelHero);apply(takezoHero,d.takezoHero);apply(coastSurveyHero,d.coastSurveyHero);apply(volcanoSurveyHero,d.volcanoSurveyHero);apply(finalBearHero,d.finalBearHero);if(d.finalBear){if(typeof d.finalBear.alive==='boolean')finalBear.alive=d.finalBear.alive;}
 
     restoreList(monsters,d.monsters);
     restoreList(caveMobs,d.caveMobs);
@@ -747,6 +790,7 @@ function loadGame(){
       gyouJoin:'gyouJoin',
       finalPrep:'finalPrep',
       finalPrepFree:'finalPrepFree',
+      yunoCombo:'yunoCombo',volcanoBearQuest:'volcanoBearQuest',finalBearField:'finalBearField',volcanoBearAfter:'volcanoBearAfter',
       gyouTraining:'gyouTraining',
       finalWeapon:'finalWeapon',
       end:lastFieldScene
@@ -1469,7 +1513,7 @@ function drawBattle(){
         outlineRect(400,378,170,48,'#dff4fb','#71bad7',2);text('氷結斬り',485,402,14,'center','#17324a');
         outlineRect(580,378,170,48,'#d9f4ff','#62afd1',2);text('氷晶波 MP8',665,402,14,'center','#17324a');
         outlineRect(760,378,160,48,'#fff0d0','#d2a24d',2);text(`回復薬 x${progress.items.potion}`,840,402,13,'center','#5f4623');
-        if(yunoJoined && battle.monsterId>=400){
+        if(yunoJoined && progress.heroYunoComboUnlocked && battle.monsterId>=400){
           outlineRect(40,438,250,44,'#d8f2ed','#59aaa6',2);text('合体：蒼風大癒 MP12+12',165,460,12,'center','#174c4b');
           outlineRect(305,438,300,44,'#d8eef7','#5d9fbd',2);text('合体：氷嵐大旋風 MP12+12',455,460,12,'center','#173f57');
           outlineRect(620,438,300,44,'#dff4fb','#71bad7',2);text('もどる',770,460,15,'center','#17324a');
@@ -1622,6 +1666,7 @@ function suzuAction(mode='attack'){
 
 function heroYunoCombo(mode){
   if(!battle || battle.turn!=='player' || battleActor!=='hero' || !yunoJoined || battle.monsterId<400)return;
+  if(!progress.heroYunoComboUnlocked){battleMessage='ユーノとの合体技はまだ試していない！';return;}
   const ys=yunoStats();
   if(battle.heroMP<12 || battle.yunoMP<12){
     battleMessage='合体技に必要なMPが足りない！（二人ともMP12必要）';return;
@@ -1805,6 +1850,12 @@ function finishBattle(){
     battle=null;scene='volcanoSurveyField';touchUI.classList.remove('hidden');
     flashText=leveled?`レベルアップ！ Lv.${progress.level}`:`${mon?mon.name:'魔物'}を倒した！`;
     flashTimer=2.0;saveGame();return;
+  }
+
+  if(battle && battle.monsterId===472){
+    finalBear.alive=false;
+    progress.gold+=55;const leveled=gainExp(80);saveProgress();
+    battle=null;scene='volcanoBearAfter';dialogIndex=0;touchUI.classList.add('hidden');saveGame();return;
   }
 
   if(battle && battle.monsterId===450){
@@ -3088,6 +3139,37 @@ function drawFinalPrep(){
   const item=finalPrepDialog[Math.min(dialogIndex,finalPrepDialog.length-1)];drawDialog(item[0],item[1]);
 }
 
+function drawYunoCombo(){
+  ctx.fillStyle='#b9d8d4';ctx.fillRect(0,0,W,H);rect(0,320,W,220,'#8ca574');
+  drawHeroFox(310,400,.9);drawYuno(500,400,1.0);drawDashmiu(650,410,.82);
+  // Water/wind practice swirl.
+  ctx.strokeStyle='rgba(205,245,255,.75)';ctx.lineWidth=5;
+  for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(410,300,45+i*18,.2,Math.PI*1.65);ctx.stroke();}
+  const item=yunoComboDialog[Math.min(dialogIndex,yunoComboDialog.length-1)];drawDialog(item[0],item[1]);
+}
+function drawVolcanoBearQuest(){
+  ctx.fillStyle='#c7d6c1';ctx.fillRect(0,0,W,H);rect(0,320,W,220,'#8ca574');
+  drawHeroFox(205,405,.88);drawSuzumaru(315,410,.94);drawDashmiu(420,418,.84);drawYuno(520,410,.94);drawGyou(625,410,.97);
+  const item=volcanoBearQuestDialog[Math.min(dialogIndex,volcanoBearQuestDialog.length-1)];drawDialog(item[0],item[1]);
+}
+function drawFinalBearField(){
+  camera.x=Math.max(0,Math.min(1250-W,finalBearHero.x-W*.44));
+  ctx.save();ctx.translate(-camera.x,0);
+  const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#e5ad6c');gr.addColorStop(1,'#d6cf9b');ctx.fillStyle=gr;ctx.fillRect(0,0,1250,H);
+  rect(0,330,1250,210,'#778d62');
+  ctx.fillStyle='#666258';ctx.beginPath();ctx.moveTo(600,330);ctx.lineTo(1080,80);ctx.lineTo(1250,330);ctx.closePath();ctx.fill();
+  if(finalBear.alive)drawSurveyMonster(finalBear);
+  drawHeroFox(finalBearHero.x,finalBearHero.y,.92);drawYuno(finalBearHero.x-50,finalBearHero.y+15,.96);drawSuzumaru(finalBearHero.x-95,finalBearHero.y+22,.92);drawDashmiu(finalBearHero.x-135,finalBearHero.y+28,.82);drawGyou(finalBearHero.x-178,finalBearHero.y+28,.9);
+  ctx.restore();
+  const ht=hudTop();ctx.fillStyle='rgba(10,28,48,.88)';ctx.fillRect(18,ht,440,46);
+  text('決戦前任務：爆炎大剣の試し斬り',35,ht+23,16);
+}
+function drawVolcanoBearAfter(){
+  ctx.fillStyle='#d9c68f';ctx.fillRect(0,0,W,H);rect(0,330,W,210,'#778d62');
+  drawHeroFox(205,405,.88);drawSuzumaru(315,410,.94);drawDashmiu(420,418,.84);drawYuno(520,410,.94);drawGyou(625,410,.97);
+  const item=volcanoBearAfterDialog[Math.min(dialogIndex,volcanoBearAfterDialog.length-1)];drawDialog(item[0],item[1]);
+}
+
 function drawFinalWeapon(){
   ctx.fillStyle='#d8c8aa';ctx.fillRect(0,0,W,H);rect(0,330,W,210,'#8ca574');
   // simple supply table and wrapped sword
@@ -3117,12 +3199,17 @@ function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);
   drawHeroFox(245,270,1.15);drawSuzumaru(355,275,1.25);drawDashmiu(465,282,1.12);drawYuno(575,275,1.22);drawGyou(685,275,1.25);
   text('Ver.0.39 ここまで',480,105,40,'center');
-  text('スズマルが「爆炎大剣」を入手！',480,365,26,'center','#d8efff');
-  text('次は：仲間たちの決戦前特訓・最終作戦へ',480,407,23,'center','#d8efff');
+  text('合体技を習得し、火山の安全も確保！',480,365,26,'center','#d8efff');
+  text('次は：残る決戦前準備・ぶりふぉ村へ',480,407,23,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,466,20,'center','#9fc8df');
 }
 function update(dt){
-  if(scene==='world'){
+  if(scene==='finalBearField'){
+    let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;
+    const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);finalBearHero.x+=dx*finalBearHero.speed*dt;finalBearHero.y+=dy*finalBearHero.speed*dt;}
+    finalBearHero.x=Math.max(60,Math.min(1190,finalBearHero.x));finalBearHero.y=Math.max(260,Math.min(500,finalBearHero.y));
+    if(finalBear.alive&&Math.hypot(finalBearHero.x-finalBear.x,finalBearHero.y-finalBear.y)<95){startBattle(finalBear);}
+  } else if(scene==='world'){
     let dx=0,dy=0;
     if(keys.ArrowLeft||keys.a)dx--;
     if(keys.ArrowRight||keys.d)dx++;
@@ -3570,7 +3657,28 @@ function pressAction(){
   if(scene==='finalWeapon'){
     dialogIndex++;
     if(dialogIndex>=finalWeaponDialog.length){
-      progress.finalFlameBlade=true;saveProgress();scene='end';dialogIndex=0;saveGame();
+      progress.finalFlameBlade=true;saveProgress();scene='yunoCombo';dialogIndex=0;saveGame();
+    }
+    return;
+  }
+  if(scene==='yunoCombo'){
+    dialogIndex++;
+    if(dialogIndex>=yunoComboDialog.length){
+      progress.heroYunoComboUnlocked=true;saveProgress();scene='volcanoBearQuest';dialogIndex=0;saveGame();
+    }
+    return;
+  }
+  if(scene==='volcanoBearQuest'){
+    dialogIndex++;
+    if(dialogIndex>=volcanoBearQuestDialog.length){
+      scene='finalBearField';dialogIndex=0;finalBearHero.x=150;finalBearHero.y=430;touchUI.classList.remove('hidden');saveGame();
+    }
+    return;
+  }
+  if(scene==='volcanoBearAfter'){
+    dialogIndex++;
+    if(dialogIndex>=volcanoBearAfterDialog.length){
+      progress.volcanoBearCleared=true;saveProgress();scene='end';dialogIndex=0;saveGame();
     }
     return;
   }
@@ -3633,7 +3741,7 @@ function pressAction(){
     return;
   }
 
-  if(scene==='world' || scene==='road2' || scene==='route3' || scene==='cave' || scene==='takezoTravel' || scene==='takezoRoute' || scene==='coastSurveyField' || scene==='volcanoSurveyField'){
+  if(scene==='world' || scene==='road2' || scene==='route3' || scene==='cave' || scene==='takezoTravel' || scene==='takezoRoute' || scene==='coastSurveyField' || scene==='volcanoSurveyField' || scene==='finalBearField'){
     openFieldMenu(scene);
     return;
   }
@@ -3685,6 +3793,10 @@ function frame(now){
   else if(scene==='finalPrepFree')drawFinalPrepFree();
   else if(scene==='gyouTraining')drawGyouTraining();
   else if(scene==='finalWeapon')drawFinalWeapon();
+  else if(scene==='yunoCombo')drawYunoCombo();
+  else if(scene==='volcanoBearQuest')drawVolcanoBearQuest();
+  else if(scene==='finalBearField')drawFinalBearField();
+  else if(scene==='volcanoBearAfter')drawVolcanoBearAfter();
   else if(scene==='sarubibiTown')drawSarubibiTown();
   else if(scene==='sarubibiShop')drawSarubibiShop();
   else if(scene==='sarubieTown')drawSarubieTown();
@@ -3815,7 +3927,7 @@ canvas.addEventListener('pointerdown',e=>{
             else if(x<575)battleAttack('iceSlash');
             else if(x<755)battleAttack('iceWave');
             else usePotion('hero');
-          }else if(yunoJoined && battle.monsterId>=400 && y>=435&&y<=485){
+          }else if(yunoJoined && progress.heroYunoComboUnlocked && battle.monsterId>=400 && y>=435&&y<=485){
             if(x<300)heroYunoCombo('grandHeal');
             else if(x<615)heroYunoCombo('grandDamage');
             else battleMenu='main';

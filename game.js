@@ -119,6 +119,7 @@ if(progress.suzuSpentSP===undefined){
 if(progress.yunoSP===undefined) progress.yunoSP=totalSPForLevel(progress.level);
 if(!progress.yunoSkills)progress.yunoSkills={heal:0,regen:0,wind:0,haste:0,evade:0,evadeAll:0};
 if(progress.gyouSP===undefined)progress.gyouSP=totalSPForLevel(progress.level);
+if(!progress.gyouSkills)progress.gyouSkills={fortify:0,cover:0,taunt:0,manaGuard:0,healGuard:0,doubleThrust:0,counter:0};
 
 
 if(!progress.suzuSkills) progress.suzuSkills={
@@ -2774,14 +2775,39 @@ function drawMenu(){
     // character switch buttons
     const suzuEnabled=(suzumaruActive||suzumaruJoined);
     const yunoEnabled=yunoJoined;
-    outlineRect(55,140,260,42,menuCharacter==='hero'?'#dff4fb':'#31455f','#78b9d7',2);
-    text(heroName,185,161,16,'center',menuCharacter==='hero'?'#17324a':'#d9e6ef');
-    outlineRect(350,140,260,42,menuCharacter==='suzu'?'#ffe1d7':'#31455f',suzuEnabled?'#c76e58':'#536273',2);
-    text(suzuEnabled?'スズマル':'スズマル（未加入）',480,161,16,'center',suzuEnabled?(menuCharacter==='suzu'?'#65291f':'#e9d8d3'):'#758596');
-    outlineRect(645,140,260,42,menuCharacter==='yuno'?'#d8f2ed':'#31455f',yunoEnabled?'#59aaa6':'#536273',2);
-    text(yunoEnabled?'ユーノ':'ユーノ（未加入）',775,161,16,'center',yunoEnabled?(menuCharacter==='yuno'?'#174c4b':'#d6ece8'):'#758596');
+    const gyouEnabled=gyouJoinConfirmed;
+    const tx=[35,265,495,725],tw=205;
+    outlineRect(tx[0],140,tw,42,menuCharacter==='hero'?'#dff4fb':'#31455f','#78b9d7',2);
+    text(heroName,tx[0]+tw/2,161,15,'center',menuCharacter==='hero'?'#17324a':'#d9e6ef');
+    outlineRect(tx[1],140,tw,42,menuCharacter==='suzu'?'#ffe1d7':'#31455f',suzuEnabled?'#c76e58':'#536273',2);
+    text(suzuEnabled?'スズマル':'スズマル（未加入）',tx[1]+tw/2,161,14,'center',suzuEnabled?(menuCharacter==='suzu'?'#65291f':'#e9d8d3'):'#758596');
+    outlineRect(tx[2],140,tw,42,menuCharacter==='yuno'?'#d8f2ed':'#31455f',yunoEnabled?'#59aaa6':'#536273',2);
+    text(yunoEnabled?'ユーノ':'ユーノ（未加入）',tx[2]+tw/2,161,14,'center',yunoEnabled?(menuCharacter==='yuno'?'#174c4b':'#d6ece8'):'#758596');
+    outlineRect(tx[3],140,tw,42,menuCharacter==='gyou'?'#ece8ce':'#31455f',gyouEnabled?'#999064':'#536273',2);
+    text(gyouEnabled?'ギョウ':'ギョウ（未加入）',tx[3]+tw/2,161,14,'center',gyouEnabled?(menuCharacter==='gyou'?'#494427':'#e5e0c8'):'#758596');
 
-    if(menuCharacter==='yuno' && yunoEnabled){
+    if(menuCharacter==='gyou' && gyouEnabled){
+      text(`ギョウ SP：${progress.gyouSP||0}`,45,212,17,'left','#f4efcf');
+      const gsks=[
+        ['fortify','岩守り','自分の防御UP'],
+        ['cover','かばう','仲間1人を身代わり'],
+        ['taunt','挑発','敵に狙われやすい'],
+        ['manaGuard','土脈吸収','被ダメージでMP回復'],
+        ['healGuard','守りの呼吸','防御＋自分を回復'],
+        ['doubleThrust','二段突き','槍で単体2回攻撃'],
+        ['counter','迎撃の構え','攻撃を受けて反撃']
+      ];
+      gsks.forEach((s,i)=>{
+        const col=i%4,row=Math.floor(i/4),x=35+col*225,y=238+row*103,lv=progress.gyouSkills[s[0]]||0;
+        outlineRect(x,y,210,86,'#3c3b2d','#999064',2);
+        text(s[1],x+12,y+25,16,'left','#f4efcf');
+        text(s[2],x+12,y+49,12,'left','#d7d1ae');
+        text(lv?'習得済み':'習得 SP1',x+196,y+73,11,'right',lv?'#b9d29e':'#ffe4a0');
+      });
+      const ult=progress.gyouGrandGuard;
+      outlineRect(260,450,440,44,ult?'#6f6b4d':'#2e3340',ult?'#d7c86e':'#697181',2);
+      text(ult?'村長奥義「大守護」習得済み':'村長との特訓で奥義「大守護」が開放',480,472,14,'center',ult?'#fff0a8':'#aab0b9');
+    }else if(menuCharacter==='yuno' && yunoEnabled){
       text(`ユーノ SP：${progress.yunoSP||0}`,55,215,18,'left','#d8fff5');
       const ysks=[
         ['heal','風の癒し','全体回復'],['regen','そよぎの輪','全体徐々に回復'],
@@ -2852,9 +2878,24 @@ function menuTap(x,y){
   }
 
   if(menuPage==='skill' && y>=135 && y<=190){
-    if(x<325){menuCharacter='hero';return;}
-    if(x>=325 && x<630 && (suzumaruActive||suzumaruJoined)){menuCharacter='suzu';return;}
-    if(x>=630 && yunoJoined){menuCharacter='yuno';return;}
+    if(x<250){menuCharacter='hero';return;}
+    if(x>=250 && x<480 && (suzumaruActive||suzumaruJoined)){menuCharacter='suzu';return;}
+    if(x>=480 && x<715 && yunoJoined){menuCharacter='yuno';return;}
+    if(x>=715 && gyouJoinConfirmed){menuCharacter='gyou';return;}
+  }
+
+  if(menuPage==='skill' && menuCharacter==='gyou' && gyouJoinConfirmed && y>=238 && y<=430){
+    const col=Math.floor((x-35)/225),row=Math.floor((y-238)/103);
+    if(col>=0&&col<4&&row>=0&&row<2){
+      const keys=['fortify','cover','taunt','manaGuard','healGuard','doubleThrust','counter'];
+      const k=keys[row*4+col];
+      if(!k)return;
+      if(progress.gyouSkills[k]){flashText='習得済みです';flashTimer=1.4;return;}
+      if((progress.gyouSP||0)<1){flashText='ギョウのSPが足りない';flashTimer=1.5;return;}
+      progress.gyouSP--;progress.gyouSkills[k]=1;
+      saveProgress();saveGame();
+      flashText='ギョウが新しい守護技を習得！';flashTimer=1.8;return;
+    }
   }
 
   if(menuPage==='skill' && menuCharacter==='yuno' && yunoJoined && y>=245 && y<=455){

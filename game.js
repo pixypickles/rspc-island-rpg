@@ -81,6 +81,14 @@ let shopType='weapon';
 let battleFx={type:'',timer:0,x:0,y:0};
 let battleChoiceText={hero:'未選択',suzu:'未選択'};
 let damagePopups=[];
+let route3Hero={x:210,y:760,speed:220};
+let route3Mobs=[
+  {id:301,name:'ハネダイコン',kind:'radishFerret',x:620,y:590,spawnX:620,spawnY:590,alive:true,hp:46,maxHP:46,respawn:0},
+  {id:302,name:'ソラマメテン',kind:'beanMarten',x:1120,y:420,spawnX:1120,spawnY:420,alive:true,hp:50,maxHP:50,respawn:0},
+  {id:303,name:'ワタゲイタチ',kind:'fluffWeasel',x:1600,y:300,spawnX:1600,spawnY:300,alive:true,hp:54,maxHP:54,respawn:0}
+];
+let sarubibiQuestStarted=false;
+
 
 
 let menuPage = 'status';
@@ -161,6 +169,29 @@ const sarubieRitualDialog = [
   ['narrator','スズマルが正式に仲間になった！']
 ];
 
+const sarubibiArrivalDialog = [
+  ['narrator','火山を鎮めた一行は、次の村・さるびび村へ急いだ。'],
+  ['yuno','話は聞いた。クラウス海賊団が来たんだね。'],
+  ['dash','早い！ まだほとんど説明してないのに！'],
+  ['yuno','状況から考えれば、その可能性が一番高い。'],
+  ['suzu','助かる。なら防衛の準備を――'],
+  ['yuno','それが、ひとつ問題がある。'],
+  ['dash','また！？'],
+  ['yuno','防衛隊長が、ほとんど仕事にならない。'],
+  ['captain','……もう、どうでもいいんだ……。'],
+  ['hero','何があったの？'],
+  ['captain','恋人が最近、俺より大事なものを見つけたみたいでさ……。'],
+  ['dash','この島、今かなり大変なんだけど！？'],
+  ['captain','夜になると毎晩どこかへ行く。俺には何も話してくれない。'],
+  ['yuno','説得も推理も試したけど、感情の問題はどうも苦手でね。'],
+  ['dash','ユーノにも苦手分野あるんだ……。'],
+  ['yuno','あるよ。むしろ、かなりある。'],
+  ['hero','今夜、後を追ってみよう。何をしてるのか分かれば話せるかもしれない。'],
+  ['captain','……頼めるなら。'],
+  ['narrator','今夜、防衛隊長の恋人をこっそり追うことになった。']
+];
+
+
 
 
 const world = { width:2400, height:1250 };
@@ -195,6 +226,35 @@ function ellipse(x,y,rx,ry,color){ctx.fillStyle=color;ctx.beginPath();ctx.ellips
 
 
 
+
+function drawYuno(x,y,s=1){
+  ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.scale(s,s);
+  ellipse(0,34,18,6,'rgba(23,38,56,.22)');
+  // long weasel tail
+  ctx.strokeStyle='#b99668';ctx.lineWidth=7;ctx.beginPath();ctx.arc(18,14,18,-1.25,1.15);ctx.stroke();
+  // ears/head
+  ellipse(-10,-25,5,6,'#c8aa78');ellipse(10,-25,5,6,'#c8aa78');
+  ellipse(0,-12,17,15,'#d2b583');ellipse(0,-4,9,6,'#ead7ad');
+  rect(-8,-14,4,5,'#1d293d');rect(4,-14,4,5,'#1d293d');
+  // neat dark hair
+  ctx.fillStyle='#3e4d52';ctx.beginPath();ctx.moveTo(-12,-24);ctx.lineTo(-5,-30);ctx.lineTo(0,-25);ctx.lineTo(7,-31);ctx.lineTo(12,-22);ctx.closePath();ctx.fill();
+  // turquoise outfit
+  rect(-15,4,30,25,'#2c9a9c');rect(-13,5,26,7,'#43b9b5');rect(-3,10,6,17,'#d9f1e8');
+  rect(-17,8,5,16,'#c8aa78');rect(12,8,5,16,'#c8aa78');
+  rect(-13,23,26,4,'#244b59');
+  // bow
+  ctx.strokeStyle='#6c4d36';ctx.lineWidth=3;ctx.beginPath();ctx.arc(18,18,12,-1.2,1.2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(22,7);ctx.lineTo(22,29);ctx.stroke();
+  rect(-12,28,9,12,'#1d5860');rect(3,28,9,12,'#1d5860');
+  ctx.restore();
+}
+function drawWindHouse(x,y){
+  outlineRect(x,y+32,84,62,'#eef5ee','#3a6d73',2);
+  ctx.fillStyle='#227f83';ctx.beginPath();ctx.moveTo(x-8,y+34);ctx.lineTo(x+42,y);ctx.lineTo(x+92,y+34);ctx.closePath();ctx.fill();
+  rect(x+32,y+59,18,35,'#35aeb0');
+  outlineRect(x+10,y+47,17,15,'#bde8e3','#5f8e8a',1);
+  outlineRect(x+57,y+47,17,15,'#bde8e3','#5f8e8a',1);
+}
 function drawSuzumaru(x,y,s=1){
   ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.scale(s,s);
   ellipse(0,34,18,6,'rgba(23,38,56,.22)');
@@ -304,6 +364,10 @@ function drawPirate(x,y,s=1,variant=0){
 }
 
 function drawWildMonster(mon){
+  if(mon.kind==='radishFerret'||mon.kind==='beanMarten'||mon.kind==='fluffWeasel'){
+    drawRoute3Mob(mon);return;
+  }
+
   if(mon.kind==='emberLizard'||mon.kind==='pepperMouse'||mon.kind==='rockMole'){
     drawCaveMob(mon);return;
   }
@@ -373,11 +437,11 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.18.2',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.19',480,121,18,'center','#eef8ff');
   ctx.fillStyle='rgba(10,23,48,.73)';ctx.fillRect(310,466,340,52);text('タップ / Enter で はじめる',480,492,21,'center');
 }
 function speakerName(who){
-  return ({narrator:'語り',dash:'ダッシュミウ',pirate:'海賊',elder:'ぶりふぉ村長',hero:heroName,suzu:'スズマル'})[who]||who;
+  return ({narrator:'語り',dash:'ダッシュミウ',pirate:'海賊',elder:'ぶりふぉ村長',hero:heroName,suzu:'スズマル',yuno:'ユーノ',captain:'防衛隊長'})[who]||who;
 }
 function drawDialog(who,line){
   ctx.fillStyle='rgba(7,17,36,.92)';ctx.fillRect(46,380,868,132);
@@ -904,6 +968,19 @@ function finishBattle(){
     flashTimer=3.0;return;
   }
 
+  if(battle && battle.monsterId>=300){
+    const mon=route3Mobs.find(m=>m.id===battle.monsterId);
+    if(mon){mon.alive=false;mon.respawn=12.0;}
+    const count=battle.enemies?battle.enemies.length:1;
+    const expGain=18+(count-1)*8;
+    const goldGain=12+(count-1)*5;
+    progress.gold+=goldGain;
+    const leveled=gainExp(expGain);saveProgress();
+    battle=null;scene='route3';touchUI.classList.remove('hidden');
+    flashText=leveled?`レベルアップ！ Lv.${progress.level}　SP+1`:`経験値 ${expGain} / ${goldGain}G 獲得！`;
+    flashTimer=2.5;return;
+  }
+
   if(battle && battle.monsterId>=200){
     const mon=caveMobs.find(m=>m.id===battle.monsterId);
     if(mon){mon.alive=false;mon.respawn=12.0;}
@@ -975,6 +1052,69 @@ function drawSarubieRitual(){
   drawDialog(item[0],item[1]);
 }
 
+
+
+function drawRoute3(){
+  camera.x=Math.max(0,Math.min(1900-W,route3Hero.x-W*.45));
+  camera.y=Math.max(0,Math.min(1050-H,route3Hero.y-H*.48));
+  ctx.save();ctx.translate(-camera.x,-camera.y);
+  const sky=ctx.createLinearGradient(0,0,0,1050);sky.addColorStop(0,'#b7e7e5');sky.addColorStop(1,'#9ad7b3');
+  ctx.fillStyle=sky;ctx.fillRect(0,0,1900,1050);
+
+  // highland road; one map, readable
+  ctx.fillStyle='#e6d7aa';ctx.beginPath();
+  ctx.moveTo(100,820);ctx.bezierCurveTo(500,760,820,590,1080,450);ctx.bezierCurveTo(1330,315,1580,250,1830,220);
+  ctx.lineTo(1860,350);ctx.bezierCurveTo(1590,390,1370,460,1130,585);ctx.bezierCurveTo(850,730,530,900,110,945);ctx.closePath();ctx.fill();
+
+  // wind grass / stones
+  for(let x=70;x<1850;x+=95){
+    ctx.strokeStyle='#5ca48d';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,600+(x%7)*18);ctx.quadraticCurveTo(x+20,580+(x%5)*18,x+28,560+(x%3)*20);ctx.stroke();
+  }
+  for(let x=80;x<1800;x+=180) ellipse(x,245+(x%4)*55,24,13,'#77a28d');
+
+  for(const mon of route3Mobs) drawRoute3Mob(mon);
+
+  // Sarubibi entrance visible at far end
+  rect(1740,180,18,95,'#2d7779');rect(1850,180,18,95,'#2d7779');rect(1735,175,138,18,'#269195');
+  text('さるびび村',1804,152,17,'center','#24585d');
+  drawWindHouse(1765,245);
+
+  drawHeroFox(route3Hero.x,route3Hero.y,1.15);
+  drawSuzumaru(route3Hero.x-52,route3Hero.y+18,1.02);
+  drawDashmiu(route3Hero.x-98,route3Hero.y+32,.94);
+  ctx.restore();
+
+  const ht=hudTop();
+  ctx.fillStyle='rgba(17,63,70,.85)';ctx.fillRect(18,ht,355,46);
+  text('目的：さるびび村へ急ぐ',35,ht+23,18);
+}
+
+function drawSarubibiVillageBG(){
+  const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#a8e2e1');sky.addColorStop(1,'#d5ebc9');
+  ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+  rect(0,245,W,295,'#92cda9');
+  // windmills / ribbon poles
+  for(const x of [140,820]){
+    rect(x,170,8,110,'#557b73');
+    ctx.strokeStyle='#f2f7ed';ctx.lineWidth=5;
+    ctx.beginPath();ctx.moveTo(x+4,175);ctx.lineTo(x-30,145);ctx.moveTo(x+4,175);ctx.lineTo(x+40,145);ctx.moveTo(x+4,175);ctx.lineTo(x-30,205);ctx.moveTo(x+4,175);ctx.lineTo(x+40,205);ctx.stroke();
+  }
+  drawWindHouse(70,280);drawWindHouse(210,245);drawWindHouse(735,275);
+  outlineRect(450,255,125,82,'#e9f4ec','#3d7776',2);
+  text('防衛隊詰所',512,278,15,'center','#315a5e');
+}
+
+function drawSarubibiArrival(){
+  drawSarubibiVillageBG();
+  drawHeroFox(275,355,1.25);
+  drawSuzumaru(385,360,1.18);
+  drawDashmiu(485,368,1.08);
+  drawYuno(655,355,1.3);
+  // depressed defense captain
+  ellipse(765,355,15,14,'#cfb687');rect(748,370,34,30,'#257f83');
+  const item=sarubibiArrivalDialog[Math.min(dialogIndex,sarubibiArrivalDialog.length-1)];
+  drawDialog(item[0],item[1]);
+}
 
 function drawSarubieTown(){
   drawSarubieVillageBG();
@@ -1072,6 +1212,34 @@ function drawSarubieArrival(){
 }
 
 
+
+
+function drawRoute3Mob(mon){
+  if(!mon||!mon.alive)return;
+  const x=mon.x,y=mon.y;
+  ctx.save();ctx.translate(x,y);
+  ellipse(0,18,22,6,'rgba(0,0,0,.16)');
+  if(mon.kind==='radishFerret'){
+    ellipse(0,1,19,16,'#f4eee4');
+    ctx.fillStyle='#7dbb69';ctx.beginPath();ctx.moveTo(-6,-14);ctx.lineTo(-16,-29);ctx.lineTo(-2,-23);ctx.lineTo(4,-34);ctx.lineTo(10,-16);ctx.closePath();ctx.fill();
+    ellipse(-8,-2,4,4,'#263149');ellipse(7,-2,4,4,'#263149');
+    ctx.strokeStyle='#cbb991';ctx.lineWidth=5;ctx.beginPath();ctx.arc(17,5,17,-1.1,1.1);ctx.stroke();
+  }else if(mon.kind==='beanMarten'){
+    ellipse(0,0,21,15,'#75b36c');
+    ellipse(-9,-12,6,6,'#c8aa78');ellipse(9,-12,6,6,'#c8aa78');
+    rect(-8,-3,4,4,'#263149');rect(5,-3,4,4,'#263149');
+    ctx.strokeStyle='#b89568';ctx.lineWidth=6;ctx.beginPath();ctx.arc(18,7,18,-1.1,1.15);ctx.stroke();
+    ellipse(-5,2,5,8,'#a6d69a');ellipse(6,2,5,8,'#a6d69a');
+  }else{
+    ellipse(0,2,20,15,'#d8c59c');
+    ellipse(-9,-11,5,6,'#b89468');ellipse(9,-11,5,6,'#b89468');
+    rect(-7,-2,3,4,'#263149');rect(5,-2,3,4,'#263149');
+    // cotton fluff
+    ellipse(-10,-18,9,8,'#f4f1e8');ellipse(0,-22,10,9,'#f4f1e8');ellipse(10,-18,9,8,'#f4f1e8');
+    ctx.strokeStyle='#b89468';ctx.lineWidth=6;ctx.beginPath();ctx.arc(18,8,18,-1.1,1.15);ctx.stroke();
+  }
+  ctx.restore();
+}
 
 function drawCaveMob(mon){
   if(!mon || !mon.alive)return;
@@ -1251,6 +1419,29 @@ function enemiesDefeated(){
   return battle.enemies ? livingEnemies().length===0 : battle.enemyHP<=0;
 }
 
+
+function startRoute3Battle(mon){
+  const pool=[
+    {name:'ハネダイコン',kind:'radishFerret',hp:46,maxHP:46},
+    {name:'ソラマメテン',kind:'beanMarten',hp:50,maxHP:50},
+    {name:'ワタゲイタチ',kind:'fluffWeasel',hp:54,maxHP:54}
+  ];
+  const count=2+Math.floor(Math.random()*3);
+  const enemies=[{name:mon.name,kind:mon.kind,hp:mon.hp,maxHP:mon.maxHP}];
+  while(enemies.length<count) enemies.push({...pool[Math.floor(Math.random()*pool.length)]});
+  battle={
+    heroHP:progress.maxHP,heroMP:progress.maxMP,
+    suzuHP:56,suzuMaxHP:56,suzuMP:22,suzuMaxMP:22,
+    enemies,enemyHP:enemies[0].hp,enemyMaxHP:enemies[0].maxHP,
+    monsterId:mon.id,enemyName:enemies[0].name,enemyKind:enemies[0].kind,
+    turn:'player',defending:false
+  };
+  damagePopups=[];battleMenu='main';battleActor='hero';
+  battleChoiceText={hero:'未選択',suzu:'未選択'};
+  battleMessage=`${enemies.length}体の魔物が現れた！`;
+  scene='battle';touchUI.classList.add('hidden');
+}
+
 function startCaveMobBattle(mon){
   const enemies=caveEncounterGroup(mon);
   battle={
@@ -1330,9 +1521,9 @@ function menuTap(x,y){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.18.2 ここまで',480,112,42,'center');
-  text(`スズマルが正式加入！ 次はさるびび村へ。`,480,365,22,'center','#d8efff');
-  text('次は：さるびび村へ向かう',480,405,20,'center','#d8efff');
+  text('Ver.0.19 ここまで',480,112,42,'center');
+  text(`さるびび村の問題を解決し、ユーノの協力を得よう。`,480,365,22,'center','#d8efff');
+  text('次は：夜の尾行とツキポポの秘密へ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
 }
 function update(dt){
@@ -1391,6 +1582,29 @@ function update(dt){
       scene='sarubieArrival';
       dialogIndex=0;
       touchUI.classList.add('hidden');
+    }
+  } else if(scene==='route3'){
+    for(const mon of route3Mobs){
+      if(!mon.alive && mon.respawn>0){
+        mon.respawn-=dt;
+        if(mon.respawn<=0){
+          mon.alive=true;mon.x=mon.spawnX+(Math.random()*40-20);mon.y=mon.spawnY+(Math.random()*30-15);
+        }
+      }
+    }
+    let dx=0,dy=0;
+    if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;
+    if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;
+    dx+=touchVector.x;dy+=touchVector.y;
+    const l=Math.hypot(dx,dy);
+    if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);route3Hero.x+=dx*route3Hero.speed*dt;route3Hero.y+=dy*route3Hero.speed*dt;}
+    route3Hero.x=Math.max(70,Math.min(1850,route3Hero.x));
+    route3Hero.y=Math.max(170,Math.min(960,route3Hero.y));
+    for(const mon of route3Mobs){
+      if(mon.alive&&Math.hypot(route3Hero.x-mon.x,route3Hero.y-mon.y)<55){startRoute3Battle(mon);break;}
+    }
+    if(scene==='route3'&&route3Hero.x>1700&&route3Hero.y<430){
+      scene='sarubibiArrival';dialogIndex=0;touchUI.classList.add('hidden');
     }
   } else if(scene==='sarubieTown'){
     let dx=0,dy=0;
@@ -1505,6 +1719,15 @@ function pressAction(){
     }
     return;
   }
+  if(scene==='sarubibiArrival'){
+    dialogIndex++;
+    if(dialogIndex>=sarubibiArrivalDialog.length){
+      sarubibiQuestStarted=true;
+      scene='end';
+      dialogIndex=0;
+    }
+    return;
+  }
   if(scene==='sarubieTown'){
     if(Math.hypot(townHero.x-530,townHero.y-330)<105){
       openShop('weapon');return;
@@ -1530,8 +1753,11 @@ function pressAction(){
     if(dialogIndex>=sarubieRitualDialog.length){
       suzumaruJoined=true;
       suzumaruActive=true;
-      scene='end';
+      scene='route3';
+      route3Hero.x=210;route3Hero.y=760;
       dialogIndex=0;
+      touchUI.classList.remove('hidden');
+      flashText='次は、さるびび村へ';flashTimer=2.0;
     }
     return;
   }
@@ -1555,12 +1781,14 @@ function frame(now){
   else if(scene==='battle')drawBattle();
   else if(scene==='menu')drawMenu();
   else if(scene==='sarubieArrival')drawSarubieArrival();
+  else if(scene==='route3')drawRoute3();
+  else if(scene==='sarubibiArrival')drawSarubibiArrival();
   else if(scene==='sarubieTown')drawSarubieTown();
   else if(scene==='shop')drawShop();
   else if(scene==='sarubieRitual')drawSarubieRitual();
   else if(scene==='cave')drawCave();
   else drawEnd();
-  if(flashTimer>0 && ['road2','world','cave','sarubieTown','shop'].includes(scene)){
+  if(flashTimer>0 && ['road2','world','cave','route3','sarubieTown','shop'].includes(scene)){
     ctx.fillStyle='rgba(0,0,0,.58)';ctx.fillRect(305,85,350,58);text(flashText,480,114,20,'center');
   }
   requestAnimationFrame(frame);
@@ -1633,7 +1861,7 @@ canvas.addEventListener('pointerdown',e=>{
         }
       }
     }
-  } else if(scene!=='world'&&scene!=='road2'&&scene!=='sarubieTown'&&scene!=='shop'&&scene!=='cave') pressAction();
+  } else if(scene!=='world'&&scene!=='road2'&&scene!=='route3'&&scene!=='sarubieTown'&&scene!=='shop'&&scene!=='cave') pressAction();
 });
 actionBtn.addEventListener('pointerdown',e=>{e.preventDefault();pressAction();});
 

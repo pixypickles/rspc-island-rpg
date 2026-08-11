@@ -1149,7 +1149,7 @@ function drawTitle(){
        canContinue?(titleSelection===1?'#17324a':'#e8f4fa'):'#8193a2');
 }
 function speakerName(who){
-  return ({narrator:'語り',dash:'ダッシュミウ',pirate:'海賊',elder:'ぶりふぉ村長',hero:heroName,suzu:'スズマル',yuno:'ユーノ',captain:'防衛隊長',lover:'防衛隊長の恋人',smith:'さるびえ村の鍛冶職人'})[who]||who;
+  return ({narrator:'語り',dash:'ダッシュミウ',pirate:'海賊',elder:'ぶりふぉ村長',hero:heroName,suzu:'スズマル',yuno:'ユーノ',gyou:'ジュウ',captain:'防衛隊長',lover:'防衛隊長の恋人',smith:'さるびえ村の鍛冶職人'})[who]||who;
 }
 function drawDialog(who,line){
   ctx.fillStyle='rgba(7,17,36,.92)';ctx.fillRect(46,380,868,132);

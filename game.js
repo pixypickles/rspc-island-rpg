@@ -94,6 +94,11 @@ function yunoStats(){
   };
 }
 
+function gyouStats(){
+  const lv=partyLevel();
+  return {maxHP:50+(lv-1)*6,maxMP:18+(lv-1)*2,atk:12+(lv-1)*2,def:8+(lv-1)*2};
+}
+
 function totalSPForLevel(level){
   // Lv1 starts with 0, each level-up grants 1.
   return Math.max(0, level-1);
@@ -113,6 +118,7 @@ if(progress.suzuSpentSP===undefined){
 
 if(progress.yunoSP===undefined) progress.yunoSP=totalSPForLevel(progress.level);
 if(!progress.yunoSkills)progress.yunoSkills={heal:0,regen:0,wind:0,haste:0,evade:0,evadeAll:0};
+if(progress.gyouSP===undefined)progress.gyouSP=totalSPForLevel(progress.level);
 
 
 if(!progress.suzuSkills) progress.suzuSkills={
@@ -137,6 +143,7 @@ function gainExp(amount){
 progress.sp++;
     if(progress.suzuSP!==undefined)progress.suzuSP++;
     if(progress.yunoSP!==undefined)progress.yunoSP++;
+    if(progress.gyouSP!==undefined)progress.gyouSP++;
     progress.maxHP += 6;
     progress.maxMP += 3;
     progress.atk += 2;
@@ -180,6 +187,7 @@ let route3Mobs=[
 ];
 let sarubibiQuestStarted=false;
 let yunoJoined=false;
+let gyouJoined=false;
 let nightTrailStep=0;
 let nightHero={x:170,y:760,speed:205};
 
@@ -440,11 +448,11 @@ const takezoConstructionDialog=[
   ['dash','……知ってても、どこから穴なのか分からない。'],
   ['suzu','自分たちで落ちるなよ。'],
   ['yuno','目印は決めてある。あとは海賊が来るまで、休める人は休もう。'],
-  ['narrator','巨大落とし穴が完成した。次の襲撃まで、あと数日――。']
+  ['narrator','巨大落とし穴が完成した。夜が明けるまで、交代で休みながら襲撃に備えることになった。']
 ];
 
 const secondWaveIntroDialog=[
-  ['narrator','数日後――。見張り台の鐘が、たけぞ村中に鳴り響いた。'],
+  ['narrator','翌日――。夜通しの準備を終えたたけぞ村に、見張り台の鐘が鳴り響いた。'],
   ['guard','海賊だ！ 今度は大部隊だぞ！'],
   ['dash','……多い。先行部隊の何倍いるの？'],
   ['yuno','想定内。みんな、予定通りに。'],
@@ -493,6 +501,58 @@ const secondWaveVictoryDialog=[
   ['suzu','本隊が動くか。'],
   ['yuno','みんなを集めよう。ここからは、島全体で戦うことになる。'],
   ['narrator','海賊との最終決戦が迫っていた――。']
+];
+
+const gyouJoinDialog=[
+  ['narrator','伝令の報告を聞いた直後、土壁の修復を指揮していた青年が一行の前へ来た。'],
+  ['gyou','ぶりふぉ村へ行くなら、俺も連れていってくれ。'],
+  ['dash','ギョウ！ ここの守りは？'],
+  ['gyou','もう引き継いだ。土壁の扱いなら皆も十分分かってる。'],
+  ['gyou','ここまで島中の村が力を貸してるんだ。最後だけ見送る気はない。'],
+  ['suzu','決まりだな。'],
+  ['yuno','うん。五人なら、できることも増える。'],
+  ['hero','行こう、ギョウ。'],
+  ['narrator','ギョウが仲間になった！']
+];
+
+const finalPrepDialog=[
+  ['narrator','一行は各村の代表を集め、最終決戦に向けた準備を始めた。'],
+  ['yuno','まず、ぶりふぉ村の氷壁が破られる前に動く。'],
+  ['yuno','地上の戦力は海賊本隊を引き受けてもらう。土の村人たちは土壁を何重にも作って、防衛線を維持して。'],
+  ['guard','任せろ。たけぞ村でやった形を、もっと大きくすればいい。'],
+  ['yuno','火と水の村人には、海岸側で大量の霧を作ってもらう。風の村人がその霧を海賊本陣へゆっくり流す。'],
+  ['dash','向こうから島の中が見えなくなるね。'],
+  ['yuno','それが狙い。あと、火山で確認した斜面も使える。ぶりふぉ村の氷壁前に集まった海賊を、一気に崩せるかもしれない。'],
+  ['suzu','この前、斜面ばかり見てたのはそのためか。'],
+  ['yuno','岩を落とすか、氷の道を作って大きな物を滑らせるか……そこは現地で最終調整する。'],
+  ['hero','僕たち五人は？'],
+  ['yuno','地上には残らない。気球を使う。'],
+  ['dash','気球！？'],
+  ['yuno','スズマルの火で熱を作って、私が風で進路を調整する。霧に隠れて上空から海賊船へ入る。'],
+  ['gyou','地上の大軍を相手にせず、頭を直接叩くわけか。'],
+  ['yuno','船長を止めれば、この戦いを終わらせられる。'],
+  ['narrator','作戦が決まった。決戦までのわずかな時間、一行は装備と技を整えることになった。']
+];
+
+const gyouTrainingDialog=[
+  ['narrator','準備を進めていると、たけぞ村の老村長がギョウを呼び止めた。'],
+  ['elder','ギョウ。守るというのは、ただ硬くなることではない。'],
+  ['gyou','村長……。'],
+  ['elder','仲間が倒れるはずだった一撃を、自分が引き受ける。その覚悟まで含めて守りだ。'],
+  ['narrator','村長はギョウと何度も打ち合い、複数方向から飛んでくる土の礫を一人で受け止める特訓を行った。'],
+  ['gyou','……もう一度お願いします！'],
+  ['elder','よし。今度は四人全員を守るつもりで構えろ！'],
+  ['narrator','激しい特訓の末、ギョウは奥義「大守護」を身につけた！'],
+  ['elder','使えばお前一人に攻撃が集中する。無茶はするな。だが――必要な時には迷うな。'],
+  ['gyou','はい！']
+];
+
+const finalPrepFreeDialog=[
+  ['narrator','決戦前の準備時間。各村から物資や協力者が集まり始めている。'],
+  ['dash','今のうちに買い物や特訓をしておこう。'],
+  ['suzu','本番で後悔しないようにな。'],
+  ['yuno','準備ができたら、ぶりふぉ村へ向かおう。'],
+  ['gyou','俺も付き合う。']
 ];
 
 const sarubibiNightDialog = [
@@ -633,7 +693,7 @@ function loadGame(){
     if(typeof d.caveBossAlive==='boolean')caveBoss.alive=d.caveBossAlive;
     if(Number.isFinite(d.caveBossHP))caveBoss.hp=d.caveBossHP;
     sarubibiQuestStarted=!!d.sarubibiQuestStarted;
-    yunoJoined=!!d.yunoJoined;
+    yunoJoined=!!d.yunoJoined;gyouJoined=!!d.gyouJoined;
     takezoIntroDone=!!d.takezoIntroDone;takezoPrepStage=d.takezoPrepStage||0;secondWaveStage=d.secondWaveStage||0;
     if(typeof d.bananaSharkAlive==='boolean')bananaSharkAlive=d.bananaSharkAlive;
     takezoScoutDefeated=!!d.takezoScoutDefeated;
@@ -670,6 +730,10 @@ function loadGame(){
       secondWaveRetreat:'secondWaveRetreat',
       secondWaveTrap:'secondWaveTrap',
       secondWaveVictory:'secondWaveVictory',
+      gyouJoin:'gyouJoin',
+      finalPrep:'finalPrep',
+      finalPrepFree:'finalPrepFree',
+      gyouTraining:'gyouTraining',
       end:lastFieldScene
     };
     if(safeMap[target])target=safeMap[target];
@@ -749,6 +813,22 @@ function drawDefenseCaptain(x,y,s=1){
   // captain sash
   ctx.fillStyle='#173b54';ctx.beginPath();ctx.moveTo(-12,5);ctx.lineTo(-6,5);ctx.lineTo(10,28);ctx.lineTo(4,28);ctx.closePath();ctx.fill();
   rect(-12,28,9,12,'#234c55');rect(3,28,9,12,'#234c55');
+  ctx.restore();
+}
+
+
+function drawGyou(x,y,s=1){
+  ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.scale(s,s);
+  ellipse(0,34,18,6,'rgba(23,38,56,.22)');
+  // sturdy badger-like villager
+  ellipse(-11,-25,6,6,'#756b59');ellipse(11,-25,6,6,'#756b59');
+  ellipse(0,-12,18,16,'#8a806c');ellipse(0,-4,10,7,'#d1c5aa');
+  ctx.fillStyle='#e7e0cf';ctx.beginPath();ctx.moveTo(-13,-22);ctx.lineTo(-5,-25);ctx.lineTo(-2,-7);ctx.lineTo(-9,-5);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(13,-22);ctx.lineTo(5,-25);ctx.lineTo(2,-7);ctx.lineTo(9,-5);ctx.closePath();ctx.fill();
+  rect(-8,-14,4,5,'#172235');rect(4,-14,4,5,'#172235');
+  rect(-16,4,32,25,'#6e7048');rect(-14,5,28,7,'#8a8c5a');rect(-3,10,6,17,'#d8d0ad');
+  rect(-18,8,5,17,'#8a806c');rect(13,8,5,17,'#8a806c');
+  rect(-13,24,26,4,'#4d493c');rect(-12,28,9,12,'#48483b');rect(3,28,9,12,'#48483b');
   ctx.restore();
 }
 
@@ -1334,10 +1414,17 @@ function drawBattle(){
       outlineRect(270,388,180,48,'#dff4fb','#71bad7',2);text('スキル',360,412,20,'center','#17324a');
       outlineRect(470,388,180,48,'#dff4fb','#71bad7',2);text('ぼうぎょ',560,412,20,'center','#17324a');
       outlineRect(670,388,180,48,'#dff4fb','#71bad7',2);text('にげる',760,412,20,'center','#17324a');
-      const actorName=isYunoTurn()?'ユーノ':isSuzumaruTurn()?'スズマル':heroName;
+      const actorName=isGyouTurn()?'ギョウ':isYunoTurn()?'ユーノ':isSuzumaruTurn()?'スズマル':heroName;
       text(`${actorName}の行動`,480,474,15,'center','#c8e7f4');
     }else{
-      if(isYunoTurn()){
+      if(isGyouTurn()){
+        text('ギョウのスキル',480,372,14,'center','#f4efcf');
+        const opts=[
+          ['岩守り','MP5'],['かばう','MP5'],['挑発','MP4'],['土脈吸収','MP4'],
+          ['守りの呼吸','MP7'],['二段突き','MP6'],['迎撃の構え','MP7'],[progress.gyouGrandGuard?'大守護':'大守護(未習得)','MP16']
+        ];
+        opts.forEach((o,i)=>{const x=28+i*114;outlineRect(x,385,106,54,'#ece8ce','#999064',2);text(o[0],x+53,406,11,'center','#494427');text(o[1],x+53,425,10,'center','#69633e');});
+      }else if(isYunoTurn()){
         text('ユーノのスキル',480,372,14,'center','#d8fff5');
         outlineRect(35,385,135,54,'#d8f2ed','#59aaa6',2);text('風の癒し MP8',102,408,13,'center','#174c4b');text('味方全体回復',102,426,10,'center','#356c69');
         outlineRect(180,385,135,54,'#d8f2ed','#59aaa6',2);text('そよぎの輪 MP10',247,408,12,'center','#174c4b');text('全体徐々に回復',247,426,10,'center','#356c69');
@@ -1532,8 +1619,33 @@ function yunoAction(mode){
   advancePartyTurn();
 }
 
+
+function gyouAction(mode){
+  if(!isGyouTurn())return;
+  ensureGyouBattle();
+  const key={fortify:'fortify',cover:'cover',taunt:'taunt',manaGuard:'manaGuard',healGuard:'healGuard',doubleThrust:'doubleThrust',counter:'counter'}[mode];
+  if(mode!=='grandGuard' && !progress.gyouSkills[key]){battleMessage='その技はまだ習得していない！';return;}
+  if(mode==='grandGuard'&&!progress.gyouGrandGuard){battleMessage='村長からまだ奥義を教わっていない！';return;}
+  const cost={fortify:5,cover:5,taunt:4,manaGuard:4,healGuard:7,doubleThrust:6,counter:7,grandGuard:16}[mode];
+  if(battle.gyouMP<cost){battleMessage='MPが足りない！';return;}
+  battle.gyouMP-=cost;
+  if(mode==='fortify'){battle.gyouDefTurns=3;battleMessage='ギョウの「岩守り」！ 防御力が大きく上がった！';}
+  else if(mode==='cover'){battle.gyouCover='hero';battleMessage=`ギョウの「かばう」！ ${heroName}への攻撃を引き受ける！`;}
+  else if(mode==='taunt'){battle.gyouTauntTurns=3;battleMessage='ギョウの「挑発」！ 敵の注意を一身に集めた！';}
+  else if(mode==='manaGuard'){battle.gyouManaGuard=true;battleMessage='ギョウの「土脈吸収」！ ダメージを受けるとMPが回復する！';}
+  else if(mode==='healGuard'){const heal=18+Math.floor(gyouStats().def/2);battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+heal);battle.gyouDefTurns=2;battleMessage=`ギョウの「守りの呼吸」！ HP${heal}回復＋防御！`;setBattleFx('heal',455,255);}
+  else if(mode==='doubleThrust'){const gs=gyouStats(),d1=Math.floor(gs.atk*.72)+5+Math.floor(Math.random()*4),d2=Math.floor(gs.atk*.72)+5+Math.floor(Math.random()*4);damageEnemy(d1);if(!enemiesDefeated())damageEnemy(d2);battleMessage=`ギョウの「二段突き」！ ${d1}＋${d2}ダメージ！`;setBattleFx('slash');if(enemiesDefeated()){battle.turn='win';battleCooldown=1;return;}}
+  else if(mode==='counter'){battle.gyouCounter=true;battleMessage='ギョウの「迎撃の構え」！ 攻撃を受ければ槍で反撃する！';}
+  else if(mode==='grandGuard'){battle.gyouGrandGuard=true;battle.gyouDefTurns=1;battleMessage='ギョウの奥義「大守護」！ このターン、仲間全員への攻撃を引き受ける！';}
+  battleChoiceText.gyou=mode;advancePartyTurn();
+}
+
 function battleDefend(){
   if(!battle || battle.turn!=='player')return;
+  if(isGyouTurn()){
+    ensureGyouBattle();battle.gyouDefTurns=Math.max(battle.gyouDefTurns,1);
+    battleMessage='ギョウは槍を構えて身を守っている！';battleChoiceText.gyou='ぼうぎょ';advancePartyTurn();return;
+  }
   if(isYunoTurn()){
     battleMessage='ユーノは身を守っている！';battleChoiceText.yuno='ぼうぎょ';advancePartyTurn();return;
   }
@@ -1558,77 +1670,48 @@ function battleRun(){
   battle.turn='run';battleCooldown=.6;battleMenu='main';
 }
 function enemyTurn(){
-  const ss=suzumaruStats(),ys=yunoStats();
-  const attackers=battle.enemies?livingEnemies():[{
-    name:battle.enemyName||'敵',
-    kind:battle.enemyKind||''
-  }];
-
-  let totalHero=0,totalSuzu=0,totalYuno=0;
+  const ss=suzumaruStats(),ys=yunoStats(),gs=gyouStats();ensureGyouBattle();
+  const attackers=battle.enemies?livingEnemies():[{name:battle.enemyName||'敵',kind:battle.enemyKind||''}];
+  let totalHero=0,totalSuzu=0,totalYuno=0,totalGyou=0;
   const attackLines=[];
-
   attackers.forEach((foe,idx)=>{
-    let baseDmg=5+Math.floor(Math.random()*5);
-    let dmg=baseDmg;
-    if(battle.defending)dmg=Math.max(1,Math.floor(dmg/2));
-
+    const baseDmg=5+Math.floor(Math.random()*5);
     let target='hero';
-    if(yunoJoined && battle.monsterId>=400){
+    if(gyouJoined && battle.monsterId>=400){
+      if(battle.gyouGrandGuard||battle.gyouTauntTurns>0)target='gyou';
+      else {const r=Math.random();target=r<.24?'hero':r<.46?'suzu':r<.68?'yuno':'gyou';}
+    }else if(yunoJoined && battle.monsterId>=400){
       const r=Math.random();target=r<.34?'hero':r<.67?'suzu':'yuno';
-    }else if(isPartyBattle() && Math.random()<0.4)target='suzu';
+    }else if(isPartyBattle()&&Math.random()<.4)target='suzu';
+    if(battle.gyouCover===target)target='gyou';
 
     const evadeChance=(battle.evadeAllTurns>0?.30:0)+((battle.evadeTarget===target&&battle.evadeTurns>0)?.25:0);
-    if(Math.random()<evadeChance){
-      attackLines.push(`${foe.name} → ${target==='hero'?heroName:target==='suzu'?'スズマル':'ユーノ'} 回避！`);
-      return;
-    }
-
-    const enemySpots=[[650,235],[770,235],[610,310],[720,320],[830,310]];
-    const ep=enemySpots[Math.min(idx,enemySpots.length-1)]||[700,245];
+    if(target!=='gyou'&&Math.random()<evadeChance){attackLines.push(`${foe.name} → ${target==='hero'?heroName:target==='suzu'?'スズマル':'ユーノ'} 回避！`);return;}
+    const ep=[[650,235],[770,235],[610,310],[720,320],[830,310]][Math.min(idx,4)]||[700,245];
     addDamagePopup('攻撃！',ep[0],ep[1]-45,'#ffcf9d');
-
-    if(target==='yuno'){
-      dmg=Math.max(1,baseDmg-Math.floor(ys.def/4));
-      battle.yunoHP=Math.max(1,battle.yunoHP-dmg);totalYuno+=dmg;
-      attackLines.push(`${foe.name} → ユーノ ${dmg}`);
-    }else if(target==='suzu'){
-      dmg=Math.max(1,baseDmg-Math.floor(ss.def/4));
-      battle.suzuHP=Math.max(1,battle.suzuHP-dmg);
-      totalSuzu+=dmg;
-      attackLines.push(`${foe.name} → スズマル ${dmg}`);
-    }else{
-      dmg=Math.max(1,baseDmg-Math.floor(progress.def/4));
-      battle.heroHP=Math.max(1,battle.heroHP-dmg);
-      totalHero+=dmg;
-      attackLines.push(`${foe.name} → ${heroName} ${dmg}`);
-    }
+    let dmg=baseDmg;
+    if(target==='gyou'){
+      let def=gs.def+(battle.gyouDefTurns>0?10:0);dmg=Math.max(1,baseDmg-Math.floor(def/4));
+      battle.gyouHP=Math.max(1,battle.gyouHP-dmg);totalGyou+=dmg;
+      if(battle.gyouManaGuard){const mp=Math.max(1,Math.ceil(dmg/2));battle.gyouMP=Math.min(battle.gyouMaxMP,battle.gyouMP+mp);attackLines.push(`${foe.name} → ギョウ ${dmg} / MP+${mp}`);}
+      else attackLines.push(`${foe.name} → ギョウ ${dmg}`);
+      if(battle.gyouCounter){const cd=Math.max(5,Math.floor(gs.atk*.8));damageEnemy(cd);attackLines.push(`迎撃 ${cd}`);}
+    }else if(target==='yuno'){dmg=Math.max(1,baseDmg-Math.floor(ys.def/4));battle.yunoHP=Math.max(1,battle.yunoHP-dmg);totalYuno+=dmg;attackLines.push(`${foe.name} → ユーノ ${dmg}`);}
+    else if(target==='suzu'){dmg=Math.max(1,baseDmg-Math.floor(ss.def/4));battle.suzuHP=Math.max(1,battle.suzuHP-dmg);totalSuzu+=dmg;attackLines.push(`${foe.name} → スズマル ${dmg}`);}
+    else{dmg=Math.max(1,(battle.defending?Math.floor(baseDmg/2):baseDmg)-Math.floor(progress.def/4));battle.heroHP=Math.max(1,battle.heroHP-dmg);totalHero+=dmg;attackLines.push(`${foe.name} → ${heroName} ${dmg}`);}
   });
-
   battle.defending=false;
-
-  if(totalHero>0){
-    addDamagePopup(`-${totalHero}`,185,215,'#ff796e');
-    setBattleFx('hitHero',185,255);
-  }
-  if(totalSuzu>0){addDamagePopup(`-${totalSuzu}`,265,215,'#ff796e');setBattleFx('hitSuzu',265,258);}
-  if(totalYuno>0){addDamagePopup(`-${totalYuno}`,380,215,'#ff796e');}
-
-  // Keep this text on screen during enemyResult.
+  if(totalHero>0){addDamagePopup(`-${totalHero}`,185,215,'#ff796e');setBattleFx('hitHero',185,255);}
+  if(totalSuzu>0)addDamagePopup(`-${totalSuzu}`,265,215,'#ff796e');
+  if(totalYuno>0)addDamagePopup(`-${totalYuno}`,360,215,'#ff796e');
+  if(totalGyou>0)addDamagePopup(`-${totalGyou}`,455,215,'#ff796e');
   battleMessage=`敵の攻撃！ ${attackLines.join(' / ')}`;
-  if(battle.regenTurns>0){
-    const heal=7;
-    battle.heroHP=Math.min(progress.maxHP,battle.heroHP+heal);
-    battle.suzuHP=Math.min(battle.suzuMaxHP,battle.suzuHP+heal);
-    if(battle.yunoHP!==undefined)battle.yunoHP=Math.min(battle.yunoMaxHP,battle.yunoHP+heal);
-    battle.regenTurns--;
-    battleMessage+=` / そよぎの輪 +${heal}`;
-  }
-  if(battle.evadeAllTurns>0)battle.evadeAllTurns--;
-  if(battle.evadeTurns>0)battle.evadeTurns--;
-  if(isPartyBattle())battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択'};
-
-  battle.turn='enemyResult';
-  battleCooldown=1.15;
+  if(battle.regenTurns>0){const heal=7;battle.heroHP=Math.min(progress.maxHP,battle.heroHP+heal);battle.suzuHP=Math.min(battle.suzuMaxHP,battle.suzuHP+heal);if(battle.yunoHP!==undefined)battle.yunoHP=Math.min(battle.yunoMaxHP,battle.yunoHP+heal);if(battle.gyouHP!==undefined)battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+heal);battle.regenTurns--;battleMessage+=` / そよぎの輪 +${heal}`;}
+  if(battle.evadeAllTurns>0)battle.evadeAllTurns--;if(battle.evadeTurns>0)battle.evadeTurns--;
+  if(battle.gyouDefTurns>0)battle.gyouDefTurns--;if(battle.gyouTauntTurns>0)battle.gyouTauntTurns--;
+  battle.gyouCover=null;battle.gyouCounter=false;battle.gyouGrandGuard=false;
+  if(isPartyBattle())battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
+  battle.turn='enemyResult';battleCooldown=1.15;
 }
 function finishBattle(){
   if(battle && battle.monsterId===99){
@@ -2465,6 +2548,9 @@ function drawMenu(){
     if(yunoJoined){
       members.push({key:'yuno',name:'ユーノ',draw:drawYuno,stats:yunoStats(),sp:progress.yunoSP||0,desc:'風 / 弓　補助・遠距離型',border:'#55aaa8'});
     }
+    if(gyouJoined){
+      members.push({key:'gyou',name:'ギョウ',draw:drawGyou,stats:gyouStats(),sp:progress.gyouSP||0,desc:'土 / 戦闘型は調整中',border:'#8e8b62'});
+    }
 
     const n=members.length;
     const gap=14, left=35, totalW=890;
@@ -2472,13 +2558,13 @@ function drawMenu(){
     members.forEach((m,i)=>{
       const x=left+i*(pw+gap);
       outlineRect(x,140,pw,315,'#182b48',m.border,2);
-      m.draw(x+pw/2,225,n>=3?1.18:1.5);
+      m.draw(x+pw/2,225,n>=4?1.0:n>=3?1.18:1.5);
       text(m.name,x+18,292,21,'left','#ffffff',800);
       text(`Lv.${progress.level}`,x+pw-18,292,15,'right','#d9edf7');
       text(`HP ${m.stats.maxHP}　MP ${m.stats.maxMP}`,x+18,327,15,'left','#ffffff');
       text(`攻 ${m.stats.atk}　防 ${m.stats.def}`,x+18,357,15,'left','#ffffff');
       text(`SP ${m.sp}`,x+18,387,16,'left','#ffe7a5');
-      text(m.desc,x+18,420,n>=3?12:14,'left','#bcd7e5');
+      text(m.desc,x+18,420,n>=4?10:n>=3?12:14,'left','#bcd7e5');
     });
     text('レベルはパーティ共通。戦闘終了後はHP・MPが全回復します。',480,492,15,'center','#bad9e7');
   }else if(menuPage==='skill'){
@@ -2918,12 +3004,38 @@ function drawSecondWaveVictory(){
   const item=secondWaveVictoryDialog[Math.min(dialogIndex,secondWaveVictoryDialog.length-1)];drawDialog(item[0],item[1]);
 }
 
+
+function drawGyouJoin(){
+  ctx.fillStyle='#a9d5d9';ctx.fillRect(0,0,W,H);rect(0,310,W,230,'#86a66d');
+  drawHeroFox(180,395,1.02);drawSuzumaru(285,400,.95);drawDashmiu(385,408,.86);drawYuno(485,400,.95);drawGyou(610,400,1.0);
+  const item=gyouJoinDialog[Math.min(dialogIndex,gyouJoinDialog.length-1)];drawDialog(item[0],item[1]);
+}
+function drawFinalPrep(){
+  ctx.fillStyle='#c5d9d5';ctx.fillRect(0,0,W,H);rect(0,320,W,220,'#879f70');
+  // planning table
+  rect(230,255,500,80,'#74583d');rect(250,270,460,50,'#d6c79c');
+  drawHeroFox(180,400,.98);drawSuzumaru(285,405,.9);drawDashmiu(385,413,.82);drawYuno(485,405,.91);drawGyou(590,405,.94);
+  const item=finalPrepDialog[Math.min(dialogIndex,finalPrepDialog.length-1)];drawDialog(item[0],item[1]);
+}
+
+function drawGyouTraining(){
+  ctx.fillStyle='#c6d4bb';ctx.fillRect(0,0,W,H);rect(0,330,W,210,'#8f9d6b');
+  drawGyou(390,395,1.25);drawGyou(590,395,1.12);
+  for(const p of [[300,300],[480,275],[680,310]])ellipse(p[0],p[1],15,11,'#80694e');
+  const item=gyouTrainingDialog[Math.min(dialogIndex,gyouTrainingDialog.length-1)];drawDialog(item[0],item[1]);
+}
+function drawFinalPrepFree(){
+  ctx.fillStyle='#b9d8d4';ctx.fillRect(0,0,W,H);rect(0,320,W,220,'#8ca574');
+  drawHeroFox(205,405,1.02);drawSuzumaru(315,410,.94);drawDashmiu(420,418,.84);drawYuno(520,410,.94);drawGyou(625,410,.97);
+  const item=finalPrepFreeDialog[Math.min(dialogIndex,finalPrepFreeDialog.length-1)];drawDialog(item[0],item[1]);
+}
+
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);
-  drawHeroFox(300,270,1.55);drawSuzumaru(420,275,1.45);drawDashmiu(540,282,1.3);drawYuno(655,275,1.4);
-  text('Ver.0.34 ここまで',480,105,40,'center');
-  text('たけぞ村・第2陣撃退！',480,365,22,'center','#d8efff');
-  text('次は：ぶりふぉ村へ――最終決戦の準備',480,405,20,'center','#d8efff');
+  drawHeroFox(245,270,1.35);drawSuzumaru(355,275,1.25);drawDashmiu(465,282,1.12);drawYuno(575,275,1.22);drawGyou(685,275,1.25);
+  text('Ver.0.35 ここまで',480,105,40,'center');
+  text('ギョウが奥義「大守護」を習得！',480,365,22,'center','#d8efff');
+  text('次は：ほかの仲間の特訓・最高装備の準備',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
 }
 function update(dt){
@@ -3343,7 +3455,31 @@ function pressAction(){
   }
   if(scene==='secondWaveVictory'){
     dialogIndex++;
-    if(dialogIndex>=secondWaveVictoryDialog.length){secondWaveStage=5;scene='end';dialogIndex=0;saveGame();}
+    if(dialogIndex>=secondWaveVictoryDialog.length){secondWaveStage=5;scene='gyouJoin';dialogIndex=0;saveGame();}
+    return;
+  }
+  if(scene==='gyouJoin'){
+    dialogIndex++;
+    if(dialogIndex>=gyouJoinDialog.length){
+      gyouJoined=true;
+      progress.gyouSP=Math.max(progress.gyouSP||0,totalSPForLevel(progress.level));
+      scene='finalPrep';dialogIndex=0;saveProgress();saveGame();
+    }
+    return;
+  }
+  if(scene==='finalPrep'){
+    dialogIndex++;
+    if(dialogIndex>=finalPrepDialog.length){scene='finalPrepFree';dialogIndex=0;saveGame();}
+    return;
+  }
+  if(scene==='finalPrepFree'){
+    dialogIndex++;
+    if(dialogIndex>=finalPrepFreeDialog.length){scene='gyouTraining';dialogIndex=0;saveGame();}
+    return;
+  }
+  if(scene==='gyouTraining'){
+    dialogIndex++;
+    if(dialogIndex>=gyouTrainingDialog.length){progress.gyouGrandGuard=true;saveProgress();scene='end';dialogIndex=0;saveGame();}
     return;
   }
   if(scene==='sarubibiArrival'){
@@ -3452,6 +3588,10 @@ function frame(now){
   else if(scene==='secondWaveRetreat')drawSecondWaveRetreat();
   else if(scene==='secondWaveTrap')drawSecondWaveTrap();
   else if(scene==='secondWaveVictory')drawSecondWaveVictory();
+  else if(scene==='gyouJoin')drawGyouJoin();
+  else if(scene==='finalPrep')drawFinalPrep();
+  else if(scene==='finalPrepFree')drawFinalPrepFree();
+  else if(scene==='gyouTraining')drawGyouTraining();
   else if(scene==='sarubibiTown')drawSarubibiTown();
   else if(scene==='sarubibiShop')drawSarubibiShop();
   else if(scene==='sarubieTown')drawSarubieTown();
@@ -3542,7 +3682,11 @@ canvas.addEventListener('pointerdown',e=>{
     if(battleMenu==='main'){
       if(y>=380 && y<=455){
         if(x<260){
-          if(isYunoTurn()){
+          if(isGyouTurn()){
+            const gs=gyouStats(),dmg=gs.atk+2+Math.floor(Math.random()*5);
+            battleMessage=`ギョウの槍攻撃！ ${dmg}ダメージ！`;damageEnemy(dmg);
+            if(enemiesDefeated()){battle.turn='win';battleCooldown=1;}else advancePartyTurn();
+          }else if(isYunoTurn()){
             const ys=yunoStats();const dmg=ys.atk+Math.floor(Math.random()*5);
             battleMessage=`ユーノの弓攻撃！ ${dmg}ダメージ！`;damageEnemy(dmg);
             if(enemiesDefeated()){battle.turn='win';battleCooldown=1;}else advancePartyTurn();
@@ -3555,7 +3699,11 @@ canvas.addEventListener('pointerdown',e=>{
       }
     }else{
       if(y>=385 && y<=460){
-        if(isYunoTurn()){
+        if(isGyouTurn()){
+          const i=Math.max(0,Math.min(7,Math.floor((x-28)/114)));
+          const modes=['fortify','cover','taunt','manaGuard','healGuard','doubleThrust','counter','grandGuard'];
+          gyouAction(modes[i]);
+        }else if(isYunoTurn()){
           if(x<175)yunoAction('healAll');
           else if(x<320)yunoAction('regen');
           else if(x<465)yunoAction('windAll');

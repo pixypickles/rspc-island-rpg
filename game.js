@@ -680,8 +680,9 @@ const finalBalloonDialog=[
   ['gyou','……否定しづらいな。'],
   ['narrator','一瞬だけ、5人にいつもの空気が戻る。'],
   ['hero','見えた。船長だ。'],
-  ['narrator','霧の切れ間。巨大な海賊旗の下で、一人の影が空を見上げた。'],
+  ['narrator','霧の切れ間。ぶりふぉ村攻略のため海岸近くに置かれた前線本陣。その巨大な海賊旗の下で、二人の影が空を見上げた。'],
   ['captain','……島の連中が、空から来るとはな。'],
+  ['vice','船長、俺が叩き落とします。'],
   ['yuno','気づかれた！'],
   ['hero','行こう。ここで終わらせる！'],
   ['narrator','5人は海賊本陣へ降下を開始した――。']
@@ -689,7 +690,7 @@ const finalBalloonDialog=[
 
 
 const pirateCaptainIntroDialog=[
-['narrator','5人は気球から海賊本陣へ飛び降りた。ジュウが土の盾で着地の衝撃を受け止める。'],
+['narrator','5人は気球から海岸近くの前線本陣へ飛び降りた。ジュウが土の盾で着地の衝撃を受け止める。沖には船長の旗艦が待機している。'],
 ['captain','村を守るために、わざわざ俺のところまで来たか。'],
 ['suzu','そっちが島まで来たんだろ。帰ってくれるなら追いかけないぞ。'],
 ['yuno','長引けば食料も弾薬も尽きる。だから一気に攻めたかったんだね。'],
@@ -697,10 +698,11 @@ const pirateCaptainIntroDialog=[
 ['gyou','こっちも村は渡さない。'],
 ['dash','だったら、ここで決着をつけよう。'],
 ['hero','あなたを倒して、この戦いを終わらせる！'],
-['captain','いいだろう。島の切り札――まとめて相手をしてやる！']
+['vice','船長に近づけると思うな。俺の斧でまとめて潰す！'],
+['captain','いいだろう。島の切り札――副船長と俺でまとめて相手をしてやる！']
 ];
 const pirateCaptainAfterDialog=[
-['narrator','船長の武器が地面へ落ちた。'],
+['narrator','副船長の大斧が転がり、続いて船長の武器も地面へ落ちた。'],
 ['captain','……ここまで、か。'],
 ['yuno','本隊も分断されてる。これ以上続けても勝てないよ。'],
 ['captain','全員に撤退を伝えろ。動ける船から海へ出す。'],
@@ -1480,7 +1482,11 @@ function startPirateCaptainBattle(){
   const over=Math.max(0,(progress.level||1)-10);
   const hp=520+Math.min(360,over*28);
   battle={heroHP:progress.maxHP,heroMP:progress.maxMP,enemyHP:hp,enemyMaxHP:hp,
-    enemyName:'海賊船長',enemyKind:'pirateCaptain',monsterId:900,turn:'player',defending:false,bossPhase:1,bossTurn:0};
+    enemyName:'副船長',enemyKind:'viceCaptain',monsterId:900,turn:'player',defending:false,bossPhase:1,bossTurn:0,
+    enemies:[
+      {name:'副船長',kind:'viceCaptain',hp:Math.floor(hp*.58),maxHP:Math.floor(hp*.58)},
+      {name:'海賊船長',kind:'pirateCaptain',hp:hp,maxHP:hp,potions:2}
+    ]};
   const ss=suzumaruStats(),ys=yunoStats(),gs=gyouStats();
   Object.assign(battle,{suzuMaxHP:ss.maxHP,suzuHP:ss.maxHP,suzuMaxMP:ss.maxMP,suzuMP:ss.maxMP,
     yunoMaxHP:ys.maxHP,yunoHP:ys.maxHP,yunoMaxMP:ys.maxMP,yunoMP:ys.maxMP,
@@ -1611,13 +1617,11 @@ function drawBattle(){
   if(battle.monsterId===99){
     drawCaveBoss(700,245,1.75);
   }else if(battle.monsterId===900){
-    ctx.save();ctx.translate(715,235);
-    ellipse(0,72,55,12,'rgba(0,0,0,.25)');rect(-35,-2,70,82,'#26364b');ellipse(0,-20,29,31,'#b98b6b');
-    ctx.fillStyle='#243245';ctx.beginPath();ctx.moveTo(-52,-37);ctx.lineTo(52,-37);ctx.lineTo(30,-58);ctx.lineTo(-28,-58);ctx.closePath();ctx.fill();
-    rect(-42,7,12,60,'#a8493f');rect(30,7,12,60,'#a8493f');
-    ctx.strokeStyle='#d8dce1';ctx.lineWidth=7;ctx.beginPath();ctx.arc(57,24,45,-1.15,1.1);ctx.stroke();
-    rect(-22,78,16,35,'#3a2e2a');rect(8,78,16,35,'#3a2e2a');
-    text(battle.bossPhase>=2?'船長・決死':'海賊船長',0,-92,18,'center','#6d2020',900);ctx.restore();
+    const vice=battle.enemies&&battle.enemies[0], cap=battle.enemies&&battle.enemies[1];
+    // 副船長：イノシシ。太いヘアバンド＋大斧。
+    if(vice&&vice.hp>0){ctx.save();ctx.translate(650,245);ellipse(0,72,46,11,'rgba(0,0,0,.22)');ellipse(0,-18,31,29,'#8d674c');ellipse(-25,-26,12,14,'#72513e');ellipse(25,-26,12,14,'#72513e');rect(-32,-35,64,12,'#c94848');rect(-32,8,64,70,'#704b3d');ctx.strokeStyle='#d4d7d8';ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(40,-5);ctx.lineTo(72,75);ctx.stroke();ctx.fillStyle='#9ba2a5';ctx.beginPath();ctx.moveTo(58,-8);ctx.lineTo(92,8);ctx.lineTo(76,38);ctx.lineTo(45,20);ctx.closePath();ctx.fill();text(`副船長 ${vice.hp}/${vice.maxHP}`,0,-72,16,'center','#5b2020',900);ctx.restore();}
+    // 船長：タヌキ。後方指揮型で自分用の回復薬を持つ。
+    if(cap&&cap.hp>0){ctx.save();ctx.translate(785,240);ellipse(0,72,44,11,'rgba(0,0,0,.22)');ellipse(0,-18,30,29,'#8c765e');ellipse(-24,-28,11,13,'#5d5148');ellipse(24,-28,11,13,'#5d5148');ellipse(-12,-17,8,10,'#4d4540');ellipse(12,-17,8,10,'#4d4540');rect(-34,8,68,72,'#26364b');ctx.fillStyle='#243245';ctx.beginPath();ctx.moveTo(-48,-40);ctx.lineTo(48,-40);ctx.lineTo(28,-60);ctx.lineTo(-26,-60);ctx.closePath();ctx.fill();ctx.strokeStyle='#d8dce1';ctx.lineWidth=7;ctx.beginPath();ctx.arc(48,25,38,-1.1,1.1);ctx.stroke();text(`海賊船長 ${cap.hp}/${cap.maxHP}`,0,-78,16,'center','#5b2020',900);ctx.restore();}
   }else if(battle.enemies){
     const live=livingEnemies();
     const spots=[
@@ -1669,7 +1673,7 @@ function drawBattle(){
   ctx.fillStyle='rgba(255,255,255,.88)';
   ctx.fillRect(650,bt,265,72);
   if(battle.enemies){
-    text(`敵グループ　残り ${livingEnemies().length}体`,670,bt+28,17,'left','#243245',800);
+    text(battle.monsterId===900?`海賊本陣　残り ${livingEnemies().length}人`:`敵グループ　残り ${livingEnemies().length}体`,670,bt+28,17,'left','#243245',800);
     text('HPは各敵の下に表示',670,bt+54,13,'left','#52606f');
   }else{
     text(battle.enemyName,670,bt+28,18,'left','#243245',800);
@@ -2037,15 +2041,22 @@ function battleRun(){
 }
 function pirateCaptainTurn(){
   ensureGyouBattle();battle.bossTurn=(battle.bossTurn||0)+1;
-  if(battle.enemyHP<=battle.enemyMaxHP*.5 && battle.bossPhase===1){
-    battle.bossPhase=2;
-    battleMessage='海賊船長「ここからが本番だ！」　船長の攻撃が激しくなった！';
+  const vice=battle.enemies[0],cap=battle.enemies[1];
+  if(cap.hp>0 && cap.hp<=cap.maxHP*.5 && battle.bossPhase===1){battle.bossPhase=2;battleMessage='海賊船長「まだ終わらん！」';}
+  // 船長は自分専用の回復薬を最大2回使用。副船長には使わない。
+  if(cap.hp>0 && cap.potions>0 && cap.hp<=cap.maxHP*.42){
+    const heal=Math.min(115,cap.maxHP-cap.hp);cap.hp+=heal;cap.potions--;syncPrimaryEnemy();
+    battleMessage=`海賊船長は自分に高級回復薬を使った！ HP ${heal}回復！（残り${cap.potions}）`;
+    addDamagePopup(`+${heal}`,785,170,'#9ff0c5');battle.turn='enemyResult';battleCooldown=1.3;return;
   }
-  const phase=battle.bossPhase||1;
-  const base=(phase===1?15:21)+Math.floor(Math.random()*7);
+  let attacker=cap.hp>0?'captain':'vice';
+  // 副船長は生存中、2ターンに1回割り込んで大斧を振るう。
+  if(vice.hp>0 && (battle.bossTurn%2===0 || cap.hp<=0))attacker='vice';
+  const isVice=attacker==='vice';
+  const base=(isVice?31:(battle.bossPhase===2?22:16))+Math.floor(Math.random()*7);
   let targets=[];
   if(battle.gyouGrandGuard)targets=['gyou'];
-  else if(battle.bossTurn%3===0)targets=['hero','suzu','yuno','gyou'];
+  else if(!isVice && battle.bossTurn%3===0)targets=['hero','suzu','yuno','gyou'];
   else if(battle.gyouTauntTurns>0)targets=['gyou'];
   else targets=[['hero','suzu','yuno','gyou'][Math.floor(Math.random()*4)]];
   const lines=[];
@@ -2061,14 +2072,11 @@ function pirateCaptainTurn(){
     lines.push(`${target==='hero'?heroName:target==='suzu'?'スズマル':target==='yuno'?'ユーノ':'ジュウ'} -${dmg}`);
     addDamagePopup(`-${dmg}`,target==='hero'?185:target==='suzu'?265:target==='yuno'?360:455,215,'#ff796e');
   }
-  const move=battle.bossTurn%3===0?'船長の「一斉薙ぎ払い」！':phase===2?'船長の「決死斬り」！':'船長の斬撃！';
-  battleMessage=`${move} ${lines.join(' / ')}`;
+  battleMessage=isVice?`副船長の「豪斧撃」！ ${lines.join(' / ')}`:`海賊船長の${battle.bossTurn%3===0?'「一斉指揮斬り」':'斬撃'}！ ${lines.join(' / ')}`;
   battle.defending=false;
   if(battle.regenTurns>0){const h=7;for(const [k,m] of [['heroHP',progress.maxHP],['suzuHP',battle.suzuMaxHP],['yunoHP',battle.yunoMaxHP],['gyouHP',battle.gyouMaxHP]])battle[k]=Math.min(m,battle[k]+h);battle.regenTurns--;battleMessage+=` / そよぎの輪 +${h}`;}
-  if(battle.evadeAllTurns>0)battle.evadeAllTurns--;if(battle.evadeTurns>0)battle.evadeTurns--;
-  if(battle.gyouDefTurns>0)battle.gyouDefTurns--;if(battle.gyouTauntTurns>0)battle.gyouTauntTurns--;
-  battle.gyouCover=null;battle.gyouCounter=false;battle.gyouGrandGuard=false;
-  battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
+  if(battle.evadeAllTurns>0)battle.evadeAllTurns--;if(battle.evadeTurns>0)battle.evadeTurns--;if(battle.gyouDefTurns>0)battle.gyouDefTurns--;if(battle.gyouTauntTurns>0)battle.gyouTauntTurns--;
+  battle.gyouCover=null;battle.gyouCounter=false;battle.gyouGrandGuard=false;battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
   battle.turn='enemyResult';battleCooldown=1.3;
 }
 function enemyTurn(){
@@ -3572,8 +3580,9 @@ function drawFinalPrepFree(){
 function drawPirateCaptainIntro(){
   ctx.fillStyle='#8faeb8';ctx.fillRect(0,0,W,H);rect(0,310,W,230,'#5f6d62');
   drawHeroFox(110,415,.72);drawSuzumaru(195,420,.77);drawDashmiu(280,427,.70);drawYuno(365,420,.77);drawGyou(450,420,.79);
-  // captain silhouette
-  ellipse(740,395,42,12,'rgba(0,0,0,.25)');rect(710,300,60,100,'#26364b');ellipse(740,280,26,28,'#b98b6b');rect(695,245,90,15,'#243245');
+  // 前線本陣の船長（タヌキ）と副船長（イノシシ）
+  ellipse(700,286,27,26,'#8d674c');rect(670,310,60,90,'#704b3d');rect(666,273,68,11,'#c94848');
+  ellipse(790,286,27,26,'#8c765e');rect(760,310,60,90,'#26364b');rect(748,250,84,14,'#243245');
   const item=pirateCaptainIntroDialog[Math.min(dialogIndex,pirateCaptainIntroDialog.length-1)];drawDialog(item[0],item[1]);
 }
 function drawPirateCaptainAfter(){
@@ -3600,12 +3609,12 @@ function drawFinalBalloon(){
   rect(0,390,W,150,'#628ea1');
   for(let i=0;i<6;i++)ellipse(90+i*170,355+(i%2)*18,110,38,'rgba(240,245,242,.42)');
   // balloon
-  ellipse(480,145,120,88,'#d8b56d');rect(435,218,90,55,'#806047');
+  ellipse(480,145,120,88,'#d8b56d');rect(405,218,150,64,'#806047');
   ctx.strokeStyle='#5d4b38';ctx.lineWidth=4;
-  ctx.beginPath();ctx.moveTo(410,185);ctx.lineTo(448,220);ctx.moveTo(550,185);ctx.lineTo(512,220);ctx.stroke();
-  drawHeroFox(450,250,.42);drawSuzumaru(480,252,.44);drawDashmiu(510,255,.40);drawYuno(540,252,.44);drawGyou(570,252,.45);
-  // enemy flagship marker
-  rect(725,330,150,42,'#51443e');rect(792,245,6,85,'#3f3632');
+  ctx.beginPath();ctx.moveTo(410,185);ctx.lineTo(425,220);ctx.moveTo(550,185);ctx.lineTo(535,220);ctx.stroke();
+  drawHeroFox(425,255,.38);drawSuzumaru(452,257,.39);drawDashmiu(480,259,.36);drawYuno(508,257,.39);drawGyou(536,257,.40);
+  // 海岸近くの前線本陣。船長の旗艦はさらに沖で待機。
+  ctx.fillStyle='#6f5748';ctx.beginPath();ctx.moveTo(720,372);ctx.lineTo(800,310);ctx.lineTo(880,372);ctx.closePath();ctx.fill();rect(792,245,6,85,'#3f3632');
   ctx.fillStyle='#8b3030';ctx.beginPath();ctx.moveTo(798,248);ctx.lineTo(870,272);ctx.lineTo(798,290);ctx.fill();
   const item=finalBalloonDialog[Math.min(dialogIndex,finalBalloonDialog.length-1)];drawDialog(item[0],item[1]);
 }
@@ -3613,7 +3622,7 @@ function drawFinalBalloon(){
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);
   drawHeroFox(245,270,1.15);drawSuzumaru(355,275,1.25);drawDashmiu(465,282,1.12);drawYuno(575,275,1.22);drawGyou(685,275,1.25);
-  text('Ver.0.52 ここまで',480,105,40,'center');
+  text('Ver.0.53 ここまで',480,105,40,'center');
   text('海賊船長を撃破！ 最終決戦に勝利した！',480,365,26,'center','#d8efff');
   text('次は：戦いの後・エンディング',480,407,23,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,466,20,'center','#9fc8df');

@@ -1304,6 +1304,29 @@ for(const mon of monsters) drawWildMonster(mon);
   ctx.fillStyle='rgba(9,22,48,.8)';ctx.fillRect(18,ht,340,46);
   text('目的：南南東のさるびえ村へ　→ 村門を目指す',35,ht+23,17);
 }
+
+function startFinalBearBattle(){
+  const ss=suzumaruStats(),ys=yunoStats(),gs=gyouStats();
+  battle={
+    heroHP:progress.maxHP,heroMP:progress.maxMP,
+    suzuHP:ss.maxHP,suzuMaxHP:ss.maxHP,suzuMP:ss.maxMP,suzuMaxMP:ss.maxMP,
+    yunoHP:ys.maxHP,yunoMaxHP:ys.maxHP,yunoMP:ys.maxMP,yunoMaxMP:ys.maxMP,
+    gyouHP:gs.maxHP,gyouMaxHP:gs.maxHP,gyouMP:gs.maxMP,gyouMaxMP:gs.maxMP,
+    regenTurns:0,hasteTarget:null,hasteTurns:0,hasteUsed:false,
+    evadeTarget:null,evadeTurns:0,evadeAllTurns:0,
+    gyouDefTurns:0,gyouTauntTurns:0,gyouCover:null,
+    gyouManaGuard:false,gyouCounter:false,gyouGrandGuard:false,
+    skipYunoThisRound:false,
+    enemyHP:finalBear.maxHP,enemyMaxHP:finalBear.maxHP,
+    enemyName:finalBear.name,enemyKind:finalBear.kind,
+    monsterId:finalBear.id,turn:'player',defending:false
+  };
+  damagePopups=[];battleMenu='main';battleActor='hero';
+  battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
+  battleMessage='大ドリアングマが立ちはだかった！';
+  scene='battle';touchUI.classList.add('hidden');
+}
+
 function startBattle(mon){
   battle={
     heroHP:progress.maxHP,heroMP:progress.maxMP,
@@ -2520,7 +2543,7 @@ function startBananaSharkBattle(){
     turn:'player',defending:false
   };
   damagePopups=[];battleMenu='main';battleActor='hero';
-  battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択'};
+  battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
   battleMessage='強そうなバナナザメが襲いかかってきた！';
   scene='battle';touchUI.classList.add('hidden');
 }
@@ -2535,7 +2558,7 @@ function startVolcanoSurveyBattle(mon){
     turn:'player',defending:false
   };
   damagePopups=[];battleMenu='main';battleActor='hero';
-  battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択'};
+  battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
   battleMessage=`${mon.name}が現れた！`;
   scene='battle';touchUI.classList.add('hidden');
 }
@@ -2557,7 +2580,7 @@ function startTakezoScoutBattle(){
     turn:'player',defending:false
   };
   damagePopups=[];battleMenu='main';battleActor='hero';
-  battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択'};
+  battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
   battleMessage='海賊団の偵察小隊に見つかった！';
   scene='battle';touchUI.classList.add('hidden');
 }
@@ -2582,7 +2605,7 @@ function startTakezoBattle(mon){
     turn:'player',defending:false
   };
   damagePopups=[];battleMenu='main';battleActor='hero';
-  battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択'};
+  battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
   battleMessage=`${mon.name}が立ちはだかった！`;
   scene='battle';touchUI.classList.add('hidden');
 }
@@ -3208,7 +3231,7 @@ function update(dt){
     let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;
     const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);finalBearHero.x+=dx*finalBearHero.speed*dt;finalBearHero.y+=dy*finalBearHero.speed*dt;}
     finalBearHero.x=Math.max(60,Math.min(1190,finalBearHero.x));finalBearHero.y=Math.max(260,Math.min(500,finalBearHero.y));
-    if(finalBear.alive&&Math.hypot(finalBearHero.x-finalBear.x,finalBearHero.y-finalBear.y)<95){startBattle(finalBear);}
+    if(finalBear.alive&&Math.hypot(finalBearHero.x-finalBear.x,finalBearHero.y-finalBear.y)<95){startFinalBearBattle();}
   } else if(scene==='world'){
     let dx=0,dy=0;
     if(keys.ArrowLeft||keys.a)dx--;

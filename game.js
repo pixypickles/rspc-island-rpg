@@ -189,6 +189,14 @@ let takezoScoutDefeated=false;
 let takezoScout={id:450,x:1120,y:315,alive:true,name:'海賊ネコ偵察兵',kind:'pirateCat',hp:64,maxHP:64};
 let takezoHero={x:150,y:760,speed:210};
 let takezoPrepHero={x:300,y:400,speed:210};
+let coastSurveyHero={x:160,y:430,speed:205};
+let bananaSharkAlive=true;
+let volcanoSurveyHero={x:160,y:470,speed:205};
+let volcanoSurveyMobs=[
+  {id:470,x:650,y:420,alive:true,name:'サツマイモイノシシ',kind:'sweetBoar',hp:78,maxHP:78},
+  {id:471,x:1080,y:345,alive:true,name:'ドリアングマ',kind:'durianBear',hp:92,maxHP:92}
+];
+
 let takezoPrepStage=0; // 0 plan, 1 coast survey, 2 volcano survey, 3 construction review
 
 let takezoWave=0;
@@ -393,18 +401,34 @@ const takezoCoastDialog=[
   ['dash','海から穴まで、水の道を作るんだね。'],
   ['yuno','うん。風で水を押して、水の村人に流れを制御してもらえばいい。'],
   ['suzu','海賊船から見えない位置なのも都合がいいな。'],
-  ['yuno','次は中央火山。風向きと斜面を確認したい。']
+  ['narrator','その時、浅瀬から大きな影が飛び出した！']
+];
+
+const bananaSharkAfterDialog=[
+  ['dash','つ、強かった……！ あれがこの辺の普通の魚なの？'],
+  ['yuno','バナナザメ。ここ一帯を縄張りにしてる。'],
+  ['hero','海賊が海から回り込んでくる可能性は？'],
+  ['yuno','かなり低いと思う。小舟で近づけば、先にバナナザメに襲われる。'],
+  ['suzu','つまり、海岸側は天然の防壁ってわけか。'],
+  ['yuno','そう。落とし穴へ海水を引く作業にも集中できる。次は中央火山を見よう。']
 ];
 
 const takezoVolcanoDialog=[
-  ['narrator','一行は中央火山を望める高台へ移動した。'],
-  ['yuno','……やっぱり。この時間は海から火山へ風が流れてる。'],
-  ['hero','落とし穴にも関係ある？'],
-  ['yuno','ある。でも、それだけじゃない。島全体の地形と風の流れを覚えておきたいんだ。'],
-  ['dash','その言い方、何かまだ考えてる？'],
-  ['yuno','まだ形になってない。必要になった時に話すよ。'],
-  ['suzu','なら今は、目の前の襲撃だな。'],
-  ['narrator','調査を終えた一行は、たけぞ村へ戻った。']
+  ['narrator','魔物を退けながら、一行は中央火山を望める高台へたどり着いた。'],
+  ['yuno','……やっぱり。この斜面、ぶりふぉ村の氷壁側までかなり長く続いてる。'],
+  ['hero','何かに使えそう？'],
+  ['yuno','岩を大量に転がすこともできる。氷の道を作って、大きな氷の船を滑らせることもできる。'],
+  ['dash','氷壁の前にいる海賊を、一気に吹き飛ばせるかも！'],
+  ['suzu','問題は狙いを外さないことだな。'],
+  ['yuno','それと、この上昇気流。火と風を組み合わせれば、気球も使えそうだ。'],
+  ['hero','気球？'],
+  ['yuno','地上の戦力は土壁と霧で海賊本隊を足止めする。霧は火と水で作って、風で本陣へ流す。'],
+  ['yuno','その間に少人数だけ空から抜けて、海賊船へ直接入る。'],
+  ['dash','船長を上から奇襲するってこと？'],
+  ['yuno','まだ先の話だけど、その形が一番きれいかもしれない。'],
+  ['suzu','浮かせる熱は俺、進路はお前の風か。'],
+  ['yuno','うん。まずは次の襲撃を落とし穴で止める。その後に考えよう。'],
+  ['narrator','ユーノは火山の斜面、風向き、ぶりふぉ村側の地形を細かく記録した。']
 ];
 
 const takezoConstructionDialog=[
@@ -488,7 +512,7 @@ function hudTop(){
 function saveGame(){
   if(scene==='title'||scene==='cutscene'||scene==='battle'||scene==='shop'||scene==='sarubibiShop')return;
 
-  if(['world','road2','cave','route3','sarubieTown','sarubibiTown','takezoTravel','takezoRoute'].includes(scene)){
+  if(['world','road2','cave','route3','sarubieTown','sarubibiTown','takezoTravel','takezoRoute','coastSurveyField','volcanoSurveyField'].includes(scene)){
     lastFieldScene=scene;
   }
 
@@ -507,6 +531,10 @@ function saveGame(){
     yunoJoined,
     takezoIntroDone,
     takezoPrepStage,
+    bananaSharkAlive,
+    coastSurveyHero:{x:coastSurveyHero.x,y:coastSurveyHero.y},
+    volcanoSurveyHero:{x:volcanoSurveyHero.x,y:volcanoSurveyHero.y},
+    volcanoSurveyMobs:volcanoSurveyMobs.map(m=>({id:m.id,alive:m.alive,x:m.x,y:m.y})),
     takezoScoutDefeated,
     takezoScoutAlive:takezoScout.alive,
     takezoTravelHero:{x:takezoTravelHero.x,y:takezoTravelHero.y},
@@ -555,16 +583,17 @@ function loadGame(){
     sarubibiQuestStarted=!!d.sarubibiQuestStarted;
     yunoJoined=!!d.yunoJoined;
     takezoIntroDone=!!d.takezoIntroDone;takezoPrepStage=d.takezoPrepStage||0;
+    if(typeof d.bananaSharkAlive==='boolean')bananaSharkAlive=d.bananaSharkAlive;
     takezoScoutDefeated=!!d.takezoScoutDefeated;
     if(typeof d.takezoScoutAlive==='boolean')takezoScout.alive=d.takezoScoutAlive;
 
     const apply=(obj,s)=>{if(s){if(Number.isFinite(s.x))obj.x=s.x;if(Number.isFinite(s.y))obj.y=s.y;}};
     apply(dash,d.dash);apply(hero,d.hero);apply(caveHero,d.caveHero);apply(route3Hero,d.route3Hero);
-    apply(townHero,d.townHero);apply(sarubibiHero,d.sarubibiHero);apply(takezoTravelHero,d.takezoTravelHero);apply(takezoHero,d.takezoHero);
+    apply(townHero,d.townHero);apply(sarubibiHero,d.sarubibiHero);apply(takezoTravelHero,d.takezoTravelHero);apply(takezoHero,d.takezoHero);apply(coastSurveyHero,d.coastSurveyHero);apply(volcanoSurveyHero,d.volcanoSurveyHero);
 
     restoreList(monsters,d.monsters);
     restoreList(caveMobs,d.caveMobs);
-    restoreList(route3Mobs,d.route3Mobs);restoreList(takezoMobs,d.takezoMobs);repairTakezoSquads();
+    restoreList(route3Mobs,d.route3Mobs);restoreList(takezoMobs,d.takezoMobs);restoreList(volcanoSurveyMobs,d.volcanoSurveyMobs);repairTakezoSquads();
 
     lastFieldScene=d.lastFieldScene||'world';
     let target=d.scene||lastFieldScene;
@@ -582,6 +611,7 @@ function loadGame(){
       takezoRelief:'takezoRelief',
       takezoPlan:'takezoPlan',
       takezoCoastSurvey:'takezoCoastSurvey',
+      bananaSharkAfter:'bananaSharkAfter',
       takezoVolcanoSurvey:'takezoVolcanoSurvey',
       takezoConstruction:'takezoConstruction',
       end:lastFieldScene
@@ -803,6 +833,9 @@ function drawPirate(x,y,s=1,variant=0){
 }
 
 function drawWildMonster(mon){
+  if(mon && ['bananaShark','sweetBoar','durianBear'].includes(mon.kind)){
+    drawSurveyMonster(mon);return;
+  }
   if(mon && ['pirateCat','pirateDog','pirateTanuki'].includes(mon.kind)){
     drawPirateAnimal(mon.x,mon.y,mon.kind,1.25);return;
   }
@@ -1554,6 +1587,22 @@ function finishBattle(){
     flashTimer=3.0;return;
   }
 
+  if(battle && battle.monsterId===460){
+    bananaSharkAlive=false;
+    const expGain=55,goldGain=35;
+    progress.gold+=goldGain;const leveled=gainExp(expGain);saveProgress();
+    battle=null;scene='bananaSharkAfter';dialogIndex=0;touchUI.classList.add('hidden');saveGame();return;
+  }
+  if(battle && (battle.monsterId===470||battle.monsterId===471)){
+    const mon=volcanoSurveyMobs.find(m=>m.id===battle.monsterId);
+    if(mon)mon.alive=false;
+    const expGain=battle.monsterId===471?48:38,goldGain=battle.monsterId===471?30:22;
+    progress.gold+=goldGain;const leveled=gainExp(expGain);saveProgress();
+    battle=null;scene='volcanoSurveyField';touchUI.classList.remove('hidden');
+    flashText=leveled?`レベルアップ！ Lv.${progress.level}`:`${mon?mon.name:'魔物'}を倒した！`;
+    flashTimer=2.0;saveGame();return;
+  }
+
   if(battle && battle.monsterId===450){
     takezoScout.alive=false;takezoScoutDefeated=true;
     const expGain=32,goldGain=24;
@@ -2204,6 +2253,38 @@ function enemiesDefeated(){
 
 
 
+
+function startBananaSharkBattle(){
+  const ss=suzumaruStats(),ys=yunoStats();
+  battle={
+    heroHP:progress.maxHP,heroMP:progress.maxMP,
+    suzuHP:ss.maxHP,suzuMaxHP:ss.maxHP,suzuMP:ss.maxMP,suzuMaxMP:ss.maxMP,
+    yunoHP:ys.maxHP,yunoMaxHP:ys.maxHP,yunoMP:ys.maxMP,yunoMaxMP:ys.maxMP,
+    regenTurns:0,hasteTarget:null,evadeTarget:null,evadeAllTurns:0,
+    enemyHP:135,enemyMaxHP:135,monsterId:460,enemyName:'バナナザメ',enemyKind:'bananaShark',
+    turn:'player',defending:false
+  };
+  damagePopups=[];battleMenu='main';battleActor='hero';
+  battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択'};
+  battleMessage='強そうなバナナザメが襲いかかってきた！';
+  scene='battle';touchUI.classList.add('hidden');
+}
+function startVolcanoSurveyBattle(mon){
+  const ss=suzumaruStats(),ys=yunoStats();
+  battle={
+    heroHP:progress.maxHP,heroMP:progress.maxMP,
+    suzuHP:ss.maxHP,suzuMaxHP:ss.maxHP,suzuMP:ss.maxMP,suzuMaxMP:ss.maxMP,
+    yunoHP:ys.maxHP,yunoMaxHP:ys.maxHP,yunoMP:ys.maxMP,yunoMaxMP:ys.maxMP,
+    regenTurns:0,hasteTarget:null,evadeTarget:null,evadeAllTurns:0,
+    enemyHP:mon.hp,enemyMaxHP:mon.maxHP,monsterId:mon.id,enemyName:mon.name,enemyKind:mon.kind,
+    turn:'player',defending:false
+  };
+  damagePopups=[];battleMenu='main';battleActor='hero';
+  battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択'};
+  battleMessage=`${mon.name}が現れた！`;
+  scene='battle';touchUI.classList.add('hidden');
+}
+
 function startTakezoScoutBattle(){
   const ss=suzumaruStats(),ys=yunoStats();
   const enemies=[
@@ -2490,6 +2571,45 @@ function menuTap(x,y){
   }
 }
 
+
+function drawSurveyMonster(mon){
+  if(!mon||!mon.alive)return;
+  const x=mon.x,y=mon.y;
+  ctx.save();ctx.translate(x,y);
+  ellipse(0,24,25,7,'rgba(0,0,0,.18)');
+  if(mon.kind==='bananaShark'){
+    // Banana + shark
+    ctx.fillStyle='#f0d64b';
+    ctx.beginPath();ctx.ellipse(0,0,35,16,-.18,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#d8bf3d';ctx.beginPath();ctx.moveTo(-7,-15);ctx.lineTo(2,-34);ctx.lineTo(10,-12);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#f5e67e';ctx.beginPath();ctx.moveTo(-28,3);ctx.lineTo(-46,-10);ctx.lineTo(-40,10);ctx.closePath();ctx.fill();
+    rect(18,-6,5,5,'#172235');
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(26,5);ctx.lineTo(32,2);ctx.lineTo(30,8);ctx.closePath();ctx.fill();
+  }else if(mon.kind==='sweetBoar'){
+    // Sweet potato + boar
+    ellipse(0,0,27,18,'#9d5e7d');
+    ellipse(-22,-7,8,8,'#7b4f66');ellipse(22,-7,8,8,'#7b4f66');
+    ellipse(17,5,13,10,'#c9859f');
+    rect(10,-5,4,4,'#1f2632');
+    ctx.fillStyle='#f2e6d4';
+    ctx.beginPath();ctx.moveTo(23,9);ctx.lineTo(33,15);ctx.lineTo(26,4);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(23,2);ctx.lineTo(34,-4);ctx.lineTo(26,7);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#68a45d';ctx.beginPath();ctx.ellipse(-10,-17,10,5,-.5,0,Math.PI*2);ctx.fill();
+  }else if(mon.kind==='durianBear'){
+    // Durian + bear
+    ellipse(0,0,28,23,'#7aa35b');
+    for(let a=0;a<Math.PI*2;a+=Math.PI/6){
+      const px=Math.cos(a)*31,py=Math.sin(a)*24;
+      ctx.fillStyle='#d4c660';ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+Math.cos(a)*11,py+Math.sin(a)*11);ctx.lineTo(px+Math.cos(a+.35)*5,py+Math.sin(a+.35)*5);ctx.closePath();ctx.fill();
+    }
+    ellipse(-15,-18,8,8,'#6b5848');ellipse(15,-18,8,8,'#6b5848');
+    ellipse(0,3,16,13,'#8d775d');
+    rect(-9,-5,4,4,'#172235');rect(5,-5,4,4,'#172235');
+    ellipse(0,5,5,4,'#372c28');
+  }
+  ctx.restore();
+}
+
 function drawPirateAnimal(x,y,kind='pirateCat',s=1){
   ctx.save();ctx.translate(x,y);ctx.scale(s,s);
   ellipse(0,30,21,6,'rgba(0,0,0,.18)');
@@ -2640,22 +2760,55 @@ function drawTakezoPlan(){
   const item=takezoPlanDialog[Math.min(dialogIndex,takezoPlanDialog.length-1)];
   drawDialog(item[0],item[1]);
 }
+
 function drawTakezoCoastSurvey(){
   const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#9bd8e9');gr.addColorStop(.48,'#9bd8e9');gr.addColorStop(.49,'#69b7d2');gr.addColorStop(1,'#4c9dbd');
   ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
   ctx.fillStyle='#d8c58f';ctx.beginPath();ctx.moveTo(0,340);ctx.lineTo(W,280);ctx.lineTo(W,540);ctx.lineTo(0,540);ctx.fill();
-  for(let x=30;x<W;x+=95){ctx.strokeStyle='rgba(255,255,255,.55)';ctx.beginPath();ctx.moveTo(x,260);ctx.lineTo(x+55,265);ctx.stroke();}
   drawHeroFox(220,380,1.08);drawYuno(340,380,1.08);drawSuzumaru(455,385,.98);drawDashmiu(560,390,.9);
   const item=takezoCoastDialog[Math.min(dialogIndex,takezoCoastDialog.length-1)];drawDialog(item[0],item[1]);
 }
+function drawCoastSurveyField(){
+  camera.x=Math.max(0,Math.min(1200-W,coastSurveyHero.x-W*.45));camera.y=0;
+  ctx.save();ctx.translate(-camera.x,0);
+  const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#9bd8e9');gr.addColorStop(.44,'#9bd8e9');gr.addColorStop(.45,'#69b7d2');gr.addColorStop(1,'#4c9dbd');
+  ctx.fillStyle=gr;ctx.fillRect(0,0,1200,H);
+  ctx.fillStyle='#d8c58f';ctx.beginPath();ctx.moveTo(0,345);ctx.lineTo(1200,250);ctx.lineTo(1200,540);ctx.lineTo(0,540);ctx.fill();
+  for(let x=40;x<1180;x+=100){ctx.strokeStyle='rgba(255,255,255,.55)';ctx.beginPath();ctx.moveTo(x,250);ctx.lineTo(x+58,257);ctx.stroke();}
+  if(bananaSharkAlive)drawSurveyMonster({x:900,y:305,alive:true,kind:'bananaShark'});
+  drawHeroFox(coastSurveyHero.x,coastSurveyHero.y,1.08);drawYuno(coastSurveyHero.x-45,coastSurveyHero.y+15,.98);drawSuzumaru(coastSurveyHero.x-86,coastSurveyHero.y+24,.92);drawDashmiu(coastSurveyHero.x-125,coastSurveyHero.y+30,.84);
+  ctx.restore();
+  const ht=hudTop();ctx.fillStyle='rgba(10,28,48,.88)';ctx.fillRect(18,ht,410,46);
+  text('目的：海岸線と海水の引き込み口を確認',35,ht+23,15);
+}
+function drawBananaSharkAfter(){
+  const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#9bd8e9');gr.addColorStop(.48,'#9bd8e9');gr.addColorStop(.49,'#69b7d2');gr.addColorStop(1,'#4c9dbd');
+  ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#d8c58f';ctx.beginPath();ctx.moveTo(0,340);ctx.lineTo(W,280);ctx.lineTo(W,540);ctx.lineTo(0,540);ctx.fill();
+  drawHeroFox(220,380,1.08);drawYuno(340,380,1.08);drawSuzumaru(455,385,.98);drawDashmiu(560,390,.9);
+  const item=bananaSharkAfterDialog[Math.min(dialogIndex,bananaSharkAfterDialog.length-1)];drawDialog(item[0],item[1]);
+}
+
+function drawVolcanoSurveyField(){
+  camera.x=Math.max(0,Math.min(1400-W,volcanoSurveyHero.x-W*.44));camera.y=0;
+  ctx.save();ctx.translate(-camera.x,0);
+  const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#e6b271');gr.addColorStop(1,'#d9d3a2');ctx.fillStyle=gr;ctx.fillRect(0,0,1400,H);
+  rect(0,330,1400,210,'#7d9b69');
+  // mountain rises to the right
+  ctx.fillStyle='#6a685d';ctx.beginPath();ctx.moveTo(680,330);ctx.lineTo(1240,80);ctx.lineTo(1400,330);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#b4583c';ctx.beginPath();ctx.moveTo(1195,100);ctx.lineTo(1240,80);ctx.lineTo(1285,108);ctx.closePath();ctx.fill();
+  for(const m of volcanoSurveyMobs)if(m.alive)drawSurveyMonster(m);
+  drawHeroFox(volcanoSurveyHero.x,volcanoSurveyHero.y,1.07);drawYuno(volcanoSurveyHero.x-44,volcanoSurveyHero.y+15,.98);drawSuzumaru(volcanoSurveyHero.x-84,volcanoSurveyHero.y+24,.92);drawDashmiu(volcanoSurveyHero.x-123,volcanoSurveyHero.y+30,.84);
+  ctx.restore();
+  const ht=hudTop();ctx.fillStyle='rgba(10,28,48,.88)';ctx.fillRect(18,ht,390,46);
+  text(`目的：火山の斜面を確認　魔物残り ${volcanoSurveyMobs.filter(m=>m.alive).length}`,35,ht+23,15);
+}
 function drawTakezoVolcanoSurvey(){
   const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#e6b271');gr.addColorStop(1,'#d9d3a2');ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
-  // distant central volcano
   ctx.fillStyle='#5e6258';ctx.beginPath();ctx.moveTo(570,90);ctx.lineTo(770,360);ctx.lineTo(390,360);ctx.closePath();ctx.fill();
   ctx.fillStyle='#c95d3d';ctx.beginPath();ctx.moveTo(570,90);ctx.lineTo(610,145);ctx.lineTo(530,145);ctx.closePath();ctx.fill();
   rect(0,360,W,180,'#7d9b69');
   drawHeroFox(220,405,1.05);drawYuno(335,405,1.08);drawSuzumaru(450,410,.98);drawDashmiu(555,415,.9);
-  // wind stream indicators
   for(let x=90;x<880;x+=160){ctx.strokeStyle='rgba(230,250,255,.7)';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x,230);ctx.quadraticCurveTo(x+60,205,x+115,225);ctx.stroke();}
   const item=takezoVolcanoDialog[Math.min(dialogIndex,takezoVolcanoDialog.length-1)];drawDialog(item[0],item[1]);
 }
@@ -2738,6 +2891,29 @@ function update(dt){
       scene='sarubieArrival';
       dialogIndex=0;
       touchUI.classList.add('hidden');
+    }
+  } else if(scene==='coastSurveyField'){
+    let dx=0,dy=0;
+    if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;
+    if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;
+    dx+=touchVector.x;dy+=touchVector.y;
+    const l=Math.hypot(dx,dy);
+    if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);coastSurveyHero.x+=dx*coastSurveyHero.speed*dt;coastSurveyHero.y+=dy*coastSurveyHero.speed*dt;}
+    coastSurveyHero.x=Math.max(90,Math.min(1120,coastSurveyHero.x));coastSurveyHero.y=Math.max(290,Math.min(500,coastSurveyHero.y));
+    if(bananaSharkAlive && coastSurveyHero.x>790){startBananaSharkBattle();}
+  } else if(scene==='volcanoSurveyField'){
+    let dx=0,dy=0;
+    if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;
+    if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;
+    dx+=touchVector.x;dy+=touchVector.y;
+    const l=Math.hypot(dx,dy);
+    if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);volcanoSurveyHero.x+=dx*volcanoSurveyHero.speed*dt;volcanoSurveyHero.y+=dy*volcanoSurveyHero.speed*dt;}
+    volcanoSurveyHero.x=Math.max(90,Math.min(1320,volcanoSurveyHero.x));volcanoSurveyHero.y=Math.max(300,Math.min(500,volcanoSurveyHero.y));
+    for(const mon of volcanoSurveyMobs){
+      if(mon.alive&&Math.hypot(volcanoSurveyHero.x-mon.x,volcanoSurveyHero.y-mon.y)<62){startVolcanoSurveyBattle(mon);break;}
+    }
+    if(scene==='volcanoSurveyField' && volcanoSurveyMobs.every(m=>!m.alive) && volcanoSurveyHero.x>1220){
+      scene='takezoVolcanoSurvey';dialogIndex=0;touchUI.classList.add('hidden');
     }
   } else if(scene==='takezoTravel'){
     let dx=0,dy=0;
@@ -2882,7 +3058,10 @@ function update(dt){
         }
         else if(battle.turn==='win')finishBattle();
         else if(battle.turn==='run'){
-          scene=(battle&&battle.monsterId===450)?'takezoTravel':(battle&&battle.monsterId>=400)?'takezoRoute':'road2';
+          scene=(battle&&battle.monsterId===460)?'coastSurveyField':
+                (battle&&(battle.monsterId===470||battle.monsterId===471))?'volcanoSurveyField':
+                (battle&&battle.monsterId===450)?'takezoTravel':
+                (battle&&battle.monsterId>=400)?'takezoRoute':'road2';
           touchUI.classList.remove('hidden');
           battle=null;
           flashText='戦闘から離脱した';
@@ -3030,7 +3209,20 @@ function pressAction(){
   }
   if(scene==='takezoCoastSurvey'){
     dialogIndex++;
-    if(dialogIndex>=takezoCoastDialog.length){takezoPrepStage=2;scene='takezoVolcanoSurvey';dialogIndex=0;saveGame();}
+    if(dialogIndex>=takezoCoastDialog.length){
+      scene='coastSurveyField';dialogIndex=0;coastSurveyHero.x=160;coastSurveyHero.y=430;bananaSharkAlive=true;
+      touchUI.classList.remove('hidden');saveGame();
+    }
+    return;
+  }
+  if(scene==='bananaSharkAfter'){
+    dialogIndex++;
+    if(dialogIndex>=bananaSharkAfterDialog.length){
+      takezoPrepStage=2;scene='volcanoSurveyField';dialogIndex=0;
+      volcanoSurveyHero.x=160;volcanoSurveyHero.y=470;
+      volcanoSurveyMobs.forEach(m=>m.alive=true);
+      touchUI.classList.remove('hidden');saveGame();
+    }
     return;
   }
   if(scene==='takezoVolcanoSurvey'){
@@ -3102,7 +3294,7 @@ function pressAction(){
     return;
   }
 
-  if(scene==='world' || scene==='road2' || scene==='route3' || scene==='cave' || scene==='takezoTravel' || scene==='takezoRoute'){
+  if(scene==='world' || scene==='road2' || scene==='route3' || scene==='cave' || scene==='takezoTravel' || scene==='takezoRoute' || scene==='coastSurveyField' || scene==='volcanoSurveyField'){
     openFieldMenu(scene);
     return;
   }
@@ -3140,6 +3332,9 @@ function frame(now){
   else if(scene==='takezoRelief')drawTakezoRelief();
   else if(scene==='takezoPlan')drawTakezoPlan();
   else if(scene==='takezoCoastSurvey')drawTakezoCoastSurvey();
+  else if(scene==='coastSurveyField')drawCoastSurveyField();
+  else if(scene==='bananaSharkAfter')drawBananaSharkAfter();
+  else if(scene==='volcanoSurveyField')drawVolcanoSurveyField();
   else if(scene==='takezoVolcanoSurvey')drawTakezoVolcanoSurvey();
   else if(scene==='takezoConstruction')drawTakezoConstruction();
   else if(scene==='sarubibiTown')drawSarubibiTown();
@@ -3149,7 +3344,7 @@ function frame(now){
   else if(scene==='sarubieRitual')drawSarubieRitual();
   else if(scene==='cave')drawCave();
   else drawEnd();
-  if(flashTimer>0 && ['title','road2','world','cave','route3','sarubieTown','shop','sarubibiTown','sarubibiShop','nightTrail','takezoTravel','takezoRoute'].includes(scene)){
+  if(flashTimer>0 && ['title','road2','world','cave','route3','sarubieTown','shop','sarubibiTown','sarubibiShop','nightTrail','takezoTravel','takezoRoute','coastSurveyField','volcanoSurveyField'].includes(scene)){
     ctx.fillStyle='rgba(0,0,0,.58)';ctx.fillRect(305,85,350,58);text(flashText,480,114,20,'center');
   }
   requestAnimationFrame(frame);
@@ -3268,7 +3463,7 @@ canvas.addEventListener('pointerdown',e=>{
         }
       }
     }
-  } else if(scene!=='world'&&scene!=='road2'&&scene!=='route3'&&scene!=='sarubieTown'&&scene!=='shop'&&scene!=='cave'&&scene!=='sarubibiTown'&&scene!=='sarubibiShop'&&scene!=='nightTrail'&&scene!=='takezoTravel'&&scene!=='takezoRoute') pressAction();
+  } else if(scene!=='world'&&scene!=='road2'&&scene!=='route3'&&scene!=='sarubieTown'&&scene!=='shop'&&scene!=='cave'&&scene!=='sarubibiTown'&&scene!=='sarubibiShop'&&scene!=='nightTrail'&&scene!=='takezoTravel'&&scene!=='takezoRoute'&&scene!=='coastSurveyField'&&scene!=='volcanoSurveyField') pressAction();
 });
 let lastActionAt=0;
 function triggerActionButton(e){

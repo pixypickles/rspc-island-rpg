@@ -571,9 +571,9 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.21.1',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.21.2',480,121,18,'center','#eef8ff');
   const canContinue=hasSaveGame();
-  const y1=430,y2=486;
+  const y1=350,y2=406;
   outlineRect(300,y1,360,46,titleSelection===0?'#e8f7fb':'rgba(15,35,60,.78)','#73b9d6',2);
   text('はじめから',480,y1+23,20,'center',titleSelection===0?'#17324a':'#e8f4fa');
   outlineRect(300,y2,360,46,titleSelection===1?'#e8f7fb':'rgba(15,35,60,.78)',canContinue?'#73b9d6':'#566879',2);
@@ -1758,7 +1758,7 @@ function menuTap(x,y){
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);drawHeroFox(405,270,1.8);drawDashmiu(555,275,1.8);
-  text('Ver.0.21.1 ここまで',480,112,42,'center');
+  text('Ver.0.21.2 ここまで',480,112,42,'center');
   text(`さるびび村の問題を解決し、ユーノの協力を得よう。`,480,365,22,'center','#d8efff');
   text('次は：夜の尾行とツキポポの秘密へ',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
@@ -2106,8 +2106,8 @@ canvas.addEventListener('pointerdown',e=>{
   if(scene==='title'){
     const r=canvas.getBoundingClientRect();
     const y=(e.clientY-r.top)/r.height*H;
-    if(y>=420&&y<478){titleSelection=0;pressAction();return;}
-    if(y>=478&&y<=540){titleSelection=1;pressAction();return;}
+    if(y>=340&&y<398){titleSelection=0;pressAction();return;}
+    if(y>=398&&y<=466){titleSelection=1;pressAction();return;}
     return;
   }
   if(scene==='sarubibiShop'){

@@ -4,20 +4,33 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
   <meta name="theme-color" content="#101b36" />
-  <title>りすぺく島RPG Ver.0.21.1</title>
+  <title>りすぺく島RPG Ver.0.21.2</title>
   <link rel="stylesheet" href="styles.css" />
+
+
 
 <style>
 html,body{
+  margin:0;
+  width:100%;
   min-height:100%;
-  overflow-x:hidden !important;
-  overflow-y:auto !important;
-  -webkit-overflow-scrolling:touch;
+  overflow-x:hidden;
+  background:#07122c;
 }
-body{min-height:100dvh;padding-bottom:120px !important;}
-@media (max-height:720px),(max-width:430px){
-  body{min-height:760px;}
-  canvas{display:block;}
+body{
+  padding:0 !important;
+}
+canvas{
+  display:block;
+  max-width:100%;
+}
+@media (orientation:landscape) and (max-height:600px){
+  canvas{
+    width:auto !important;
+    height:calc(100dvh - 4px) !important;
+    max-width:100vw !important;
+    margin:0 auto !important;
+  }
 }
 </style>
 </head>
@@ -47,6 +60,6 @@ body{min-height:100dvh;padding-bottom:120px !important;}
       <button id="actionBtn" aria-label="決定">A</button>
     </div>
   </main>
-  <script src="game.js?v=0211"></script>
+  <script src="game.js?v=0212"></script>
 </body>
 </html>

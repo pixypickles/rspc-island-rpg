@@ -188,6 +188,9 @@ let takezoTravelHero={x:180,y:470,speed:210};
 let takezoScoutDefeated=false;
 let takezoScout={id:450,x:1120,y:315,alive:true,name:'海賊ネコ偵察兵',kind:'pirateCat',hp:64,maxHP:64};
 let takezoHero={x:150,y:760,speed:210};
+let takezoPrepHero={x:300,y:400,speed:210};
+let takezoPrepStage=0; // 0 plan, 1 coast survey, 2 volcano survey, 3 construction review
+
 let takezoWave=0;
 let takezoIntroDone=false;
 let takezoMobs=[
@@ -365,6 +368,58 @@ const takezoReliefDialog=[
   ['narrator','一行はたけぞ村へ入り、数日後に来る第2陣への備えを始めることにした。']
 ];
 
+const takezoPlanDialog=[
+  ['narrator','その日の夕方。たけぞ村の作戦室に、各村の代表が集まった。'],
+  ['guard','次の襲撃は先行部隊の比じゃない。正面から受け止め続けるのは無理だ。'],
+  ['yuno','だから、正面から全部倒そうとしない。村の外に、巨大な落とし穴を作る。'],
+  ['dash','巨大って、どのくらい？'],
+  ['yuno','海賊の大部隊がまとめて乗れるくらい。'],
+  ['suzu','……それ、穴を掘るだけでも大仕事だぞ。'],
+  ['yuno','土魔法だけじゃ間に合わない。土の村人が地盤を割って、風の村人が砕いた土砂を巻き上げて外へ運ぶ。二つの魔法で掘る。'],
+  ['hero','掘った後は？'],
+  ['yuno','水を大量に入れる。水魔法でもいいし、海から海水を引いてもいい。'],
+  ['yuno','その水面を氷魔法で厚く凍らせて、最後に土を薄く被せる。見た目は普通の地面になる。'],
+  ['dash','氷の蓋と、土の蓋……。'],
+  ['yuno','海賊をその上まで誘導してから、炎と風で蓋を壊す。銃も装備も、水の底に沈める。'],
+  ['guard','なるほど……村の土壁で守りながら、わざと少しずつ後退するわけか。'],
+  ['yuno','そう。ただし、穴の位置を決める前に地形を確認したい。海岸と、中央火山を見ておきたいんだ。'],
+  ['hero','一緒に行くよ。'],
+  ['narrator','巨大落とし穴の建設が始まった。土と風の村人たちが協力し、まずは広大な穴を掘り始める。']
+];
+
+const takezoCoastDialog=[
+  ['narrator','ユーノと一行は、たけぞ村近くの海岸へ向かった。'],
+  ['yuno','ここなら海水を引ける。水魔法だけで全部満たすより、ずっと魔力を節約できる。'],
+  ['dash','海から穴まで、水の道を作るんだね。'],
+  ['yuno','うん。風で水を押して、水の村人に流れを制御してもらえばいい。'],
+  ['suzu','海賊船から見えない位置なのも都合がいいな。'],
+  ['yuno','次は中央火山。風向きと斜面を確認したい。']
+];
+
+const takezoVolcanoDialog=[
+  ['narrator','一行は中央火山を望める高台へ移動した。'],
+  ['yuno','……やっぱり。この時間は海から火山へ風が流れてる。'],
+  ['hero','落とし穴にも関係ある？'],
+  ['yuno','ある。でも、それだけじゃない。島全体の地形と風の流れを覚えておきたいんだ。'],
+  ['dash','その言い方、何かまだ考えてる？'],
+  ['yuno','まだ形になってない。必要になった時に話すよ。'],
+  ['suzu','なら今は、目の前の襲撃だな。'],
+  ['narrator','調査を終えた一行は、たけぞ村へ戻った。']
+];
+
+const takezoConstructionDialog=[
+  ['narrator','村へ戻る頃には、巨大な穴の輪郭がはっきり見えるほど工事が進んでいた。'],
+  ['guard','土組、もう一段深く！ 風組は崩した土を西へ飛ばしてくれ！'],
+  ['narrator','土魔法が地面を割り、風魔法が大量の土砂を巻き上げて運び出す。二つの村の力で、穴は急速に広がっていく。'],
+  ['yuno','いい感じ。これなら間に合う。'],
+  ['narrator','その後、海から引いた水と水魔法で穴を満たし、氷の村人たちが厚い氷の蓋を作った。'],
+  ['narrator','最後に土の村人たちが氷の上を土で覆い、周囲と見分けがつかないように偽装した。'],
+  ['dash','……知ってても、どこから穴なのか分からない。'],
+  ['suzu','自分たちで落ちるなよ。'],
+  ['yuno','目印は決めてある。あとは海賊が来るまで、休める人は休もう。'],
+  ['narrator','巨大落とし穴が完成した。次の襲撃まで、あと数日――。']
+];
+
 const sarubibiNightDialog = [
   ['narrator','夜。防衛隊長の恋人は、ひとりで村の外へ歩き出した。'],
   ['dash','ほんとに毎晩出かけてる……。'],
@@ -451,6 +506,7 @@ function saveGame(){
     sarubibiQuestStarted,
     yunoJoined,
     takezoIntroDone,
+    takezoPrepStage,
     takezoScoutDefeated,
     takezoScoutAlive:takezoScout.alive,
     takezoTravelHero:{x:takezoTravelHero.x,y:takezoTravelHero.y},
@@ -498,7 +554,7 @@ function loadGame(){
     if(Number.isFinite(d.caveBossHP))caveBoss.hp=d.caveBossHP;
     sarubibiQuestStarted=!!d.sarubibiQuestStarted;
     yunoJoined=!!d.yunoJoined;
-    takezoIntroDone=!!d.takezoIntroDone;
+    takezoIntroDone=!!d.takezoIntroDone;takezoPrepStage=d.takezoPrepStage||0;
     takezoScoutDefeated=!!d.takezoScoutDefeated;
     if(typeof d.takezoScoutAlive==='boolean')takezoScout.alive=d.takezoScoutAlive;
 
@@ -523,7 +579,11 @@ function loadGame(){
       takezoDeparture:'takezoTravel',
       takezoScoutAfter:'takezoTravel',
       takezoArrival:'takezoRoute',
-      takezoRelief:'takezoRoute',
+      takezoRelief:'takezoRelief',
+      takezoPlan:'takezoPlan',
+      takezoCoastSurvey:'takezoCoastSurvey',
+      takezoVolcanoSurvey:'takezoVolcanoSurvey',
+      takezoConstruction:'takezoConstruction',
       end:lastFieldScene
     };
     if(safeMap[target])target=safeMap[target];
@@ -2569,12 +2629,57 @@ function drawTakezoRelief(){
   drawDialog(item[0],item[1]);
 }
 
+
+function drawTakezoPlan(){
+  drawTakezoVillageGate();
+  // planning table and elemental representatives
+  rect(165,255,630,120,'#7a5639');rect(190,280,580,70,'#d5c59b');
+  drawHeroFox(210,420,1.0);drawSuzumaru(310,420,.95);drawDashmiu(400,425,.86);drawYuno(500,420,.96);
+  // earth + wind villagers
+  drawSuzumaru(650,420,.85);drawYuno(735,420,.86);
+  const item=takezoPlanDialog[Math.min(dialogIndex,takezoPlanDialog.length-1)];
+  drawDialog(item[0],item[1]);
+}
+function drawTakezoCoastSurvey(){
+  const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#9bd8e9');gr.addColorStop(.48,'#9bd8e9');gr.addColorStop(.49,'#69b7d2');gr.addColorStop(1,'#4c9dbd');
+  ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#d8c58f';ctx.beginPath();ctx.moveTo(0,340);ctx.lineTo(W,280);ctx.lineTo(W,540);ctx.lineTo(0,540);ctx.fill();
+  for(let x=30;x<W;x+=95){ctx.strokeStyle='rgba(255,255,255,.55)';ctx.beginPath();ctx.moveTo(x,260);ctx.lineTo(x+55,265);ctx.stroke();}
+  drawHeroFox(220,380,1.08);drawYuno(340,380,1.08);drawSuzumaru(455,385,.98);drawDashmiu(560,390,.9);
+  const item=takezoCoastDialog[Math.min(dialogIndex,takezoCoastDialog.length-1)];drawDialog(item[0],item[1]);
+}
+function drawTakezoVolcanoSurvey(){
+  const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#e6b271');gr.addColorStop(1,'#d9d3a2');ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
+  // distant central volcano
+  ctx.fillStyle='#5e6258';ctx.beginPath();ctx.moveTo(570,90);ctx.lineTo(770,360);ctx.lineTo(390,360);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#c95d3d';ctx.beginPath();ctx.moveTo(570,90);ctx.lineTo(610,145);ctx.lineTo(530,145);ctx.closePath();ctx.fill();
+  rect(0,360,W,180,'#7d9b69');
+  drawHeroFox(220,405,1.05);drawYuno(335,405,1.08);drawSuzumaru(450,410,.98);drawDashmiu(555,415,.9);
+  // wind stream indicators
+  for(let x=90;x<880;x+=160){ctx.strokeStyle='rgba(230,250,255,.7)';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x,230);ctx.quadraticCurveTo(x+60,205,x+115,225);ctx.stroke();}
+  const item=takezoVolcanoDialog[Math.min(dialogIndex,takezoVolcanoDialog.length-1)];drawDialog(item[0],item[1]);
+}
+function drawTakezoConstruction(){
+  const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#a7dbe8');gr.addColorStop(1,'#b8d49a');ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
+  rect(0,260,W,280,'#82a96d');
+  // enormous excavation, deliberately wide
+  ellipse(520,380,330,105,'#574332');ellipse(520,390,270,78,'#263947');
+  // earth workers at rim
+  for(const p of [[210,330],[315,300],[725,305]])drawSuzumaru(p[0],p[1],.72);
+  // wind workers; arcs show soil being carried away
+  for(const p of [[785,350],[850,305]])drawYuno(p[0],p[1],.72);
+  ctx.strokeStyle='rgba(235,245,220,.72)';ctx.lineWidth=6;
+  for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(650+i*45,315-i*18,55,2.8,5.8);ctx.stroke();}
+  drawHeroFox(130,430,.95);drawYuno(205,430,.95);drawSuzumaru(280,435,.88);drawDashmiu(350,440,.82);
+  const item=takezoConstructionDialog[Math.min(dialogIndex,takezoConstructionDialog.length-1)];drawDialog(item[0],item[1]);
+}
+
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);
   drawHeroFox(300,270,1.55);drawSuzumaru(420,275,1.45);drawDashmiu(540,282,1.3);drawYuno(655,275,1.4);
   text('Ver.0.31 ここまで',480,105,40,'center');
-  text('たけぞ村の先行部隊を撃退！',480,365,22,'center','#d8efff');
-  text('次は：第2陣を迎え撃つ準備',480,405,20,'center','#d8efff');
+  text('巨大落とし穴の準備が完了！',480,365,22,'center','#d8efff');
+  text('次は：数日後――海賊第2陣の襲撃',480,405,20,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,462,18,'center','#9fc8df');
 }
 function update(dt){
@@ -2913,9 +3018,29 @@ function pressAction(){
   if(scene==='takezoRelief'){
     dialogIndex++;
     if(dialogIndex>=takezoReliefDialog.length){
-      takezoIntroDone=true;
-      scene='end';dialogIndex=0;saveGame();
+      takezoIntroDone=true;takezoPrepStage=0;
+      scene='takezoPlan';dialogIndex=0;saveGame();
     }
+    return;
+  }
+  if(scene==='takezoPlan'){
+    dialogIndex++;
+    if(dialogIndex>=takezoPlanDialog.length){takezoPrepStage=1;scene='takezoCoastSurvey';dialogIndex=0;saveGame();}
+    return;
+  }
+  if(scene==='takezoCoastSurvey'){
+    dialogIndex++;
+    if(dialogIndex>=takezoCoastDialog.length){takezoPrepStage=2;scene='takezoVolcanoSurvey';dialogIndex=0;saveGame();}
+    return;
+  }
+  if(scene==='takezoVolcanoSurvey'){
+    dialogIndex++;
+    if(dialogIndex>=takezoVolcanoDialog.length){takezoPrepStage=3;scene='takezoConstruction';dialogIndex=0;saveGame();}
+    return;
+  }
+  if(scene==='takezoConstruction'){
+    dialogIndex++;
+    if(dialogIndex>=takezoConstructionDialog.length){scene='end';dialogIndex=0;saveGame();}
     return;
   }
   if(scene==='sarubibiArrival'){
@@ -3013,6 +3138,10 @@ function frame(now){
   else if(scene==='takezoArrival')drawTakezoArrival();
   else if(scene==='takezoRoute')drawTakezoRoute();
   else if(scene==='takezoRelief')drawTakezoRelief();
+  else if(scene==='takezoPlan')drawTakezoPlan();
+  else if(scene==='takezoCoastSurvey')drawTakezoCoastSurvey();
+  else if(scene==='takezoVolcanoSurvey')drawTakezoVolcanoSurvey();
+  else if(scene==='takezoConstruction')drawTakezoConstruction();
   else if(scene==='sarubibiTown')drawSarubibiTown();
   else if(scene==='sarubibiShop')drawSarubibiShop();
   else if(scene==='sarubieTown')drawSarubieTown();

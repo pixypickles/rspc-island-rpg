@@ -511,13 +511,13 @@ const secondWaveVictoryDialog=[
 const gyouJoinDialog=[
   ['narrator','伝令の報告を聞いた直後、土壁の修復を指揮していた青年が一行の前へ来た。'],
   ['gyou','ぶりふぉ村へ行くなら、俺も連れていってくれ。'],
-  ['dash','ギョウ！ ここの守りは？'],
+  ['dash','ジュウ！ ここの守りは？'],
   ['gyou','もう引き継いだ。土壁の扱いなら皆も十分分かってる。'],
   ['gyou','ここまで島中の村が力を貸してるんだ。最後だけ見送る気はない。'],
   ['suzu','決まりだな。'],
   ['yuno','うん。五人なら、できることも増える。'],
-  ['hero','行こう、ギョウ。'],
-  ['narrator','ギョウが仲間になった！']
+  ['hero','行こう、ジュウ。'],
+  ['narrator','ジュウが仲間になった！']
 ];
 
 const finalPrepDialog=[
@@ -540,7 +540,7 @@ const finalPrepDialog=[
 ];
 
 const finalWeaponDialog=[
-  ['narrator','ギョウの特訓が終わった頃、さるびえ村から鍛冶職人が長い包みを抱えてやって来た。'],
+  ['narrator','ジュウの特訓が終わった頃、さるびえ村から鍛冶職人が長い包みを抱えてやって来た。'],
   ['smith','スズマル。お前に持たせたいものがある。'],
   ['suzu','俺に？'],
   ['smith','火山の炉で最後まで鍛えた大剣だ。刃の芯に炎晶石を仕込んである。'],
@@ -593,14 +593,14 @@ const volcanoBearAfterDialog=[
 ];
 
 const gyouTrainingDialog=[
-  ['narrator','準備を進めていると、たけぞ村の老村長がギョウを呼び止めた。'],
-  ['elder','ギョウ。守るというのは、ただ硬くなることではない。'],
+  ['narrator','準備を進めていると、たけぞ村の老村長がジュウを呼び止めた。'],
+  ['elder','ジュウ。守るというのは、ただ硬くなることではない。'],
   ['gyou','村長……。'],
   ['elder','仲間が倒れるはずだった一撃を、自分が引き受ける。その覚悟まで含めて守りだ。'],
-  ['narrator','村長はギョウと何度も打ち合い、複数方向から飛んでくる土の礫を一人で受け止める特訓を行った。'],
+  ['narrator','村長はジュウと何度も打ち合い、複数方向から飛んでくる土の礫を一人で受け止める特訓を行った。'],
   ['gyou','……もう一度お願いします！'],
   ['elder','よし。今度は四人全員を守るつもりで構えろ！'],
-  ['narrator','激しい特訓の末、ギョウは奥義「大守護」を身につけた！'],
+  ['narrator','激しい特訓の末、ジュウは奥義「大守護」を身につけた！'],
   ['elder','使えばお前一人に攻撃が集中する。無茶はするな。だが――必要な時には迷うな。'],
   ['gyou','はい！']
 ];
@@ -1509,7 +1509,7 @@ function drawBattle(){
   }
   if(gyouJoinConfirmed && battle.monsterId>=400){
     ensureGyouBattle();
-    partyRows.push({name:'ギョウ',hp:battle.gyouHP,maxHP:battle.gyouMaxHP,mp:battle.gyouMP,maxMP:battle.gyouMaxMP});
+    partyRows.push({name:'ジュウ',hp:battle.gyouHP,maxHP:battle.gyouMaxHP,mp:battle.gyouMP,maxMP:battle.gyouMaxMP});
   }
 
   const rosterX=32, rosterY=bt, rosterW=350;
@@ -1541,7 +1541,7 @@ function drawBattle(){
   }else if(battle.turn==='enemyResult'){
     text('敵の攻撃',480,300,20,'center','#ff9d91');
   }else if(battle.turn==='player'){
-    const who=isGyouTurn()?'ギョウ':isYunoTurn()?'ユーノ':isSuzumaruTurn()?'スズマル':heroName;
+    const who=isGyouTurn()?'ジュウ':isYunoTurn()?'ユーノ':isSuzumaruTurn()?'スズマル':heroName;
     text(`${who}のターン`,480,300,18,'center','#e8f6ff');
   }
   // party command state
@@ -1562,11 +1562,11 @@ function drawBattle(){
       outlineRect(270,by,180,48,'#dff4fb','#71bad7',2);text('スキル',360,by+24,20,'center','#17324a');
       outlineRect(470,by,180,48,'#dff4fb','#71bad7',2);text('ぼうぎょ',560,by+24,20,'center','#17324a');
       outlineRect(670,by,180,48,'#dff4fb','#71bad7',2);text('にげる',760,by+24,20,'center','#17324a');
-      const actorName=isGyouTurn()?'ギョウ':isYunoTurn()?'ユーノ':isSuzumaruTurn()?'スズマル':heroName;
+      const actorName=isGyouTurn()?'ジュウ':isYunoTurn()?'ユーノ':isSuzumaruTurn()?'スズマル':heroName;
       text(`${actorName}の行動`,480,by+78,15,'center','#c8e7f4');
     }else{
       if(isGyouTurn()){
-        text('ギョウのスキル',480,372,14,'center','#f4efcf');
+        text('ジュウのスキル',480,372,14,'center','#f4efcf');
         const opts=[
           ['岩守り','MP5'],['かばう','MP5'],['挑発','MP4'],['土脈吸収','MP4'],
           ['守りの呼吸','MP7'],['二段突き','MP6'],['迎撃の構え','MP7'],[progress.gyouGrandGuard?'大守護':'大守護(未習得)','MP16']
@@ -1818,14 +1818,14 @@ function gyouAction(mode){
   const cost={fortify:5,cover:5,taunt:4,manaGuard:4,healGuard:7,doubleThrust:6,counter:7,grandGuard:16}[mode];
   if(battle.gyouMP<cost){battleMessage='MPが足りない！';return;}
   battle.gyouMP-=cost;
-  if(mode==='fortify'){battle.gyouDefTurns=3;battleMessage='ギョウの「岩守り」！ 防御力が大きく上がった！';}
-  else if(mode==='cover'){battle.gyouCover='hero';battleMessage=`ギョウの「かばう」！ ${heroName}への攻撃を引き受ける！`;}
-  else if(mode==='taunt'){battle.gyouTauntTurns=3;battleMessage='ギョウの「挑発」！ 敵の注意を一身に集めた！';}
-  else if(mode==='manaGuard'){battle.gyouManaGuard=true;battleMessage='ギョウの「土脈吸収」！ ダメージを受けるとMPが回復する！';}
-  else if(mode==='healGuard'){const heal=18+Math.floor(gyouStats().def/2);battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+heal);battle.gyouDefTurns=2;battleMessage=`ギョウの「守りの呼吸」！ HP${heal}回復＋防御！`;setBattleFx('heal',455,255);}
-  else if(mode==='doubleThrust'){const gs=gyouStats(),d1=Math.floor(gs.atk*.72)+5+Math.floor(Math.random()*4),d2=Math.floor(gs.atk*.72)+5+Math.floor(Math.random()*4);damageEnemy(d1);if(!enemiesDefeated())damageEnemy(d2);battleMessage=`ギョウの「二段突き」！ ${d1}＋${d2}ダメージ！`;setBattleFx('slash');if(enemiesDefeated()){battle.turn='win';battleCooldown=1;return;}}
-  else if(mode==='counter'){battle.gyouCounter=true;battleMessage='ギョウの「迎撃の構え」！ 攻撃を受ければ槍で反撃する！';}
-  else if(mode==='grandGuard'){battle.gyouGrandGuard=true;battle.gyouDefTurns=1;battleMessage='ギョウの奥義「大守護」！ このターン、仲間全員への攻撃を引き受ける！';}
+  if(mode==='fortify'){battle.gyouDefTurns=3;battleMessage='ジュウの「岩守り」！ 防御力が大きく上がった！';}
+  else if(mode==='cover'){battle.gyouCover='hero';battleMessage=`ジュウの「かばう」！ ${heroName}への攻撃を引き受ける！`;}
+  else if(mode==='taunt'){battle.gyouTauntTurns=3;battleMessage='ジュウの「挑発」！ 敵の注意を一身に集めた！';}
+  else if(mode==='manaGuard'){battle.gyouManaGuard=true;battleMessage='ジュウの「土脈吸収」！ ダメージを受けるとMPが回復する！';}
+  else if(mode==='healGuard'){const heal=18+Math.floor(gyouStats().def/2);battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+heal);battle.gyouDefTurns=2;battleMessage=`ジュウの「守りの呼吸」！ HP${heal}回復＋防御！`;setBattleFx('heal',455,255);}
+  else if(mode==='doubleThrust'){const gs=gyouStats(),d1=Math.floor(gs.atk*.72)+5+Math.floor(Math.random()*4),d2=Math.floor(gs.atk*.72)+5+Math.floor(Math.random()*4);damageEnemy(d1);if(!enemiesDefeated())damageEnemy(d2);battleMessage=`ジュウの「二段突き」！ ${d1}＋${d2}ダメージ！`;setBattleFx('slash');if(enemiesDefeated()){battle.turn='win';battleCooldown=1;return;}}
+  else if(mode==='counter'){battle.gyouCounter=true;battleMessage='ジュウの「迎撃の構え」！ 攻撃を受ければ槍で反撃する！';}
+  else if(mode==='grandGuard'){battle.gyouGrandGuard=true;battle.gyouDefTurns=1;battleMessage='ジュウの奥義「大守護」！ このターン、仲間全員への攻撃を引き受ける！';}
   battleChoiceText.gyou=mode;advancePartyTurn();
 }
 
@@ -1833,7 +1833,7 @@ function battleDefend(){
   if(!battle || battle.turn!=='player')return;
   if(isGyouTurn()){
     ensureGyouBattle();battle.gyouDefTurns=Math.max(battle.gyouDefTurns,1);
-    battleMessage='ギョウは槍を構えて身を守っている！';battleChoiceText.gyou='ぼうぎょ';advancePartyTurn();return;
+    battleMessage='ジュウは槍を構えて身を守っている！';battleChoiceText.gyou='ぼうぎょ';advancePartyTurn();return;
   }
   if(isYunoTurn()){
     battleMessage='ユーノは身を守っている！';battleChoiceText.yuno='ぼうぎょ';advancePartyTurn();return;
@@ -1882,8 +1882,8 @@ function enemyTurn(){
     if(target==='gyou'){
       let def=gs.def+(battle.gyouDefTurns>0?10:0);dmg=Math.max(1,baseDmg-Math.floor(def/4));
       battle.gyouHP=Math.max(1,battle.gyouHP-dmg);totalGyou+=dmg;
-      if(battle.gyouManaGuard){const mp=Math.max(1,Math.ceil(dmg/2));battle.gyouMP=Math.min(battle.gyouMaxMP,battle.gyouMP+mp);attackLines.push(`${foe.name} → ギョウ ${dmg} / MP+${mp}`);}
-      else attackLines.push(`${foe.name} → ギョウ ${dmg}`);
+      if(battle.gyouManaGuard){const mp=Math.max(1,Math.ceil(dmg/2));battle.gyouMP=Math.min(battle.gyouMaxMP,battle.gyouMP+mp);attackLines.push(`${foe.name} → ジュウ ${dmg} / MP+${mp}`);}
+      else attackLines.push(`${foe.name} → ジュウ ${dmg}`);
       if(battle.gyouCounter){const cd=Math.max(5,Math.floor(gs.atk*.8));damageEnemy(cd);attackLines.push(`迎撃 ${cd}`);}
     }else if(target==='yuno'){dmg=Math.max(1,baseDmg-Math.floor(ys.def/4));battle.yunoHP=Math.max(1,battle.yunoHP-dmg);totalYuno+=dmg;attackLines.push(`${foe.name} → ユーノ ${dmg}`);}
     else if(target==='suzu'){dmg=Math.max(1,baseDmg-Math.floor(ss.def/4));battle.suzuHP=Math.max(1,battle.suzuHP-dmg);totalSuzu+=dmg;attackLines.push(`${foe.name} → スズマル ${dmg}`);}
@@ -2750,7 +2750,7 @@ function drawMenu(){
       members.push({key:'yuno',name:'ユーノ',draw:drawYuno,stats:yunoStats(),sp:progress.yunoSP||0,desc:'風 / 弓　補助・遠距離型',border:'#55aaa8'});
     }
     if(gyouJoinConfirmed){
-      members.push({key:'gyou',name:'ギョウ',draw:drawGyou,stats:gyouStats(),sp:progress.gyouSP||0,desc:'土 / 戦闘型は調整中',border:'#8e8b62'});
+      members.push({key:'gyou',name:'ジュウ',draw:drawGyou,stats:gyouStats(),sp:progress.gyouSP||0,desc:'土 / 戦闘型は調整中',border:'#8e8b62'});
     }
 
     const n=members.length;
@@ -2784,10 +2784,10 @@ function drawMenu(){
     outlineRect(tx[2],140,tw,42,menuCharacter==='yuno'?'#d8f2ed':'#31455f',yunoEnabled?'#59aaa6':'#536273',2);
     text(yunoEnabled?'ユーノ':'ユーノ（未加入）',tx[2]+tw/2,161,14,'center',yunoEnabled?(menuCharacter==='yuno'?'#174c4b':'#d6ece8'):'#758596');
     outlineRect(tx[3],140,tw,42,menuCharacter==='gyou'?'#ece8ce':'#31455f',gyouEnabled?'#999064':'#536273',2);
-    text(gyouEnabled?'ギョウ':'ギョウ（未加入）',tx[3]+tw/2,161,14,'center',gyouEnabled?(menuCharacter==='gyou'?'#494427':'#e5e0c8'):'#758596');
+    text(gyouEnabled?'ジュウ':'ジュウ（未加入）',tx[3]+tw/2,161,14,'center',gyouEnabled?(menuCharacter==='gyou'?'#494427':'#e5e0c8'):'#758596');
 
     if(menuCharacter==='gyou' && gyouEnabled){
-      text(`ギョウ SP：${progress.gyouSP||0}`,45,212,17,'left','#f4efcf');
+      text(`ジュウ SP：${progress.gyouSP||0}`,45,212,17,'left','#f4efcf');
       const gsks=[
         ['fortify','岩守り','自分の防御UP'],
         ['cover','かばう','仲間1人を身代わり'],
@@ -2891,10 +2891,10 @@ function menuTap(x,y){
       const k=keys[row*4+col];
       if(!k)return;
       if(progress.gyouSkills[k]){flashText='習得済みです';flashTimer=1.4;return;}
-      if((progress.gyouSP||0)<1){flashText='ギョウのSPが足りない';flashTimer=1.5;return;}
+      if((progress.gyouSP||0)<1){flashText='ジュウのSPが足りない';flashTimer=1.5;return;}
       progress.gyouSP--;progress.gyouSkills[k]=1;
       saveProgress();saveGame();
-      flashText='ギョウが新しい守護技を習得！';flashTimer=1.8;return;
+      flashText='ジュウが新しい守護技を習得！';flashTimer=1.8;return;
     }
   }
 
@@ -4016,7 +4016,7 @@ canvas.addEventListener('pointerdown',e=>{
         if(x<260){
           if(isGyouTurn()){
             const gs=gyouStats(),dmg=gs.atk+2+Math.floor(Math.random()*5);
-            battleMessage=`ギョウの槍攻撃！ ${dmg}ダメージ！`;damageEnemy(dmg);
+            battleMessage=`ジュウの槍攻撃！ ${dmg}ダメージ！`;damageEnemy(dmg);
             if(enemiesDefeated()){battle.turn='win';battleCooldown=1;}else advancePartyTurn();
           }else if(isYunoTurn()){
             const ys=yunoStats();const dmg=ys.atk+Math.floor(Math.random()*5);

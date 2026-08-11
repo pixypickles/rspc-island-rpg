@@ -688,6 +688,29 @@ const finalBalloonDialog=[
 ];
 
 
+const pirateCaptainIntroDialog=[
+['narrator','5人は気球から海賊本陣へ飛び降りた。ジュウが土の盾で着地の衝撃を受け止める。'],
+['captain','村を守るために、わざわざ俺のところまで来たか。'],
+['suzu','そっちが島まで来たんだろ。帰ってくれるなら追いかけないぞ。'],
+['yuno','長引けば食料も弾薬も尽きる。だから一気に攻めたかったんだね。'],
+['captain','……よく見ている。だが、ここまで来て手ぶらでは帰れん。'],
+['gyou','こっちも村は渡さない。'],
+['dash','だったら、ここで決着をつけよう。'],
+['hero','あなたを倒して、この戦いを終わらせる！'],
+['captain','いいだろう。島の切り札――まとめて相手をしてやる！']
+];
+const pirateCaptainAfterDialog=[
+['narrator','船長の武器が地面へ落ちた。'],
+['captain','……ここまで、か。'],
+['yuno','本隊も分断されてる。これ以上続けても勝てないよ。'],
+['captain','全員に撤退を伝えろ。動ける船から海へ出す。'],
+['suzu','最初からそうしてくれれば楽だったんだけどな。'],
+['gyou','終わった……のか。'],
+['dash','まだ村に戻るまでが決戦だよ。'],
+['hero','うん。みんなのところへ戻ろう。'],
+['narrator','海賊旗が下ろされ、島を覆っていた戦いは終わりへ向かい始めた――。']
+];
+
 const gyouTrainingDialog=[
   ['narrator','準備を進めていると、たけぞ村の老村長がジュウを呼び止めた。'],
   ['elder','ジュウ。守るというのは、ただ硬くなることではない。'],
@@ -915,7 +938,7 @@ function loadGame(){
       gyouJoin:'gyouJoin',
       finalPrep:'finalPrep',
       finalPrepFree:'finalPrepFree',
-      yunoCombo:'yunoCombo',volcanoBearQuest:'volcanoBearQuest',finalBearField:'finalBearField',volcanoBearAfter:'volcanoBearAfter',finalEve:'finalEve',finalEveFree:'finalEveFree',finalLaunch:'finalLaunch',finalBattleGround:'finalBattleGround',finalBalloon:'finalBalloon',
+      yunoCombo:'yunoCombo',volcanoBearQuest:'volcanoBearQuest',finalBearField:'finalBearField',volcanoBearAfter:'volcanoBearAfter',finalEve:'finalEve',finalEveFree:'finalEveFree',finalLaunch:'finalLaunch',finalBattleGround:'finalBattleGround',finalBalloon:'finalBalloon',pirateCaptainIntro:'pirateCaptainIntro',pirateCaptainAfter:'pirateCaptainAfter',
       gyouTraining:'gyouTraining',
       finalWeapon:'finalWeapon',
       end:lastFieldScene
@@ -1453,6 +1476,19 @@ function startFinalBearBattle(){
   scene='battle';touchUI.classList.add('hidden');
 }
 
+function startPirateCaptainBattle(){
+  const over=Math.max(0,(progress.level||1)-10);
+  const hp=520+Math.min(360,over*28);
+  battle={heroHP:progress.maxHP,heroMP:progress.maxMP,enemyHP:hp,enemyMaxHP:hp,
+    enemyName:'海賊船長',enemyKind:'pirateCaptain',monsterId:900,turn:'player',defending:false,bossPhase:1,bossTurn:0};
+  const ss=suzumaruStats(),ys=yunoStats(),gs=gyouStats();
+  Object.assign(battle,{suzuMaxHP:ss.maxHP,suzuHP:ss.maxHP,suzuMaxMP:ss.maxMP,suzuMP:ss.maxMP,
+    yunoMaxHP:ys.maxHP,yunoHP:ys.maxHP,yunoMaxMP:ys.maxMP,yunoMP:ys.maxMP,
+    gyouMaxHP:gs.maxHP,gyouHP:gs.maxHP,gyouMaxMP:gs.maxMP,gyouMP:gs.maxMP});
+  damagePopups=[];battleMenu='main';battleActor='hero';
+  battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
+  battleMessage='海賊船長との最終決戦！';scene='battle';touchUI.classList.add('hidden');saveGame();
+}
 function startBattle(mon){
   battle={
     heroHP:progress.maxHP,heroMP:progress.maxMP,
@@ -1574,6 +1610,14 @@ function drawBattle(){
   }
   if(battle.monsterId===99){
     drawCaveBoss(700,245,1.75);
+  }else if(battle.monsterId===900){
+    ctx.save();ctx.translate(715,235);
+    ellipse(0,72,55,12,'rgba(0,0,0,.25)');rect(-35,-2,70,82,'#26364b');ellipse(0,-20,29,31,'#b98b6b');
+    ctx.fillStyle='#243245';ctx.beginPath();ctx.moveTo(-52,-37);ctx.lineTo(52,-37);ctx.lineTo(30,-58);ctx.lineTo(-28,-58);ctx.closePath();ctx.fill();
+    rect(-42,7,12,60,'#a8493f');rect(30,7,12,60,'#a8493f');
+    ctx.strokeStyle='#d8dce1';ctx.lineWidth=7;ctx.beginPath();ctx.arc(57,24,45,-1.15,1.1);ctx.stroke();
+    rect(-22,78,16,35,'#3a2e2a');rect(8,78,16,35,'#3a2e2a');
+    text(battle.bossPhase>=2?'船長・決死':'海賊船長',0,-92,18,'center','#6d2020',900);ctx.restore();
   }else if(battle.enemies){
     const live=livingEnemies();
     const spots=[
@@ -1991,7 +2035,44 @@ function battleRun(){
   battleMessage='うまく逃げ切った！';
   battle.turn='run';battleCooldown=.6;battleMenu='main';
 }
+function pirateCaptainTurn(){
+  ensureGyouBattle();battle.bossTurn=(battle.bossTurn||0)+1;
+  if(battle.enemyHP<=battle.enemyMaxHP*.5 && battle.bossPhase===1){
+    battle.bossPhase=2;
+    battleMessage='海賊船長「ここからが本番だ！」　船長の攻撃が激しくなった！';
+  }
+  const phase=battle.bossPhase||1;
+  const base=(phase===1?15:21)+Math.floor(Math.random()*7);
+  let targets=[];
+  if(battle.gyouGrandGuard)targets=['gyou'];
+  else if(battle.bossTurn%3===0)targets=['hero','suzu','yuno','gyou'];
+  else if(battle.gyouTauntTurns>0)targets=['gyou'];
+  else targets=[['hero','suzu','yuno','gyou'][Math.floor(Math.random()*4)]];
+  const lines=[];
+  for(const target0 of targets){
+    let target=(battle.gyouCover===target0)?'gyou':target0;
+    const evade=(battle.evadeAllTurns>0?.30:0)+((battle.evadeTarget===target&&battle.evadeTurns>0)?.25:0);
+    if(target!=='gyou'&&Math.random()<evade){lines.push(`${target==='hero'?heroName:target==='suzu'?'スズマル':target==='yuno'?'ユーノ':'ジュウ'} 回避！`);continue;}
+    let dmg=base;
+    if(target==='hero'){dmg=Math.max(1,(battle.defending?Math.floor(dmg/2):dmg)-Math.floor(progress.def/4));battle.heroHP=Math.max(1,battle.heroHP-dmg);}
+    else if(target==='suzu'){dmg=Math.max(1,dmg-Math.floor(suzumaruStats().def/4));battle.suzuHP=Math.max(1,battle.suzuHP-dmg);}
+    else if(target==='yuno'){dmg=Math.max(1,dmg-Math.floor(yunoStats().def/4));battle.yunoHP=Math.max(1,battle.yunoHP-dmg);}
+    else {dmg=Math.max(1,dmg-Math.floor((gyouStats().def+(battle.gyouDefTurns>0?10:0))/4));battle.gyouHP=Math.max(1,battle.gyouHP-dmg);if(battle.gyouManaGuard)battle.gyouMP=Math.min(battle.gyouMaxMP,battle.gyouMP+Math.ceil(dmg/2));}
+    lines.push(`${target==='hero'?heroName:target==='suzu'?'スズマル':target==='yuno'?'ユーノ':'ジュウ'} -${dmg}`);
+    addDamagePopup(`-${dmg}`,target==='hero'?185:target==='suzu'?265:target==='yuno'?360:455,215,'#ff796e');
+  }
+  const move=battle.bossTurn%3===0?'船長の「一斉薙ぎ払い」！':phase===2?'船長の「決死斬り」！':'船長の斬撃！';
+  battleMessage=`${move} ${lines.join(' / ')}`;
+  battle.defending=false;
+  if(battle.regenTurns>0){const h=7;for(const [k,m] of [['heroHP',progress.maxHP],['suzuHP',battle.suzuMaxHP],['yunoHP',battle.yunoMaxHP],['gyouHP',battle.gyouMaxHP]])battle[k]=Math.min(m,battle[k]+h);battle.regenTurns--;battleMessage+=` / そよぎの輪 +${h}`;}
+  if(battle.evadeAllTurns>0)battle.evadeAllTurns--;if(battle.evadeTurns>0)battle.evadeTurns--;
+  if(battle.gyouDefTurns>0)battle.gyouDefTurns--;if(battle.gyouTauntTurns>0)battle.gyouTauntTurns--;
+  battle.gyouCover=null;battle.gyouCounter=false;battle.gyouGrandGuard=false;
+  battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
+  battle.turn='enemyResult';battleCooldown=1.3;
+}
 function enemyTurn(){
+  if(battle&&battle.monsterId===900){pirateCaptainTurn();return;}
   const ss=suzumaruStats(),ys=yunoStats(),gs=gyouStats();ensureGyouBattle();
   const attackers=battle.enemies?livingEnemies():[{name:battle.enemyName||'敵',kind:battle.enemyKind||''}];
   let totalHero=0,totalSuzu=0,totalYuno=0,totalGyou=0;
@@ -2068,6 +2149,11 @@ function finishBattle(){
     finalBear.alive=false;
     progress.gold+=55;const leveled=gainExp(80);saveProgress();
     battle=null;scene='volcanoBearAfter';dialogIndex=0;touchUI.classList.add('hidden');saveGame();return;
+  }
+
+  if(battle && battle.monsterId===900){
+    progress.pirateCaptainDefeated=true;saveProgress();
+    battle=null;scene='pirateCaptainAfter';dialogIndex=0;touchUI.classList.add('hidden');saveGame();return;
   }
 
   if(battle && battle.monsterId===450){
@@ -2673,6 +2759,7 @@ function syncPrimaryEnemy(){
 }
 function damageEnemy(amount,index=0){
   if(!battle.enemies){
+    if(battle.monsterId===900)amount=Math.min(amount,180);
     const actual=Math.max(0,Math.min(amount,battle.enemyHP));
     battle.enemyHP-=amount;
     addDamagePopup(`${actual} DAMAGE`,700,205,'#ffffff');
@@ -3482,6 +3569,20 @@ function drawFinalPrepFree(){
 }
 
 
+function drawPirateCaptainIntro(){
+  ctx.fillStyle='#8faeb8';ctx.fillRect(0,0,W,H);rect(0,310,W,230,'#5f6d62');
+  drawHeroFox(110,415,.72);drawSuzumaru(195,420,.77);drawDashmiu(280,427,.70);drawYuno(365,420,.77);drawGyou(450,420,.79);
+  // captain silhouette
+  ellipse(740,395,42,12,'rgba(0,0,0,.25)');rect(710,300,60,100,'#26364b');ellipse(740,280,26,28,'#b98b6b');rect(695,245,90,15,'#243245');
+  const item=pirateCaptainIntroDialog[Math.min(dialogIndex,pirateCaptainIntroDialog.length-1)];drawDialog(item[0],item[1]);
+}
+function drawPirateCaptainAfter(){
+  ctx.fillStyle='#b4c7c8';ctx.fillRect(0,0,W,H);rect(0,320,W,220,'#78836d');
+  drawHeroFox(120,420,.72);drawSuzumaru(210,425,.77);drawDashmiu(300,432,.70);drawYuno(390,425,.77);drawGyou(480,425,.79);
+  rect(700,320,58,90,'#26364b');ellipse(729,302,25,27,'#b98b6b');ctx.strokeStyle='#d8dce1';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(770,405);ctx.lineTo(825,430);ctx.stroke();
+  const item=pirateCaptainAfterDialog[Math.min(dialogIndex,pirateCaptainAfterDialog.length-1)];drawDialog(item[0],item[1]);
+}
+
 function drawFinalBattleGround(){
   ctx.fillStyle='#aebfc8';ctx.fillRect(0,0,W,H);
   rect(0,300,W,240,'#788b63');
@@ -3512,9 +3613,9 @@ function drawFinalBalloon(){
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);
   drawHeroFox(245,270,1.15);drawSuzumaru(355,275,1.25);drawDashmiu(465,282,1.12);drawYuno(575,275,1.22);drawGyou(685,275,1.25);
-  text('Ver.0.50 ここまで',480,105,40,'center');
-  text('地上戦を突破し、海賊本陣の上空へ！',480,365,26,'center','#d8efff');
-  text('次は：海賊本陣への降下・船長戦',480,407,23,'center','#d8efff');
+  text('Ver.0.52 ここまで',480,105,40,'center');
+  text('海賊船長を撃破！ 最終決戦に勝利した！',480,365,26,'center','#d8efff');
+  text('次は：戦いの後・エンディング',480,407,23,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,466,20,'center','#9fc8df');
 }
 function update(dt){
@@ -4020,9 +4121,17 @@ function pressAction(){
   }
   if(scene==='finalBalloon'){
     dialogIndex++;
-    if(dialogIndex>=finalBalloonDialog.length){
-      scene='end';dialogIndex=0;saveGame();
-    }
+    if(dialogIndex>=finalBalloonDialog.length){scene='pirateCaptainIntro';dialogIndex=0;saveGame();}
+    return;
+  }
+  if(scene==='pirateCaptainIntro'){
+    dialogIndex++;
+    if(dialogIndex>=pirateCaptainIntroDialog.length){dialogIndex=0;startPirateCaptainBattle();}
+    return;
+  }
+  if(scene==='pirateCaptainAfter'){
+    dialogIndex++;
+    if(dialogIndex>=pirateCaptainAfterDialog.length){scene='end';dialogIndex=0;saveGame();}
     return;
   }
   if(scene==='sarubibiArrival'){
@@ -4149,6 +4258,8 @@ function frame(now){
   else if(scene==='finalLaunch')drawFinalLaunch();
   else if(scene==='finalBattleGround')drawFinalBattleGround();
   else if(scene==='finalBalloon')drawFinalBalloon();
+  else if(scene==='pirateCaptainIntro')drawPirateCaptainIntro();
+  else if(scene==='pirateCaptainAfter')drawPirateCaptainAfter();
   else if(scene==='sarubibiTown')drawSarubibiTown();
   else if(scene==='sarubibiShop')drawSarubibiShop();
   else if(scene==='sarubieTown')drawSarubieTown();

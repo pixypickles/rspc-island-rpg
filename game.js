@@ -67,7 +67,7 @@ function heroStats(){
   return {
     maxHP:progress.maxHP,
     maxMP:progress.maxMP,
-    atk:progress.atk+(progress.finalIceBlade?12:0),
+    atk:progress.atk,
     def:progress.def
   };
 }
@@ -79,7 +79,7 @@ function suzumaruStats(){
   return {
     maxHP:50+(lv-1)*7,
     maxMP:18+(lv-1)*2,
-    atk:11+(lv-1)*3,
+    atk:11+(lv-1)*3+(progress.finalFlameBlade?10:0),
     def:4+(lv-1)*1
   };
 }
@@ -535,17 +535,17 @@ const finalPrepDialog=[
 ];
 
 const finalWeaponDialog=[
-  ['narrator','ギョウの特訓が終わった頃、さるびえ村から一人の鍛冶職人が大きな包みを抱えてやって来た。'],
-  ['smith','間に合った！ 火山の炉を止めるわけにはいかなくてな。最後まで鍛えていた。'],
-  ['suzu','その包み……まさか。'],
-  ['smith','ぴくるす用だ。炎で何度も鍛え、最後はぶりふぉ村の氷で一気に締めた。'],
-  ['hero','火と氷、両方の力で作った剣……？'],
-  ['smith','ああ。「霜炎の剣」だ。水と氷の魔力を流しても刃が鈍らない。'],
-  ['dash','名前からして強そう！'],
-  ['yuno','火の村と氷の村が一緒に作った武器か。今の島らしくていいね。'],
-  ['gyou','決戦で頼りになりそうだ。'],
-  ['narrator','ぴくるすは「霜炎の剣」を装備した！ 攻撃力が12上がった！'],
-  ['smith','壊すなよ。決戦が終わったら、ちゃんと感想を聞かせろ。']
+  ['narrator','ギョウの特訓が終わった頃、さるびえ村から鍛冶職人が長い包みを抱えてやって来た。'],
+  ['smith','スズマル。お前に持たせたいものがある。'],
+  ['suzu','俺に？'],
+  ['smith','火山の炉で最後まで鍛えた大剣だ。刃の芯に炎晶石を仕込んである。'],
+  ['dash','炎晶石って、あの洞窟で取ったやつ？'],
+  ['smith','ああ。斬った瞬間に刃へ残った魔力が弾けて、少し遅れて炎が走る。'],
+  ['yuno','一度の斬撃で、物理と炎の二段攻撃になるんだ。'],
+  ['smith','名前は「爆炎大剣」。お前の火魔法なら一番うまく扱える。'],
+  ['suzu','……ありがたく使わせてもらう。'],
+  ['narrator','スズマルは「爆炎大剣」を装備した！ 攻撃力が10上がり、通常攻撃と単体斬撃に炎の追撃が発生する！'],
+  ['smith','決戦が終わったら返せとは言わん。ちゃんと使い込め。']
 ];
 
 const gyouTrainingDialog=[
@@ -1339,7 +1339,14 @@ function advancePartyTurn(){
     battle.hasteUsed=true;battleMessage+='　疾風でもう1回！';return;
   }
   if(battleActor==='hero' && suzumaruActive){battle.hasteUsed=false;if(battle.hasteTurns>0)battle.hasteTurns--;battleActor='suzu';return;}
-  if(battleActor==='suzu' && yunoJoined && battle.monsterId>=400){battleActor='yuno';return;}
+  if(battleActor==='suzu' && yunoJoined && battle.monsterId>=400){
+    if(battle.skipYunoThisRound){
+      battle.skipYunoThisRound=false;
+      if(gyouJoined){ensureGyouBattle();battleActor='gyou';return;}
+      beginEnemyTurn();return;
+    }
+    battleActor='yuno';return;
+  }
   beginEnemyTurn();
 }
 function drawBattle(){
@@ -1462,7 +1469,13 @@ function drawBattle(){
         outlineRect(400,378,170,48,'#dff4fb','#71bad7',2);text('氷結斬り',485,402,14,'center','#17324a');
         outlineRect(580,378,170,48,'#d9f4ff','#62afd1',2);text('氷晶波 MP8',665,402,14,'center','#17324a');
         outlineRect(760,378,160,48,'#fff0d0','#d2a24d',2);text(`回復薬 x${progress.items.potion}`,840,402,13,'center','#5f4623');
-        outlineRect(330,442,300,42,'#dff4fb','#71bad7',2);text('もどる',480,463,15,'center','#17324a');
+        if(yunoJoined && battle.monsterId>=400){
+          outlineRect(40,438,250,44,'#d8f2ed','#59aaa6',2);text('合体：蒼風大癒 MP12+12',165,460,12,'center','#174c4b');
+          outlineRect(305,438,300,44,'#d8eef7','#5d9fbd',2);text('合体：氷嵐大旋風 MP12+12',455,460,12,'center','#173f57');
+          outlineRect(620,438,300,44,'#dff4fb','#71bad7',2);text('もどる',770,460,15,'center','#17324a');
+        }else{
+          outlineRect(330,442,300,42,'#dff4fb','#71bad7',2);text('もどる',480,463,15,'center','#17324a');
+        }
       }
       text('スキルを選択',480,474,15,'center','#c8e7f4');
     }
@@ -1594,8 +1607,42 @@ function suzuAction(mode='attack'){
     battleMessage=`スズマルのこうげき！ ${dmg}ダメージ！`;setBattleFx('slash');battleChoiceText.suzu='こうげき';
   }
   damageEnemy(dmg);
+  if(progress.finalFlameBlade && !enemiesDefeated()){
+    const follow=7+Math.floor(ss.atk*.28)+Math.floor(Math.random()*5);
+    damageEnemy(follow);
+    battleMessage+=`　爆炎大剣の炎が追撃！ ${follow}ダメージ！`;
+    setBattleFx('fire');addDamagePopup(`+炎 ${follow}`,700,185,'#ff9b70');
+  }
   if(enemiesDefeated()){
     battle.turn='win';battleCooldown=1.0;return;
+  }
+  advancePartyTurn();
+}
+
+
+function heroYunoCombo(mode){
+  if(!battle || battle.turn!=='player' || battleActor!=='hero' || !yunoJoined || battle.monsterId<400)return;
+  const ys=yunoStats();
+  if(battle.heroMP<12 || battle.yunoMP<12){
+    battleMessage='合体技に必要なMPが足りない！（二人ともMP12必要）';return;
+  }
+  battle.heroMP-=12;battle.yunoMP-=12;
+  battle.skipYunoThisRound=true;
+  if(mode==='grandHeal'){
+    const heal=34+Math.floor((progress.atk+ys.atk)/4);
+    battle.heroHP=Math.min(progress.maxHP,battle.heroHP+heal);
+    battle.suzuHP=Math.min(battle.suzuMaxHP,battle.suzuHP+heal);
+    battle.yunoHP=Math.min(battle.yunoMaxHP,battle.yunoHP+heal);
+    if(battle.gyouHP!==undefined)battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+heal);
+    battleMessage=`${heroName}＆ユーノの合体技「蒼風大癒」！ 味方全体のHPが${heal}回復！`;
+    setBattleFx('heal',360,255);
+  }else{
+    const dmg=30+Math.floor((progress.atk+ys.atk)*.65);
+    const res=damageAllEnemies(dmg);
+    const summary=res.map(v=>`${v.name} ${v.damage}`).join(' / ');
+    battleMessage=`${heroName}＆ユーノの合体技「氷嵐大旋風」！ ${summary}`;
+    setBattleFx('ice');addDamagePopup('COMBO ALL',700,155,'#b8f4ff');
+    if(enemiesDefeated()){battle.turn='win';battleCooldown=1;return;}
   }
   advancePartyTurn();
 }
@@ -3069,8 +3116,8 @@ function drawFinalPrepFree(){
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);
   drawHeroFox(245,270,1.15);drawSuzumaru(355,275,1.25);drawDashmiu(465,282,1.12);drawYuno(575,275,1.22);drawGyou(685,275,1.25);
-  text('Ver.0.38 ここまで',480,105,40,'center');
-  text('霜炎の剣を入手！　決戦装備が整ってきた',480,365,26,'center','#d8efff');
+  text('Ver.0.39 ここまで',480,105,40,'center');
+  text('スズマルが「爆炎大剣」を入手！',480,365,26,'center','#d8efff');
   text('次は：仲間たちの決戦前特訓・最終作戦へ',480,407,23,'center','#d8efff');
   text('タップ / Enter でタイトルへ',480,466,20,'center','#9fc8df');
 }
@@ -3523,7 +3570,7 @@ function pressAction(){
   if(scene==='finalWeapon'){
     dialogIndex++;
     if(dialogIndex>=finalWeaponDialog.length){
-      progress.finalIceBlade=true;saveProgress();scene='end';dialogIndex=0;saveGame();
+      progress.finalFlameBlade=true;saveProgress();scene='end';dialogIndex=0;saveGame();
     }
     return;
   }
@@ -3768,6 +3815,10 @@ canvas.addEventListener('pointerdown',e=>{
             else if(x<575)battleAttack('iceSlash');
             else if(x<755)battleAttack('iceWave');
             else usePotion('hero');
+          }else if(yunoJoined && battle.monsterId>=400 && y>=435&&y<=485){
+            if(x<300)heroYunoCombo('grandHeal');
+            else if(x<615)heroYunoCombo('grandDamage');
+            else battleMenu='main';
           }else battleMenu='main';
         }
       }

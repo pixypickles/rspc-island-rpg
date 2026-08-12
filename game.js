@@ -1567,9 +1567,25 @@ function drawSealedAncientDragonBattle(white=false){
   ctx.restore();
 }
 function drawYamataNoOrochi(x,y,s=1){
- ctx.save();ctx.translate(x,y);ctx.scale(s,s);ellipse(0,45,80,13,'rgba(0,0,0,.3)');
- for(let i=0;i<9;i++){const a=(i-4)*.24, hx=Math.sin(a)*70,hy=-35-Math.cos(a)*25;ctx.strokeStyle='#36594a';ctx.lineWidth=16;ctx.beginPath();ctx.moveTo(0,30);ctx.quadraticCurveTo(hx*.55,-5,hx,hy);ctx.stroke();ellipse(hx,hy,13,11,'#456d58');ellipse(hx-4,hy-2,2,2,'#f0d75a');ellipse(hx+4,hy-2,2,2,'#f0d75a');}
- ellipse(0,30,55,35,'#36594a');ctx.restore();
+ ctx.save();ctx.translate(x,y);ctx.scale(s,s);ellipse(0,45,88,14,'rgba(0,0,0,.3)');
+ const heads=[
+   [-92,-28,-0.72],[-68,-68,-0.42],[-42,-40,0.22],[-20,-88,-0.18],
+   [8,-58,0.48],[32,-96,0.18],[55,-48,-0.35],[78,-78,0.58],[100,-22,0.82]
+ ];
+ heads.forEach(([hx,hy,ang],i)=>{
+   const sx=(i-4)*7;
+   ctx.strokeStyle=i%2?'#3c624f':'#36594a';ctx.lineWidth=17;ctx.lineCap='round';
+   ctx.beginPath();ctx.moveTo(sx,30);
+   ctx.bezierCurveTo(sx*1.4,-2,hx*.58,hy+34,hx,hy);
+   ctx.stroke();
+   ctx.save();ctx.translate(hx,hy);ctx.rotate(ang);
+   ellipse(0,0,15,11,i%2?'#4c775e':'#456d58');
+   ctx.fillStyle=i%2?'#4c775e':'#456d58';ctx.beginPath();ctx.moveTo(-12,-4);ctx.lineTo(-21,-12);ctx.lineTo(-15,2);ctx.fill();ctx.beginPath();ctx.moveTo(12,-4);ctx.lineTo(21,-12);ctx.lineTo(15,2);ctx.fill();
+   ellipse(-5,-2,2.2,2.2,'#f0d75a');ellipse(5,-2,2.2,2.2,'#f0d75a');
+   rect(-3,5,6,2,'#263b32');
+   ctx.restore();
+ });
+ ellipse(0,30,60,37,'#36594a');ctx.restore();
 }
 function drawWildMonster(mon){
   if(mon&&mon.kind==='blackDragon'){drawAbyssDragon(mon.x,mon.y,1.2,false);return;}
@@ -1657,7 +1673,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.17',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.18',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -2068,6 +2084,7 @@ function advancePartyTurn(){
       beginEnemyTurn();return;
     }
     battleActor='yuno';
+    battle.yunoHiddenUsedThisTurn=false;
     {const r=yunoPassiveMP();if(r>0)battle.yunoMP=Math.min(battle.yunoMaxMP,battle.yunoMP+r);}
     return;
   }
@@ -2235,7 +2252,7 @@ function drawBattle(){
           text(learned?o[1]:`${o[1]} 未`,x+53,405,learned?17:15,'center',learned?'#494427':'#ffffff',800);
           text(learned?o[2]:'未習得',x+53,428,14,'center',learned?'#69633e':'#d7d7d2');
         });
-        if(progress.hiddenSkills?.yuno){outlineRect(610,447,300,42,'#d8f2ed','#59aaa6',2);text('天風の祝福 (50)',760,468,17,'center','#174c4b',900);} if(progress.hiddenSkills?.gyou){outlineRect(610,447,300,42,'#ece8ce','#999064',2);text('天地崩槍 (55)',760,468,17,'center','#494427',900);} outlineRect(365,447,230,42,'#dff4fb','#71bad7',2);text('もどる',480,468,17,'center','#17324a',800);
+        if(progress.hiddenSkills?.gyou){outlineRect(610,447,300,42,'#ece8ce','#999064',2);text('天地崩槍 (55)',760,468,17,'center','#494427',900);} outlineRect(365,447,230,42,'#dff4fb','#71bad7',2);text('もどる',480,468,17,'center','#17324a',800);
       }else if(isYunoTurn()){
         text('ユーノのスキル',480,366,19,'center','#d8fff5',800);
         const yu=[
@@ -2249,6 +2266,11 @@ function drawBattle(){
           text(lv>1?`Lv.${lv}`:(locked?'要：風の泉':lv?'使用可':'SPで習得'),x+w/2,430,14,'center',lv?'#356c69':'#d7dde1');
         });
         outlineRect(365,447,230,42,'#dff4fb','#71bad7',2);text('もどる',480,468,17,'center','#17324a',800);
+        if(progress.hiddenSkills?.yuno){
+          const used=!!battle.yunoHiddenUsedThisTurn;
+          outlineRect(610,447,300,42,used?'#64716f':'#d8f2ed',used?'#8b9895':'#59aaa6',2);
+          text(used?'天風の祝福（このターン使用済み）':'天風の祝福 (50)',760,468,used?14:17,'center',used?'#e2e8e6':'#174c4b',900);
+        }
       }else if(isSuzumaruTurn()){
         text('スズマルのスキル',480,372,18,'center','#ffe5c8');
         outlineRect(55,385,245,54,'#ffd9cf','#d86145',2);text(`${suzuSingleSkillName()} (5)`,177,407,22,'center','#6b231d');text('単体・高威力',177,431,15,'center','#934a3e');
@@ -2290,7 +2312,7 @@ function drawBattle(){
           outlineRect(40,438,250,44,'#d8f2ed','#59aaa6',2);text('合体：蒼風大癒 (24)',165,460,20,'center','#174c4b');
           outlineRect(305,438,300,44,'#d8eef7','#5d9fbd',2);text('合体：氷嵐大旋風 (24)',455,460,20,'center','#173f57');
           outlineRect(620,438,145,44,'#ffe7c7','#c47b45',2);text(`高級薬 x${progress.items.highPotion||0}`,692,460,19,'center','#63371d');
-          outlineRect(775,438,145,44,'#dff4fb','#71bad7',2);text('もどる',847,460,20,'center','#17324a'); if(progress.hiddenSkills?.hero){outlineRect(620,488,300,38,'#d9efff','#557fd0',2);text('デスブリザード (60)',770,507,17,'center','#17324a',900);}
+          outlineRect(775,438,145,44,'#dff4fb','#71bad7',2);text('もどる',847,460,20,'center','#17324a'); if(progress.hiddenSkills?.hero){outlineRect(555,482,365,48,'#d9efff','#557fd0',3);text('デスブリザード (60)',737,507,19,'center','#17324a',900);}
         }else{
           outlineRect(330,442,210,42,'#ffe7c7','#c47b45',2);text(`高級回復薬 x${progress.items.highPotion||0}`,435,463,20,'center','#63371d');
           outlineRect(560,442,210,42,'#dff4fb','#71bad7',2);text('もどる',665,463,19,'center','#17324a');
@@ -2624,7 +2646,10 @@ function suzuHiddenSkill(){
  battleMessage=`スズマルの「紅蓮三段撃」！ ${parts.join('＋')} = ${parts.reduce((a,b)=>a+b,0)}ダメージ！ 闘炎10ターン分上昇！`;setBattleFx('fire');if(enemiesDefeated()){battle.turn='win';battleCooldown=1;return;}advancePartyTurn();
 }
 function yunoHiddenSkill(){
- if(!progress.hiddenSkills?.yuno){battleMessage='天風の祝福は未習得！';return;}const cost=50;if(battle.yunoMP<cost){battleMessage='MPが足りない！';return;}battle.yunoMP-=cost;
+ if(!progress.hiddenSkills?.yuno){battleMessage='天風の祝福は未習得！';return;}
+ if(battle.yunoHiddenUsedThisTurn){battleMessage='「天風の祝福」はユーノの1ターンにつき1回まで！';return;}
+ const cost=50;if(battle.yunoMP<cost){battleMessage='MPが足りない！';return;}battle.yunoMP-=cost;
+ battle.yunoHiddenUsedThisTurn=true;
  for(const t of partyTargetList()){const hk=partyHPKey(t.key),mk=partyMPKey(t.key),hm=partyMaxHP(t.key),mm=partyMaxMP(t.key);battle[hk]=Math.min(hm,(battle[hk]||0)+Math.floor(hm*.25));battle[mk]=Math.min(mm,(battle[mk]||0)+Math.floor(mm*.25));}
  battle.partyDoubleActions=2;battle.partyDoubleUsed={};battleMessage='ユーノの「天風の祝福」！ 全員のHP・MP25%回復！ 全員が次の2ターン、2回行動！';setBattleFx('heal');advancePartyTurn();
 }
@@ -2872,20 +2897,31 @@ function postGameRaidBossTurn(){
 function enemyTurn(){
   if(battle&&battle.vulnerableTurns>0)battle.vulnerableTurns--;
   if(battle&&battle.monsterId===1199){
-    battle.bossTurn=(battle.bossTurn||0)+1;
-    const flame=(battle.bossTurn%2===0);
-    const rawPerHit=flame?30:20;
-    let perHit=nineTailDamageCut(rawPerHit);
-    if(battle.defending)perHit=Math.max(1,Math.ceil(perHit*.5));
-    if(progress.fourAbyssUnlocked)perHit=Math.max(perHit,Math.floor(perHit*Math.max(1,progress.level/100)));
-    const hits=9,total=perHit*hits;
     const targets=battle.soloHero?['hero']:['hero','suzu','yuno','gyou'];
-    targets.forEach(t=>{let d=total;if(t==='hero')d=nineTailDamageCut(total);if(t==='gyou'&&battle.gyouHiddenGuard)d=Math.ceil(d*.25);const k=t==='hero'?'heroHP':t==='suzu'?'suzuHP':t==='yuno'?'yunoHP':'gyouHP';battle[k]=Math.max(1,battle[k]-d);});
+    const actionLines=[];
+    let totalHeroTaken=0;
+    for(let action=0;action<3;action++){
+      battle.bossTurn=(battle.bossTurn||0)+1;
+      const flame=(battle.bossTurn%2===0);
+      const rawPerHit=flame?30:20;
+      let perHit=nineTailDamageCut(rawPerHit);
+      if(battle.defending)perHit=Math.max(1,Math.ceil(perHit*.5));
+      if(progress.fourAbyssUnlocked)perHit=Math.max(perHit,Math.floor(perHit*Math.max(1,progress.level/100)));
+      const hits=9,total=perHit*hits;
+      for(const t of targets){
+        let d=total;
+        if(t==='gyou'&&battle.gyouHiddenGuard)d=Math.ceil(d*.25);
+        const k=t==='hero'?'heroHP':t==='suzu'?'suzuHP':t==='yuno'?'yunoHP':'gyouHP';
+        battle[k]=Math.max(1,battle[k]-d);
+        if(t==='hero')totalHeroTaken+=d;
+      }
+      actionLines.push(`${action+1}回目 ${flame?'九頭灼炎':'九頭連牙'} ${perHit}×9=${total}`);
+    }
     battle.gyouHiddenGuard=false;battle.defending=false;
-    battleMessage=`ヤマタノオロチの${flame?'「九頭灼炎」':'「九頭連牙」'}！ ${perHit}×${hits} = ${total}ダメージ！${battle.soloHero?'':'（全体）'}`;
-    addDamagePopup(`9 HIT -${total}`,250,205,flame?'#ff9b72':'#ff796e');
+    battleMessage=`ヤマタノオロチの3回行動！ ${actionLines.join(' / ')}${battle.soloHero?'':'（全体）'}`;
+    addDamagePopup(`3 ACTION -${totalHeroTaken}`,250,205,'#ff796e');
     setBattleFx('hitHero',185,255);
-    battleActor='hero';battle.turn='enemyResult';battleCooldown=1.2;battleMenu='main';
+    battleActor='hero';battle.turn='enemyResult';battleCooldown=1.45;battleMenu='main';
     return;
   }
   if(battle&&battle.monsterId===990){postGameRaidBossTurn();return;}
@@ -6175,7 +6211,7 @@ canvas.addEventListener('pointerdown',e=>{
           if(modes[i]==='cover'){openPartyTarget('gyou','cover','かばう');return;}
           gyouAction(modes[i]);
         }else if(isYunoTurn()){
-          if(y>=445&&x>=610&&progress.hiddenSkills?.yuno){yunoHiddenSkill();return;}
+          if(y>=438&&y<=500&&x>=595&&x<=925&&progress.hiddenSkills?.yuno){yunoHiddenSkill();return;}
           if(y>=445){battleMenu='main';battleMessage='ユーノの行動を選択';return;}
           if(x<175)yunoAction('healAll');
           else if(x<320)yunoAction('regen');
@@ -6198,7 +6234,7 @@ canvas.addEventListener('pointerdown',e=>{
             else if(x<575)battleAttack('iceSlash');
             else if(x<755)battleAttack('iceWave');
             else {if(progress.heroManaSkill||0){openPartyTarget('hero','manaHeal','水脈の雫');return;} battleMessage='水脈の雫は未習得！';return;}
-          }else if(progress.hiddenSkills?.hero&&y>=486&&y<=530&&x>=610){heroHiddenSkill();return;}else if(yunoJoined && progress.heroYunoComboUnlocked && battle.monsterId>=400 && y>=435&&y<=485){
+          }else if(progress.hiddenSkills?.hero&&x>=535&&x<=935&&y>=472&&y<=538){heroHiddenSkill();return;}else if(yunoJoined && progress.heroYunoComboUnlocked && battle.monsterId>=400 && y>=435&&y<=485){
             if(x<300)heroYunoCombo('grandHeal');
             else if(x<615)heroYunoCombo('grandDamage');
             else if(x<770)useHighPotion('hero');

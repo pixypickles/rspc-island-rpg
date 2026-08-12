@@ -4095,14 +4095,16 @@ function drawDragonTrail(){
 function drawDragonTrailShop(){
   ctx.fillStyle='#172333';ctx.fillRect(0,0,W,H);
   text('火山頂上への売店',480,48,30,'center','#fff0c5',900);
-  text(`所持金 ${progress.gold}G`,820,48,18,'center','#ffe19a');
+  outlineRect(665,22,245,52,'#263a50','#e5bd68',2);
+  text('所持金',690,39,14,'left','#ffe9ad',800);
+  text(`${progress.gold} G`,885,53,23,'right','#fff6d7',900);
   const rows=[
     ['高級回復薬','HP70回復 / 75G',false],
     ['烈風の強弓','ダッシュミウ用　仲間全体の攻撃補助 +6 / 260G',!!progress.shopBought.summitBow],
     ['黒曜の剛槍','ジュウ用　攻撃+12・防御+5 / 300G',!!progress.shopBought.summitSpear]
   ];
   rows.forEach((r,i)=>{const y=105+i*92,sel=dragonTrailShopSelection===i;outlineRect(100,y,760,72,sel?'#fff3d6':'#e4edf2',sel?'#e0a954':'#7793a6',3);text(`${sel?'▶ ':''}${r[0]}`,130,y+25,20,'left','#17324a',900);text(r[1],130,y+51,14,'left','#425f70');if(r[2])text('購入済み',820,y+35,15,'right','#7a6955');});
-  text('↑↓ / タップ：選択　A / Enter：購入　X / Esc：戻る',480,430,16,'center','#d6e6ef');
+  text('↑↓ / タップ：選択　A / Enter：購入　X / Esc：戻る',430,430,16,'center','#d6e6ef');
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);
@@ -4648,7 +4650,7 @@ function pressAction(){
     dialogIndex++;if(dialogIndex>=endingDialog.length){progress.gameCleared=true;saveProgress();scene='end';dialogIndex=0;saveGame();}return;
   }
   if(scene==='dragonTrail'){
-    if(Math.hypot(dragonTrailHero.x-335,dragonTrailHero.y-350)<135){dragonTrailShopSelection=0;scene='dragonTrailShop';touchUI.classList.add('hidden');return;}
+    if(Math.hypot(dragonTrailHero.x-335,dragonTrailHero.y-350)<135){dragonTrailShopSelection=0;scene='dragonTrailShop';touchUI.classList.remove('hidden');return;}
     flashText='頂上へ進もう。売店では登山用装備も買える';flashTimer=1.7;return;
   }
   if(scene==='dragonTrailShop'){buyDragonTrailShop();return;}

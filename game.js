@@ -1599,7 +1599,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.07',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.08',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -4625,12 +4625,20 @@ function drawNineTailHouse(){
   rect(440,142,80,65,'#ffffff');ctx.fillStyle='#72bddd';ctx.beginPath();ctx.moveTo(440,150);ctx.lineTo(400,215);ctx.lineTo(455,205);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(520,150);ctx.lineTo(560,215);ctx.lineTo(505,205);ctx.closePath();ctx.fill();
   rect(476,118,8,102,'#dbeef5');rect(477,85,6,58,'#c8d9e5');rect(470,138,20,4,'#466e8a');
   text('九尾の妖刀　／　九尾の衣',480,255,20,'center','#31546c',900);
-  drawElder(270,385,1.1);drawHeroFox(620,390,1.05);
-  drawDialog(...nineTailHouseDialog[Math.min(dialogIndex,nineTailHouseDialog.length-1)]);
+  drawElderFox(270,385,1.1);drawHeroFox(620,390,1.05);
+  text('ぶりふぉ村長',270,320,14,'center','#31443c',900);
+  text(heroName,620,325,14,'center','#31443c',900);
+  {
+    const d=nineTailHouseDialog[Math.min(dialogIndex,nineTailHouseDialog.length-1)];
+    drawDialog(d[0],d[1]);
+  }
 }
 function drawNineTailElderTalk(){
   drawPostGameVillage();
-  drawDialog(...nineTailElderCheckDialog[Math.min(dialogIndex,nineTailElderCheckDialog.length-1)]);
+  {
+    const d=nineTailElderCheckDialog[Math.min(dialogIndex,nineTailElderCheckDialog.length-1)];
+    drawDialog(d[0],d[1]);
+  }
 }
 function drawPostGameVillage(){
   if(postGameArea==='brifo'){
@@ -4913,6 +4921,11 @@ function bgmToggle(){
 },{once:true,passive:true}));
 
 function update(dt){
+  if(scene==='nineTailElderTalk'||scene==='nineTailHouse'){
+    touchUI.classList.remove('hidden');
+    if(scene==='nineTailElderTalk'&&(dialogIndex<0||dialogIndex>=nineTailElderCheckDialog.length))dialogIndex=0;
+    if(scene==='nineTailHouse'&&(dialogIndex<0||dialogIndex>=nineTailHouseDialog.length))dialogIndex=0;
+  }
   if(scene==='postGameRaidClear')touchUI.classList.remove('hidden');
   if(scene==='postGameCircusTalk'){
     touchUI.classList.remove('hidden');
@@ -5594,19 +5607,30 @@ function pressAction(){
   if(scene==='nineTailElderTalk'){
     dialogIndex++;
     if(dialogIndex>=nineTailElderCheckDialog.length){
-      scene='nineTailHouse';dialogIndex=0;touchUI.classList.add('hidden');saveGame();
+      scene='nineTailHouse';dialogIndex=0;touchUI.classList.remove('hidden');saveGame();
     }
     return;
   }
   if(scene==='nineTailHouse'){
-    dialogIndex++;
-    if(dialogIndex===2 && !progress.nineTailGear){
-      progress.nineTailGear=true;progress.nineTailQuestUnlocked=true;progress.sealedCaveUnlocked=true;saveProgress();saveGame();
+    touchUI.classList.remove('hidden');
+    if(dialogIndex < nineTailHouseDialog.length-1){
+      dialogIndex++;
+      if(dialogIndex>=1 && !progress.nineTailGear){
+        progress.nineTailGear=true;
+        progress.nineTailQuestUnlocked=true;
+        progress.sealedCaveUnlocked=true;
+        saveProgress();saveGame();
+      }
+      return;
     }
-    if(dialogIndex>=nineTailHouseDialog.length){
-      scene='postGameVillage';postGameArea='brifo';postGameHero.x=650;postGameHero.y=420;dialogIndex=0;
-      touchUI.classList.remove('hidden');saveGame();
+    if(!progress.nineTailGear){
+      progress.nineTailGear=true;
+      progress.nineTailQuestUnlocked=true;
+      progress.sealedCaveUnlocked=true;
+      saveProgress();
     }
+    scene='postGameVillage';postGameArea='brifo';postGameHero.x=650;postGameHero.y=420;dialogIndex=0;
+    touchUI.classList.remove('hidden');saveGame();
     return;
   }
   if(scene==='postGameElderTalk'){

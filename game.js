@@ -1512,7 +1512,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.03',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.04',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -4549,8 +4549,9 @@ function drawPostGameVillage(){
   outlineRect(28,425,145,58,'#e8f4f2','#557a79',3);text('島へ出る',100,454,17,'center','#284b50',900);
   drawHeroFox(postGameHero.x,postGameHero.y,.96);drawSuzumaru(postGameHero.x-43,postGameHero.y+14,.88);drawYuno(postGameHero.x-82,postGameHero.y+18,.86);drawGyou(postGameHero.x-120,postGameHero.y+21,.86);
   if(postGameArea==='brifo'){
-    // 村長。近づいてAで会話。
-    ctx.save();ctx.translate(700,385);ellipse(0,24,22,7,'rgba(0,0,0,.18)');ellipse(0,-18,19,18,'#c9b58e');ellipse(-13,-29,6,7,'#8a7259');ellipse(13,-29,6,7,'#8a7259');rect(-19,0,38,48,'#6e7f55');text('村長',0,-52,13,'center','#31443c',800);ctx.restore();
+    // Opening village chief sprite reused exactly.
+    drawElderFox(700,385,1.2);
+    text('村長',700,325,13,'center','#31443c',800);
   }
   const names={brifo:'ぶりふぉ村',sarubie:'さるびえ村',sarubibi:'さるびび村',takezo:'たけぞ村'};
   const ht=hudTop();ctx.fillStyle='rgba(18,40,50,.84)';ctx.fillRect(18,ht,330,45);text(`${names[postGameArea]}　平和な日常`,35,ht+22,17);
@@ -4575,7 +4576,7 @@ function drawPostGameCircus(){
  for(let x=600;x<840;x+=44)rect(x,285,22,45,x%88===0?'#e24d55':'#f0d27d');
  text('ちぇすたぴサーカス団',720,365,18,'center','#fff3c8',900);
  drawDash(470,360,1.0);drawHeroFox(postGameHero.x,postGameHero.y,.95);
- text('ダッシュミウに話しかける',480,hudTop()+24,17,'center','#ffffff',900);
+ text(scene==='postGameCircusTalk'?'Aで会話を進める':'ダッシュミウに話しかける',480,hudTop()+24,17,'center','#ffffff',900);
 }
 function drawPostGameRaid(){
  const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#8aa1aa');gr.addColorStop(1,'#665b50');ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
@@ -4759,8 +4760,9 @@ function bgmToggle(){
 },{once:true,passive:true}));
 
 function update(dt){
+  if(scene==='postGameCircusTalk')touchUI.classList.remove('hidden');
   if(scene==='postGameCircus'){
-    scene='postGameCircusTalk';dialogIndex=0;touchUI.classList.add('hidden');
+    scene='postGameCircusTalk';dialogIndex=0;touchUI.classList.remove('hidden');
     return;
   }
   if(bgmCtx&&bgmEnabled)bgmSync();
@@ -4772,7 +4774,7 @@ function update(dt){
  if(postGameRaidUnlocked&&Math.hypot(postGameHero.x-480,postGameHero.y-95)<65){
   postGameHero.x=500;postGameHero.y=420;
   scene='postGameCircusTalk';dialogIndex=0;
-  touchUI.classList.add('hidden');
+  touchUI.classList.remove('hidden');
   saveGame();return;
 }return;}
   if(scene==='postGameVillage'){let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameHero.x+=dx*postGameHero.speed*dt;postGameHero.y+=dy*postGameHero.speed*dt;}postGameHero.x=Math.max(45,Math.min(920,postGameHero.x));postGameHero.y=Math.max(250,Math.min(500,postGameHero.y));if(postGameHero.x<175&&postGameHero.y>385){const back={sarubie:[207,430],brifo:[277,290],sarubibi:[682,430],takezo:[702,260]}[postGameArea]||[480,400];postGameHero.x=back[0];postGameHero.y=back[1];scene='postGameIsland';saveGame();}return;}
@@ -5423,9 +5425,11 @@ function pressAction(){
   }
   if(scene==='postGameCircus'){scene='postGameCircusTalk';dialogIndex=0;touchUI.classList.add('hidden');return;}
   if(scene==='postGameCircusTalk'){
+    touchUI.classList.remove('hidden');
     dialogIndex++;
     if(dialogIndex>=postGameCircusDialog.length){
       postGameRaidWave=0;
+      suzumaruActive=true;suzumaruJoined=true;yunoJoined=true;gyouJoinConfirmed=true;gyouJoined=true;syncStoryParty();
       scene='postGameRaid';dialogIndex=0;
       touchUI.classList.remove('hidden');
       saveGame();

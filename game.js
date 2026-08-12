@@ -125,6 +125,22 @@ if(!progress.yunoSkills)progress.yunoSkills={heal:0,regen:0,wind:0,haste:0,evade
 if(progress.gyouSP===undefined)progress.gyouSP=totalSPForLevel(progress.level);
 if(!progress.gyouSkills)progress.gyouSkills={fortify:0,cover:0,taunt:0,manaGuard:0,healGuard:0,doubleThrust:0,counter:0};
 
+function yunoSkillCost(key,lv){
+  const table={
+    heal:[2,2,3], regen:[2,2,3], wind:[2,2,3],
+    haste:[3], evade:[2,2], evadeAll:[3]
+  };
+  const arr=table[key]||[3];
+  return arr[Math.min(lv,arr.length-1)];
+}
+function yunoSkillMax(key){
+  return ({heal:3,regen:3,wind:3,haste:1,evade:2,evadeAll:1})[key]||1;
+}
+function gyouSkillCost(key){
+  return ({fortify:2,cover:2,taunt:2,manaGuard:3,healGuard:3,doubleThrust:3,counter:3})[key]||3;
+}
+
+
 
 if(!progress.suzuSkills) progress.suzuSkills={
   single:0,   // 火炎斬り系：主力。伸び幅を大きくする
@@ -1785,20 +1801,31 @@ function drawBattle(){
       text(`${actorName}の行動`,480,by+78,15,'center','#c8e7f4');
     }else{
       if(isGyouTurn()){
-        text('ジュウのスキル',480,372,14,'center','#f4efcf');
+        text('ジュウのスキル',480,366,16,'center','#f4efcf',800);
         const opts=[
-          ['岩守り','MP5'],['かばう','MP5'],['挑発','MP4'],['土脈吸収','MP4'],
-          ['守りの呼吸','MP7'],['二段突き','MP6'],['迎撃の構え','MP7'],[progress.gyouGrandGuard?'大守護':'大守護(未習得)','MP16']
+          ['fortify','岩守り','MP5'],['cover','かばう','MP5'],['taunt','挑発','MP4'],['manaGuard','土脈吸収','MP4'],
+          ['healGuard','守りの呼吸','MP7'],['doubleThrust','二段突き','MP6'],['counter','迎撃の構え','MP7'],['grandGuard','大守護','MP16']
         ];
-        opts.forEach((o,i)=>{const x=28+i*114;outlineRect(x,385,106,54,'#ece8ce','#999064',2);text(o[0],x+53,406,11,'center','#494427');text(o[1],x+53,425,10,'center','#69633e');});
+        opts.forEach((o,i)=>{
+          const x=28+i*114,learned=o[0]==='grandGuard'?!!progress.gyouGrandGuard:!!progress.gyouSkills[o[0]];
+          outlineRect(x,385,106,54,learned?'#ece8ce':'#53554f',learned?'#999064':'#777970',2);
+          text(learned?o[1]:`${o[1]} 未`,x+53,406,learned?11:10,'center',learned?'#494427':'#ffffff',800);
+          text(learned?o[2]:'未習得',x+53,425,10,'center',learned?'#69633e':'#d7d7d2');
+        });
+        outlineRect(365,447,230,42,'#dff4fb','#71bad7',2);text('もどる',480,468,17,'center','#17324a',800);
       }else if(isYunoTurn()){
-        text('ユーノのスキル',480,372,14,'center','#d8fff5');
-        outlineRect(35,385,135,54,'#d8f2ed','#59aaa6',2);text('風の癒し MP8',102,408,13,'center','#174c4b');text('味方全体回復',102,426,10,'center','#356c69');
-        outlineRect(180,385,135,54,'#d8f2ed','#59aaa6',2);text('そよぎの輪 MP10',247,408,12,'center','#174c4b');text('全体徐々に回復',247,426,10,'center','#356c69');
-        outlineRect(325,385,135,54,'#d8f2ed','#59aaa6',2);text('風刃嵐 MP9',392,408,13,'center','#174c4b');text('敵全体',392,426,10,'center','#356c69');
-        outlineRect(470,385,135,54,'#d8f2ed','#59aaa6',2);text('疾風 MP8',537,408,13,'center','#174c4b');text('主人公2回行動',537,426,10,'center','#356c69');
-        outlineRect(615,385,135,54,'#d8f2ed','#59aaa6',2);text('風まとい MP6',682,408,12,'center','#174c4b');text('1人回避UP',682,426,10,'center','#356c69');
-        outlineRect(760,385,150,54,'#d8f2ed','#59aaa6',2);text('風護陣 MP12',835,408,12,'center','#174c4b');text('全体回避UP',835,426,10,'center','#356c69');
+        text('ユーノのスキル',480,366,16,'center','#d8fff5',800);
+        const yu=[
+          ['heal','風の癒し','MP8'],['regen','そよぎの輪','MP10'],['wind','風刃嵐','MP9'],
+          ['haste','疾風','MP8'],['evade','風まとい','MP6'],['evadeAll','風護陣','MP12']
+        ];
+        yu.forEach((o,i)=>{
+          const x=35+i*145,w=i===5?150:135,lv=progress.yunoSkills[o[0]]||0,locked=(o[0]==='evadeAll'&&(progress.yunoSkills.evade||0)<1);
+          outlineRect(x,385,w,54,lv?'#d8f2ed':'#536273',lv?'#59aaa6':'#7d8992',2);
+          text(lv?`${o[1]} ${o[2]}`:`${o[1]} 未習得`,x+w/2,407,lv?12:11,'center',lv?'#174c4b':'#ffffff',800);
+          text(lv>1?`Lv.${lv}`:(locked?'要：風まとい':lv?'使用可':'SPで習得'),x+w/2,427,10,'center',lv?'#356c69':'#d7dde1');
+        });
+        outlineRect(365,447,230,42,'#dff4fb','#71bad7',2);text('もどる',480,468,17,'center','#17324a',800);
       }else if(isSuzumaruTurn()){
         text('スズマルのスキル',480,372,14,'center','#ffe5c8');
         outlineRect(55,385,245,54,'#ffd9cf','#d86145',2);text(`${suzuSingleSkillName()} MP5`,177,406,16,'center','#6b231d');text('単体・高威力',177,425,11,'center','#934a3e');
@@ -2047,34 +2074,39 @@ function heroYunoCombo(mode){
 function yunoAction(mode){
   if(!isYunoTurn())return;
   const key={healAll:'heal',regen:'regen',windAll:'wind',haste:'haste',evade:'evade',evadeAll:'evadeAll'}[mode];
-  if(!progress.yunoSkills[key]){battleMessage='その風術はまだ習得していない！';return;}
+  const lv=progress.yunoSkills[key]||0;
+  if(!lv){battleMessage='その風術はまだ習得していない！ 「もどる」で行動選択へ戻れます。';return;}
   const ys=yunoStats();
   const cost={healAll:8,regen:10,windAll:9,haste:8,evade:6,evadeAll:12}[mode]||0;
-  if(battle.yunoMP<cost){battleMessage='MPが足りない！';return;}
+  if(battle.yunoMP<cost){battleMessage='MPが足りない！ 「もどる」で行動選択へ戻れます。';return;}
   battle.yunoMP-=cost;
   if(mode==='healAll'){
-    const heal=14+Math.floor(ys.atk/3);
+    const heal=14+Math.floor(ys.atk/3)+(lv-1)*10;
     battle.heroHP=Math.min(progress.maxHP,battle.heroHP+heal);
     battle.suzuHP=Math.min(battle.suzuMaxHP,battle.suzuHP+heal);
     battle.yunoHP=Math.min(battle.yunoMaxHP,battle.yunoHP+heal);
-    battleMessage=`ユーノの「風の癒し」！ 味方全体のHPが${heal}回復！`;setBattleFx('heal',360,255);
+    if(battle.gyouHP!==undefined)battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+heal);
+    battleMessage=`ユーノの「風の癒し Lv.${lv}」！ 味方全体のHPが${heal}回復！`;setBattleFx('heal',360,255);
   }else if(mode==='regen'){
-    battle.regenTurns=3;
-    battleMessage='ユーノの「そよぎの輪」！ 3ターン、味方全体が徐々に回復！';setBattleFx('heal',360,255);
+    battle.regenTurns=3+(lv>=3?1:0);
+    battle.regenPower=7+(lv-1)*5;
+    battleMessage=`ユーノの「そよぎの輪 Lv.${lv}」！ ${battle.regenTurns}ターン、毎ターンHP${battle.regenPower}回復！`;setBattleFx('heal',360,255);
   }else if(mode==='windAll'){
-    const dmg=8+Math.floor(ys.atk*.65);
+    const dmg=8+Math.floor(ys.atk*.65)+(lv-1)*12;
     const res=damageAllEnemies(dmg);
-    battleMessage=`ユーノの「風刃嵐」！ ${res.map(v=>`${v.name} ${v.damage}`).join(' / ')}`;
-    setBattleFx('ice');addDamagePopup('WIND ALL',700,155,'#b8fff1');
+    battleMessage=`ユーノの「風刃嵐 Lv.${lv}」！ ${res.map(v=>`${v.name} ${v.damage}`).join(' / ')}`;
+    setBattleFx('ice');addDamagePopup(`WIND ALL Lv.${lv}`,700,155,'#b8fff1');
     if(enemiesDefeated()){battle.turn='win';battleCooldown=1;return;}
   }else if(mode==='haste'){
     battle.hasteTarget='hero';battle.hasteTurns=2;
     battleMessage=`ユーノの「疾風」！ ${heroName}は2ターン、行動を2回できる！`;
   }else if(mode==='evade'){
-    battle.evadeTarget='hero';battle.evadeTurns=3;
-    battleMessage=`ユーノの「風まとい」！ ${heroName}の回避率が上がった！`;
+    battle.evadeTarget='hero';battle.evadeTurns=lv>=2?4:3;
+    battle.evadeSingleBonus=lv>=2?.35:.25;
+    battleMessage=`ユーノの「風まとい${lv>=2?' Lv.2':''}」！ ${heroName}の回避率が上がった！`;
   }else if(mode==='evadeAll'){
     battle.evadeAllTurns=3;
+    battle.evadeAllBonus=.30;
     battleMessage='ユーノの「風護陣」！ 味方全体の回避率が上がった！';
   }
   battleChoiceText.yuno=mode;
@@ -2154,7 +2186,7 @@ function pirateCaptainTurn(){
   const lines=[];
   for(const target0 of targets){
     let target=(battle.gyouCover===target0)?'gyou':target0;
-    const evade=(battle.evadeAllTurns>0?.30:0)+((battle.evadeTarget===target&&battle.evadeTurns>0)?.25:0);
+    const evade=(battle.evadeAllTurns>0?(battle.evadeAllBonus||.30):0)+((battle.evadeTarget===target&&battle.evadeTurns>0)?(battle.evadeSingleBonus||.25):0);
     if(target!=='gyou'&&Math.random()<evade){lines.push(`${target==='hero'?heroName:target==='suzu'?'スズマル':target==='yuno'?'ユーノ':'ジュウ'} 回避！`);continue;}
     let dmg=base;
     if(target==='hero'){dmg=Math.max(1,(battle.defending?Math.floor(dmg/2):dmg)-Math.floor(progress.def/4));battle.heroHP=Math.max(1,battle.heroHP-dmg);}
@@ -2166,7 +2198,7 @@ function pirateCaptainTurn(){
   }
   battleMessage=isVice?`副船長の「豪斧撃」！ ${lines.join(' / ')}`:`海賊船長の${battle.bossTurn%3===0?'「一斉指揮斬り」':'斬撃'}！ ${lines.join(' / ')}`;
   battle.defending=false;
-  if(battle.regenTurns>0){const h=7;for(const [k,m] of [['heroHP',progress.maxHP],['suzuHP',battle.suzuMaxHP],['yunoHP',battle.yunoMaxHP],['gyouHP',battle.gyouMaxHP]])battle[k]=Math.min(m,battle[k]+h);battle.regenTurns--;battleMessage+=` / そよぎの輪 +${h}`;}
+  if(battle.regenTurns>0){const h=battle.regenPower||7;for(const [k,m] of [['heroHP',progress.maxHP],['suzuHP',battle.suzuMaxHP],['yunoHP',battle.yunoMaxHP],['gyouHP',battle.gyouMaxHP]])battle[k]=Math.min(m,battle[k]+h);battle.regenTurns--;battleMessage+=` / そよぎの輪 +${h}`;}
   if(battle.evadeAllTurns>0)battle.evadeAllTurns--;if(battle.evadeTurns>0)battle.evadeTurns--;if(battle.gyouDefTurns>0)battle.gyouDefTurns--;if(battle.gyouTauntTurns>0)battle.gyouTauntTurns--;
   battle.gyouCover=null;battle.gyouCounter=false;battle.gyouGrandGuard=false;battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
   battle.turn='enemyResult';battleCooldown=1.3;
@@ -2202,7 +2234,7 @@ function enemyTurn(){
     }else if(isPartyBattle()&&Math.random()<.4)target='suzu';
     if(battle.gyouCover===target)target='gyou';
 
-    const evadeChance=(battle.evadeAllTurns>0?.30:0)+((battle.evadeTarget===target&&battle.evadeTurns>0)?.25:0);
+    const evadeChance=(battle.evadeAllTurns>0?(battle.evadeAllBonus||.30):0)+((battle.evadeTarget===target&&battle.evadeTurns>0)?(battle.evadeSingleBonus||.25):0);
     if(target!=='gyou'&&Math.random()<evadeChance){attackLines.push(`${foe.name} → ${target==='hero'?heroName:target==='suzu'?'スズマル':'ユーノ'} 回避！`);return;}
     const ep=[[650,235],[770,235],[610,310],[720,320],[830,310]][Math.min(idx,4)]||[700,245];
     addDamagePopup('攻撃！',ep[0],ep[1]-45,'#ffcf9d');
@@ -2223,7 +2255,7 @@ function enemyTurn(){
   if(totalYuno>0)addDamagePopup(`-${totalYuno}`,360,215,'#ff796e');
   if(totalGyou>0)addDamagePopup(`-${totalGyou}`,455,215,'#ff796e');
   battleMessage=`敵の攻撃！ ${attackLines.join(' / ')}`;
-  if(battle.regenTurns>0){const heal=7;battle.heroHP=Math.min(progress.maxHP,battle.heroHP+heal);battle.suzuHP=Math.min(battle.suzuMaxHP,battle.suzuHP+heal);if(battle.yunoHP!==undefined)battle.yunoHP=Math.min(battle.yunoMaxHP,battle.yunoHP+heal);if(battle.gyouHP!==undefined)battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+heal);battle.regenTurns--;battleMessage+=` / そよぎの輪 +${heal}`;}
+  if(battle.regenTurns>0){const heal=battle.regenPower||7;battle.heroHP=Math.min(progress.maxHP,battle.heroHP+heal);battle.suzuHP=Math.min(battle.suzuMaxHP,battle.suzuHP+heal);if(battle.yunoHP!==undefined)battle.yunoHP=Math.min(battle.yunoMaxHP,battle.yunoHP+heal);if(battle.gyouHP!==undefined)battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+heal);battle.regenTurns--;battleMessage+=` / そよぎの輪 +${heal}`;}
   if(battle.evadeAllTurns>0)battle.evadeAllTurns--;if(battle.evadeTurns>0)battle.evadeTurns--;
   if(battle.gyouDefTurns>0)battle.gyouDefTurns--;if(battle.gyouTauntTurns>0)battle.gyouTauntTurns--;
   battle.gyouCover=null;battle.gyouCounter=false;battle.gyouGrandGuard=false;
@@ -3142,11 +3174,11 @@ function drawMenu(){
         ['counter','迎撃の構え','攻撃を受けて反撃']
       ];
       gsks.forEach((s,i)=>{
-        const col=i%4,row=Math.floor(i/4),x=35+col*225,y=238+row*103,lv=progress.gyouSkills[s[0]]||0;
+        const key=s[0],col=i%4,row=Math.floor(i/4),x=35+col*225,y=238+row*103,lv=progress.gyouSkills[key]||0,cost=gyouSkillCost(key);
         outlineRect(x,y,210,86,'#3c3b2d','#999064',2);
         text(s[1],x+12,y+25,16,'left','#f4efcf');
         text(s[2],x+12,y+49,12,'left','#d7d1ae');
-        text(lv?'習得済み':'習得 SP1',x+196,y+73,11,'right',lv?'#b9d29e':'#ffe4a0');
+        text(lv?'習得済み':`習得 SP${cost}`,x+196,y+73,11,'right',lv?'#b9d29e':'#ffe4a0');
       });
       const ult=progress.gyouGrandGuard;
       outlineRect(260,450,440,44,ult?'#6f6b4d':'#2e3340',ult?'#d7c86e':'#697181',2);
@@ -3159,11 +3191,19 @@ function drawMenu(){
         ['evade','風まとい','1人の回避率UP'],['evadeAll','風護陣','全体回避率UP']
       ];
       ysks.forEach((s,i)=>{
-        const col=i%3,row=Math.floor(i/3),x=55+col*300,y=245+row*105,lv=progress.yunoSkills[s[0]]||0;
-        outlineRect(x,y,280,88,'#183a43','#59aaa6',2);
-        text(s[1],x+15,y+27,17,'left','#d8fff5');
-        text(s[2],x+15,y+52,13,'left','#b9dfd9');
-        text(lv?'習得済み':'習得 SP1',x+265,y+72,12,'right',lv?'#8fc8bd':'#ffe7a5');
+        const key=s[0],col=i%3,row=Math.floor(i/3),x=55+col*300,y=245+row*105,lv=progress.yunoSkills[key]||0,max=yunoSkillMax(key);
+        const locked=(key==='evadeAll' && (progress.yunoSkills.evade||0)<1);
+        outlineRect(x,y,280,88,locked?'#29363f':'#183a43',locked?'#536273':'#59aaa6',2);
+        text(s[1],x+15,y+25,17,'left',locked?'#89979d':'#d8fff5');
+        text(s[2],x+15,y+49,13,'left',locked?'#78878e':'#b9dfd9');
+        if(locked){
+          text('風まとい習得後に解放',x+265,y+72,11,'right','#aab6bb');
+        }else if(lv>=max){
+          text(max>1?`Lv.${lv} 最大`:'習得済み',x+265,y+72,12,'right','#8fc8bd');
+        }else{
+          const cost=yunoSkillCost(key,lv);
+          text(lv>0?`Lv.${lv} → ${lv+1}　SP${cost}`:`習得 SP${cost}`,x+265,y+72,11,'right','#ffe7a5');
+        }
       });
     }else if(menuCharacter==='suzu' && suzuEnabled){
       text(`スズマル SP：${progress.suzuSP||0}`,70,215,18,'left','#ffe5c8');
@@ -3239,8 +3279,9 @@ function menuTap(x,y){
       const k=keys[row*4+col];
       if(!k)return;
       if(progress.gyouSkills[k]){flashText='習得済みです';flashTimer=1.4;return;}
-      if((progress.gyouSP||0)<1){flashText='ジュウのSPが足りない';flashTimer=1.5;return;}
-      progress.gyouSP--;progress.gyouSkills[k]=1;
+      const cost=gyouSkillCost(k);
+      if((progress.gyouSP||0)<cost){flashText=`ジュウのSPが足りない（必要 ${cost}）`;flashTimer=1.6;return;}
+      progress.gyouSP-=cost;progress.gyouSkills[k]=1;
       saveProgress();saveGame();
       flashText='ジュウが新しい守護技を習得！';flashTimer=1.8;return;
     }
@@ -3250,11 +3291,16 @@ function menuTap(x,y){
     const col=Math.floor((x-55)/300),row=Math.floor((y-245)/105);
     if(col>=0&&col<3&&row>=0&&row<2){
       const keys=['heal','regen','wind','haste','evade','evadeAll'];
-      const k=keys[row*3+col];
-      if(progress.yunoSkills[k]){flashText='習得済みです';flashTimer=1.4;return;}
-      if((progress.yunoSP||0)<1){flashText='ユーノのSPが足りない';flashTimer=1.5;return;}
-      progress.yunoSP--;progress.yunoSkills[k]=1;saveProgress();saveGame();
-      flashText='ユーノが新しい風術を習得！';flashTimer=1.8;return;
+      const k=keys[row*3+col],lv=progress.yunoSkills[k]||0,max=yunoSkillMax(k);
+      if(k==='evadeAll' && (progress.yunoSkills.evade||0)<1){
+        flashText='まず「風まとい」を習得してください';flashTimer=1.8;return;
+      }
+      if(lv>=max){flashText='この風術は最大強化です';flashTimer=1.4;return;}
+      const cost=yunoSkillCost(k,lv);
+      if((progress.yunoSP||0)<cost){flashText=`ユーノのSPが足りない（必要 ${cost}）`;flashTimer=1.6;return;}
+      progress.yunoSP-=cost;progress.yunoSkills[k]=lv+1;saveProgress();saveGame();
+      flashText=lv===0?'ユーノが新しい風術を習得！':`${k==='heal'?'風の癒し':k==='regen'?'そよぎの輪':k==='wind'?'風刃嵐':k==='evade'?'風まとい':'風術'}をLv.${lv+1}に強化！`;
+      flashTimer=1.8;return;
     }
   }
 
@@ -4573,12 +4619,14 @@ canvas.addEventListener('pointerdown',e=>{
         else battleRun();
       }
     }else{
-      if(y>=385 && y<=460){
+      if(y>=385 && y<=500){
         if(isGyouTurn()){
+          if(y>=445){battleMenu='main';battleMessage='ジュウの行動を選択';return;}
           const i=Math.max(0,Math.min(7,Math.floor((x-28)/114)));
           const modes=['fortify','cover','taunt','manaGuard','healGuard','doubleThrust','counter','grandGuard'];
           gyouAction(modes[i]);
         }else if(isYunoTurn()){
+          if(y>=445){battleMenu='main';battleMessage='ユーノの行動を選択';return;}
           if(x<175)yunoAction('healAll');
           else if(x<320)yunoAction('regen');
           else if(x<465)yunoAction('windAll');

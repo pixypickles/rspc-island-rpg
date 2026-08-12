@@ -1454,7 +1454,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.58',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.88',480,121,18,'center','#eef8ff');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
   if(cleared)labels.push(progress.postDragonDefeated?'ドラゴンに挑戦（再戦）':'ドラゴンに挑戦');
@@ -3616,9 +3616,10 @@ function drawMenu(){
       ];
       gsks.forEach((s,i)=>{
         const key=s[0],col=i%4,row=Math.floor(i/4),x=35+col*225,y=238+row*103,lv=progress.gyouSkills[key]||0,max=gyouSkillMax(key),cost=gyouSkillCost(key,lv);
-        outlineRect(x,y,210,86,'#3c3b2d','#999064',2);
-        text(s[1]+(lv>1?` Lv.${lv}`:''),x+12,y+25,16,'left','#f4efcf');
-        text(s[2],x+12,y+49,12,'left','#d7d1ae');
+        const passive=(key==='earthBreath');
+        outlineRect(x,y,210,86,passive?'#514c30':'#3c3b2d',passive?'#d6c865':'#999064',passive?3:2);
+        text(s[1]+(passive?'（パッシブ）':lv>1?` Lv.${lv}`:''),x+12,y+25,passive?13:16,'left',passive?'#fff2a8':'#f4efcf',800);
+        text(s[2],x+12,y+49,passive?11:12,'left',passive?'#ece4b4':'#d7d1ae');
         text(lv>=max?(max>1?`Lv.${lv} 最大`:'習得済み'):(lv?`次 Lv.${lv+1} SP${cost}`:`習得 SP${cost}`),x+196,y+73,11,'right',lv>=max?'#b9d29e':'#ffe4a0');
       });
       const ult=progress.gyouGrandGuard;
@@ -3634,9 +3635,9 @@ function drawMenu(){
       ];
       ysks.forEach((s,i)=>{
         const key=s[0],col=i%4,row=Math.floor(i/4),x=35+col*225,y=245+row*105,lv=progress.yunoSkills[key]||0,max=yunoSkillMax(key);
-        outlineRect(x,y,210,88,key==='windFlow'?'#24454a':'#183a43',key==='windFlow'?'#83c6b7':'#59aaa6',2);
-        text(s[1]+(key==='windFlow'?'（P）':''),x+12,y+25,15,'left','#d8fff5');
-        text(s[2],x+12,y+49,11,'left','#b9dfd9');
+        outlineRect(x,y,210,88,key==='windFlow'?'#355a4f':'#183a43',key==='windFlow'?'#d2d978':'#59aaa6',key==='windFlow'?3:2);
+        text(s[1]+(key==='windFlow'?'（パッシブ）':''),x+12,y+25,key==='windFlow'?13:15,'left',key==='windFlow'?'#fff6b3':'#d8fff5',800);
+        text(s[2],x+12,y+49,11,'left',key==='windFlow'?'#e8efbd':'#b9dfd9');
         if(lv>=max)text(max>1?`Lv.${lv} 最大`:'習得済み',x+195,y+72,11,'right','#8fc8bd');
         else{const cost=yunoSkillCost(key,lv);text(lv?`次 Lv.${lv+1} SP${cost}`:`習得 SP${cost}`,x+195,y+72,10,'right','#ffe7a5');}
       });
@@ -3724,7 +3725,12 @@ function drawMenu(){
       text(hm>=2?'水脈の恵み':'水脈の雫',705,386,18,'left','#17324a',800);
       text(hm>=2?'味方1人 MP32回復 / MP6':'味方1人 MP18回復 / MP6',705,410,12,'left','#3d5d73');
       text(hm>=2?'Lv.2 最大':hm===1?'次 Lv.2　SP2':'必要 SP1',900,438,11,'right',hm?'#356b7b':'#3d6f8a',800);
-      text('主人公は技数が多いため、各ルートの必要SPは軽め。',480,510,13,'center','#c8e1ec');
+
+      const mf=progress.heroMagicFlow||0;
+      outlineRect(690,460,225,62,mf?'#d8eef7':'#26394b',mf?'#6aaacb':'#668398',2);
+      text('水魔の高まり（パッシブ）',702,481,14,'left',mf?'#17324a':'#e0edf4',800);
+      text(mf>=2?'魔法威力 +5%/ターン':mf===1?'魔法威力 +3%/ターン':'氷結斬り系は対象外',702,501,10,'left',mf?'#35566d':'#b7c7d0');
+      text(mf>=2?'Lv.2 最大':mf===1?'次 Lv.2 SP2':'習得 SP1',900,515,10,'right',mf?'#356b7b':'#ffe7a5',800);
     }
   }
 }
@@ -3758,7 +3764,10 @@ function menuTap(x,y){
       if((progress.gyouSP||0)<cost){flashText=`ジュウのSPが足りない（必要 ${cost}）`;flashTimer=1.6;return;}
       progress.gyouSP-=cost;progress.gyouSkills[k]=lv+1;
       saveProgress();saveGame();
-      flashText=lv===0?'ジュウが新しい守護技を習得！':`${k==='taunt'?'挑発':'二段突き'}をLv.2に強化！`;flashTimer=1.8;return;
+      flashText=k==='earthBreath'
+        ?(lv===0?'パッシブ「大地の息吹」を習得！':'「大地の息吹」をLv.2に強化！')
+        :(lv===0?'ジュウが新しい守護技を習得！':`${k==='taunt'?'挑発':'二段突き'}をLv.2に強化！`);
+      flashTimer=1.8;return;
     }
   }
 
@@ -3821,7 +3830,7 @@ function menuTap(x,y){
     }
   }
 
-  if(menuPage==='skill' && menuCharacter==='hero' && x>=690&&x<=915&&y>=455&&y<=520){
+  if(menuPage==='skill' && menuCharacter==='hero' && x>=690&&x<=915&&y>=460&&y<=522){
     const lv=progress.heroMagicFlow||0;if(lv>=2){flashText='水魔の高まりは最大強化です';flashTimer=1.4;return;}
     const cost=lv===0?1:2;if(progress.sp<cost){flashText=`SPが足りない（必要 ${cost}）`;flashTimer=1.6;return;}
     progress.sp-=cost;progress.heroMagicFlow=lv+1;saveProgress();saveGame();

@@ -781,6 +781,7 @@ const dragonIntroDialog=[
 
 
 function startDragonTrailBattle(mon){
+  suzumaruActive=true;suzumaruJoined=true;yunoJoined=true;gyouJoinConfirmed=true;gyouJoined=true;
   syncStoryParty();
   const ss=suzumaruStats(),ys=yunoStats(),gs=gyouStats();
   battle={heroHP:progress.maxHP,heroMP:progress.maxMP,
@@ -796,6 +797,10 @@ function startDragonTrailBattle(mon){
 
 function buyDragonTrailShop(){
   const i=dragonTrailShopSelection;
+  if(i===3){
+    scene='dragonTrail';touchUI.classList.remove('hidden');
+    flashText='登山道へ戻った';flashTimer=1.2;return;
+  }
   if(i===0){
     if(progress.gold<75){flashText='お金が足りません';flashTimer=1.5;return;}
     progress.gold-=75;progress.items.highPotion=(progress.items.highPotion||0)+1;
@@ -805,7 +810,7 @@ function buyDragonTrailShop(){
     if(progress.gold<260){flashText='お金が足りません';flashTimer=1.5;return;}
     progress.gold-=260;progress.shopBought.summitBow=true;progress.atk+=6;
     flashText='烈風の強弓を購入！ パーティ攻撃補助 +6';flashTimer=2;
-  }else{
+  }else if(i===2){
     if(progress.shopBought.summitSpear){flashText='剛槍は購入済みです';flashTimer=1.5;return;}
     if(progress.gold<300){flashText='お金が足りません';flashTimer=1.5;return;}
     progress.gold-=300;progress.shopBought.summitSpear=true;
@@ -3279,8 +3284,14 @@ function startCaveBossBattle(){
 }
 
 function syncStoryParty(){
-  // Gyou must never appear before his actual join event.
-  // The confirmed story flag is the single source of truth.
+  // A cleared save has already passed every join event. Rebuild the full
+  // postgame party even when entering from the title after a page reload.
+  if(progress.gameCleared){
+    suzumaruActive=true;suzumaruJoined=true;
+    yunoJoined=true;
+    gyouJoinConfirmed=true;gyouJoined=true;
+    return;
+  }
   gyouJoined=!!gyouJoinConfirmed;
 }
 function drawMenu(){
@@ -4094,17 +4105,25 @@ function drawDragonTrail(){
 }
 function drawDragonTrailShop(){
   ctx.fillStyle='#172333';ctx.fillRect(0,0,W,H);
-  text('火山頂上への売店',480,48,30,'center','#fff0c5',900);
+  text('火山頂上への売店',70,48,30,'left','#fff0c5',900);
   outlineRect(665,22,245,52,'#263a50','#e5bd68',2);
   text('所持金',690,39,14,'left','#ffe9ad',800);
   text(`${progress.gold} G`,885,53,23,'right','#fff6d7',900);
+
   const rows=[
     ['高級回復薬','HP70回復 / 75G',false],
     ['烈風の強弓','ダッシュミウ用　仲間全体の攻撃補助 +6 / 260G',!!progress.shopBought.summitBow],
-    ['黒曜の剛槍','ジュウ用　攻撃+12・防御+5 / 300G',!!progress.shopBought.summitSpear]
+    ['黒曜の剛槍','ジュウ用　攻撃+12・防御+5 / 300G',!!progress.shopBought.summitSpear],
+    ['店を出る','登山道へ戻る',false]
   ];
-  rows.forEach((r,i)=>{const y=105+i*92,sel=dragonTrailShopSelection===i;outlineRect(100,y,760,72,sel?'#fff3d6':'#e4edf2',sel?'#e0a954':'#7793a6',3);text(`${sel?'▶ ':''}${r[0]}`,130,y+25,20,'left','#17324a',900);text(r[1],130,y+51,14,'left','#425f70');if(r[2])text('購入済み',820,y+35,15,'right','#7a6955');});
-  text('↑↓ / タップ：選択　A / Enter：購入　X / Esc：戻る',430,430,16,'center','#d6e6ef');
+  rows.forEach((r,i)=>{
+    const y=92+i*86,sel=dragonTrailShopSelection===i;
+    outlineRect(100,y,760,66,sel?'#fff3d6':(i===3?'#344a64':'#e4edf2'),sel?'#e0a954':(i===3?'#718aa0':'#7793a6'),3);
+    text(`${sel?'▶ ':''}${r[0]}`,130,y+23,20,'left',i===3&&!sel?'#e5eef4':'#17324a',900);
+    text(r[1],130,y+47,14,'left',i===3&&!sel?'#b8c9d5':'#425f70');
+    if(r[2])text('購入済み',820,y+32,15,'right','#7a6955');
+  });
+  text('↑↓ / タップ：選択　A / Enter：決定',480,465,16,'center','#d6e6ef');
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);
@@ -4399,6 +4418,7 @@ function pressAction(){
   if(!nameOverlay.classList.contains('hidden'))return;
   if(scene==='title'){
     if(titleSelection===3 && progress.gameCleared){
+      suzumaruActive=true;suzumaruJoined=true;yunoJoined=true;gyouJoinConfirmed=true;gyouJoined=true;
       syncStoryParty();
       dragonTrailHero.x=130;dragonTrailHero.y=455;
       dragonTrailMobs.forEach(m=>{m.alive=true;m.respawn=0;m.x=m.spawnX;m.y=m.spawnY;});
@@ -4650,8 +4670,11 @@ function pressAction(){
     dialogIndex++;if(dialogIndex>=endingDialog.length){progress.gameCleared=true;saveProgress();scene='end';dialogIndex=0;saveGame();}return;
   }
   if(scene==='dragonTrail'){
-    if(Math.hypot(dragonTrailHero.x-335,dragonTrailHero.y-350)<135){dragonTrailShopSelection=0;scene='dragonTrailShop';touchUI.classList.remove('hidden');return;}
-    flashText='頂上へ進もう。売店では登山用装備も買える';flashTimer=1.7;return;
+    syncStoryParty();
+    if(Math.hypot(dragonTrailHero.x-335,dragonTrailHero.y-350)<135){
+      dragonTrailShopSelection=0;scene='dragonTrailShop';touchUI.classList.remove('hidden');return;
+    }
+    openFieldMenu('dragonTrail');return;
   }
   if(scene==='dragonTrailShop'){buyDragonTrailShop();return;}
   if(scene==='dragonIntro'){
@@ -4680,8 +4703,8 @@ function pressAction(){
     return;
   }
   if(scene==='dragonTrailShop'){
-    if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'){dragonTrailShopSelection=(dragonTrailShopSelection+2)%3;e.preventDefault();return;}
-    if(e.key==='ArrowDown'||e.key==='s'||e.key==='S'){dragonTrailShopSelection=(dragonTrailShopSelection+1)%3;e.preventDefault();return;}
+    if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'){dragonTrailShopSelection=(dragonTrailShopSelection+3)%4;e.preventDefault();return;}
+    if(e.key==='ArrowDown'||e.key==='s'||e.key==='S'){dragonTrailShopSelection=(dragonTrailShopSelection+1)%4;e.preventDefault();return;}
     if(e.key==='Enter'||e.key===' '||e.key==='z'||e.key==='Z'){e.preventDefault();buyDragonTrailShop();return;}
     if(e.key==='Escape'||e.key==='x'||e.key==='X'){scene='dragonTrail';touchUI.classList.remove('hidden');return;}
   }
@@ -4727,7 +4750,7 @@ function pressAction(){
     scene='finalLaunch';dialogIndex=0;saveGame();return;
   }
 
-  if(scene==='world' || scene==='road2' || scene==='route3' || scene==='cave' || scene==='takezoTravel' || scene==='takezoRoute' || scene==='coastSurveyField' || scene==='volcanoSurveyField' || scene==='finalBearField'){
+  if(scene==='world' || scene==='road2' || scene==='route3' || scene==='cave' || scene==='takezoTravel' || scene==='takezoRoute' || scene==='coastSurveyField' || scene==='volcanoSurveyField' || scene==='finalBearField' || scene==='dragonTrail'){
     openFieldMenu(scene);
     return;
   }
@@ -4844,7 +4867,10 @@ addEventListener('keyup',e=>{keys[e.key]=false;});
 canvas.addEventListener('pointerdown',e=>{
   if(scene==='dragonTrailShop'){
     const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H;
-    if(y>=95&&y<385){dragonTrailShopSelection=Math.max(0,Math.min(2,Math.floor((y-105)/92)));return;}
+    if(y>=88&&y<438){
+      dragonTrailShopSelection=Math.max(0,Math.min(3,Math.floor((y-92)/86)));
+      return;
+    }
   }
   if(scene==='finalEveFree'){
     const r=canvas.getBoundingClientRect();

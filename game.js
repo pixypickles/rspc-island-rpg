@@ -872,11 +872,11 @@ function buyDragonTrailShop(){
   const buyUnique=(flag,price,msg)=>{
     if(progress.shopBought[flag]){flashText='この装備は購入済みです';flashTimer=1.5;return false;}
     if(progress.gold<price){flashText='お金が足りません';flashTimer=1.5;return false;}
-    progress.gold-=price;progress.shopBought[flag]=true;flashText=msg;flashTimer=2;return true;
+    progress.gold-=price;progress.shopBought[flag]=true;sfx('buy');flashText=msg;flashTimer=2;return true;
   };
   if(i===0){
     if(progress.gold<75){flashText='お金が足りません';flashTimer=1.5;return;}
-    progress.gold-=75;progress.items.highPotion=(progress.items.highPotion||0)+1;
+    progress.gold-=75;progress.items.highPotion=(progress.items.highPotion||0)+1;sfx('buy');
     flashText=`高級回復薬を購入！ 所持 ${progress.items.highPotion}`;flashTimer=1.7;
   }else if(i===1){
     if(!buyUnique('summitBow',260,'烈風の強弓を購入！ ユーノ攻撃+6・消費MP約1/3減！'))return;
@@ -1453,8 +1453,8 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.95',480,121,18,'center','#eef8ff');
-  text('♪ 8bit BGM（物語に合わせて変化）　Mキー：ON / OFF',480,145,12,'center','#d9edf5');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.96',480,121,18,'center','#eef8ff');
+  text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
   if(cleared)labels.push(progress.postDragonDefeated?'ドラゴンに挑戦（再戦）':'ドラゴンに挑戦');
@@ -1716,6 +1716,7 @@ function startBattle(mon){
     monsterId:mon.id,turn:'player',defending:false
   };
   battleMessage=`${mon.name}が現れた！`;
+  sfx('boss');
   battleMenu='main';
   scene='battle';touchUI.classList.add('hidden');
 }
@@ -1735,6 +1736,11 @@ function drawDamagePopups(){
 }
 function setBattleFx(type,x=700,y=245){
   battleFx={type,timer:.48,x,y};
+  if(type==='slash')sfx('slash');
+  else if(type==='ice')sfx('ice');
+  else if(type==='fire')sfx('fire');
+  else if(type==='heal')sfx('heal');
+  else if(type==='hitHero'||type==='hitSuzu'||type==='hitYuno'||type==='hitGyou')sfx('hit');
 }
 function drawBattleFx(){
   if(!battleFx || battleFx.timer<=0)return;
@@ -2295,6 +2301,7 @@ function suzuAction(mode='attack'){
   if(!battle || battle.turn!=='player' || battleActor!=='suzu')return;
   let dmg=0;
   if(mode==='counter'){
+    sfx('guard');
     if((progress.suzuSkills?.counter||0)<1){battleMessage='炎返しは未習得！';return;}
     const counterCost=suzuSkillMPCost(7);if(battle.suzuMP<counterCost){battleMessage='MPが足りない！';return;}
     battle.suzuMP-=counterCost;battle.suzuCounter=true;
@@ -2411,13 +2418,16 @@ function yunoAction(mode,target='hero'){
     battle.regenTurns=3+(lv>=3?1:0)+(progress.shopBought?.yunoBracelet?1:0);battle.regenPower=7+(lv-1)*5;
     battleMessage=`ユーノの「そよぎの輪 Lv.${lv}」！ ${battle.regenTurns}ターン、毎ターンHP${battle.regenPower}回復！`;setBattleFx('heal',360,255);
   }else if(mode==='windAll'){
+    sfx('wind');
     const dmg=yunoWindPower(8+Math.floor(ys.atk*.65)+(lv-1)*12);const res=damageAllEnemies(dmg);
     battleMessage=`ユーノの「風刃嵐 Lv.${lv}」！ ${res.map(v=>`${v.name} ${v.damage}`).join(' / ')}`;setBattleFx('ice');addDamagePopup(`WIND ALL Lv.${lv}`,700,155,'#b8fff1');
     if(enemiesDefeated()){battle.turn='win';battleCooldown=1;return;}
   }else if(mode==='haste'){
+    sfx('wind');
     battle.hasteTarget=target;battle.hasteTurns=2+(progress.shopBought?.yunoBracelet?1:0);battle.hasteUsed=false;
     battleMessage=`ユーノの「疾風」！ ${partyTargetName(target)}は${battle.hasteTurns}ターン、行動を2回できる！`;
   }else if(mode==='archery'){
+    sfx('bow');
     const hits=lv>=2?3:2,ratio=lv>=2?.78:.68,parts=[];
     for(let i=0;i<hits;i++){
       const d=yunoWindPower(Math.floor(ys.atk*ratio)+(lv>=2?8:5)+Math.floor(Math.random()*5));
@@ -2427,6 +2437,7 @@ function yunoAction(mode,target='hero'){
     battleMessage=`ユーノの「${nm}」！ ${parts.join('＋')}ダメージ！`;setBattleFx('slash');addDamagePopup(`${parts.length} HIT`,700,155,'#b8fff1');
     if(enemiesDefeated()){battle.turn='win';battleCooldown=1;return;}
   }else if(mode==='mpRegenAll'){
+    sfx('wind');
     // Recasting refreshes/overwrites duration rather than stacking another copy.
     battle.mpRegenAllTurns=4+(progress.shopBought?.yunoBracelet?1:0);battle.mpRegenAllPower=5;
     battleMessage=`ユーノの「風巡りの泉」！ ${battle.mpRegenAllTurns}ターン、味方全体のMPが毎ターン5回復！`;setBattleFx('heal',360,255);
@@ -2443,8 +2454,8 @@ function gyouAction(mode,target='hero'){
   const cost={fortify:5,cover:5,taunt:4,manaGuard:4,healGuard:7,doubleThrust:6,counter:7,grandGuard:16}[mode];
   if(battle.gyouMP<cost){battleMessage='MPが足りない！';return;}
   battle.gyouMP-=cost;
-  if(mode==='fortify'){battle.gyouDefTurns=3;battleMessage='ジュウの「岩守り」！ 防御力が大きく上がった！';}
-  else if(mode==='cover'){battle.gyouCover=target;battleMessage=`ジュウの「かばう」！ ${partyTargetName(target)}への攻撃を引き受ける！`;}
+  if(mode==='fortify'){sfx('earth');battle.gyouDefTurns=3;battleMessage='ジュウの「岩守り」！ 防御力が大きく上がった！';}
+  else if(mode==='cover'){sfx('guard');battle.gyouCover=target;battleMessage=`ジュウの「かばう」！ ${partyTargetName(target)}への攻撃を引き受ける！`;}
   else if(mode==='taunt'){
     const lv=progress.gyouSkills.taunt||1;
     battle.gyouTauntTurns=lv>=2?5:3;
@@ -2453,6 +2464,7 @@ function gyouAction(mode,target='hero'){
   else if(mode==='manaGuard'){battle.gyouManaGuard=true;battleMessage='ジュウの「土脈吸収」！ ダメージを受けるとMPが回復する！';}
   else if(mode==='healGuard'){const heal=18+Math.floor(gyouStats().def/2);battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+heal);battle.gyouDefTurns=2;battleMessage=`ジュウの「守りの呼吸」！ HP${heal}回復＋防御！`;setBattleFx('heal',455,255);}
   else if(mode==='doubleThrust'){
+    sfx('spear');
     const gs=gyouStats(),lv=progress.gyouSkills.doubleThrust||1,mul=lv>=2?.92:.72,bonus=lv>=2?9:5;
     const d1=Math.floor(gs.atk*mul)+bonus+Math.floor(Math.random()*4),d2=Math.floor(gs.atk*mul)+bonus+Math.floor(Math.random()*4);
     damageEnemy(d1);if(!enemiesDefeated())damageEnemy(d2);
@@ -4456,6 +4468,37 @@ function bgmTone(note,dur,type='square',vol=1){
   v.gain.exponentialRampToValueAtTime(.0001,t+dur);
   o.connect(v);v.connect(bgmMaster);o.start(t);o.stop(t+dur+.02);
 }
+
+let sfxEnabled=true;
+function sfxTone(freq,dur=.08,type='square',vol=.5,endFreq=null){
+  bgmInit();if(!bgmCtx||!sfxEnabled)return;
+  if(bgmCtx.state==='suspended')bgmCtx.resume();
+  const t=bgmCtx.currentTime,o=bgmCtx.createOscillator(),v=bgmCtx.createGain();
+  o.type=type;o.frequency.setValueAtTime(freq,t);
+  if(endFreq)o.frequency.exponentialRampToValueAtTime(Math.max(20,endFreq),t+dur);
+  v.gain.setValueAtTime(.0001,t);v.gain.exponentialRampToValueAtTime(.09*vol,t+.006);
+  v.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(v);v.connect(bgmMaster);o.start(t);o.stop(t+dur+.02);
+}
+function sfx(name){
+  if(!sfxEnabled)return;
+  if(name==='decide'){sfxTone(660,.055,'square',.42);setTimeout(()=>sfxTone(880,.055,'square',.36),45);}
+  else if(name==='attack'){sfxTone(520,.09,'square',.52,150);}
+  else if(name==='slash'){sfxTone(900,.11,'sawtooth',.48,180);}
+  else if(name==='bow'){sfxTone(760,.07,'square',.38,360);setTimeout(()=>sfxTone(1120,.05,'square',.28),55);}
+  else if(name==='spear'){sfxTone(430,.10,'sawtooth',.45,920);}
+  else if(name==='ice'){sfxTone(1250,.13,'square',.36,520);setTimeout(()=>sfxTone(1750,.08,'triangle',.30),55);}
+  else if(name==='fire'){sfxTone(210,.15,'sawtooth',.48,620);setTimeout(()=>sfxTone(130,.10,'square',.28),65);}
+  else if(name==='wind'){sfxTone(820,.18,'sine',.38,1450);}
+  else if(name==='earth'){sfxTone(120,.17,'square',.50,70);}
+  else if(name==='heal'){sfxTone(520,.09,'sine',.35);setTimeout(()=>sfxTone(780,.10,'sine',.32),70);setTimeout(()=>sfxTone(1040,.12,'sine',.28),140);}
+  else if(name==='hit'){sfxTone(150,.09,'square',.55,75);}
+  else if(name==='guard'){sfxTone(180,.10,'square',.38);setTimeout(()=>sfxTone(260,.07,'triangle',.28),50);}
+  else if(name==='buy'){sfxTone(700,.05,'square',.35);setTimeout(()=>sfxTone(900,.05,'square',.35),55);setTimeout(()=>sfxTone(1200,.08,'square',.30),110);}
+  else if(name==='win'){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>sfxTone(f,.16,'square',.30),i*95));}
+  else if(name==='boss'){sfxTone(95,.28,'sawtooth',.48,55);}
+}
+
 function bgmWanted(){
   if(scene==='battle'){
     if(battle&&battle.type==='postDragon')return 'dragon';
@@ -5240,6 +5283,7 @@ requestAnimationFrame(frame);
 
 addEventListener('keydown',e=>{
   if(e.key==='m'||e.key==='M'){bgmToggle();return;}
+  if(e.key==='n'||e.key==='N'){sfxEnabled=!sfxEnabled;flashText=`効果音 ${sfxEnabled?'ON':'OFF'}`;flashTimer=1.2;return;}
   keys[e.key]=true;
   if(scene==='title'){
     if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'){titleSelection=0;e.preventDefault();return;}

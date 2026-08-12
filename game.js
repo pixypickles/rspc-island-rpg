@@ -289,6 +289,7 @@ let finalBearWave=0;
 
 let dragonTrailHero={x:130,y:455,speed:210};
 let postGameHero={x:480,y:400,speed:210},postGameArea='brifo',postGameVolcanoHero={x:180,y:455,speed:210};
+let postGameElderTalked=false,postGameRaidUnlocked=false,postGameRaidWave=0;
 let postGameVolcanoMobs=[
 {id:970,name:'溶岩オオヤマネコ',kind:'emberLizard',x:430,y:430,spawnX:430,spawnY:430,alive:true,hp:380,maxHP:380,respawn:0},
 {id:971,name:'火口イワモグラ',kind:'rockMole',x:690,y:350,spawnX:690,spawnY:350,alive:true,hp:320,maxHP:320,respawn:0},
@@ -818,6 +819,41 @@ const endingDialog=[
 ['narrator','そして、ぴくるすたちの旅はひとまず終わる。――けれど、火山の奥ではまだ何かが眠っているらしい。']
 ];
 
+const postGameElderDialog=[
+ ['elder','あの海賊ら、まだ隣の島で悪さしとるらしいぞ。']
+];
+const postGameElderDragonDialog=[
+ ['elder','拠点を突き止めたらしいけど、お前さんたちドラゴンを倒したんじゃろ？'],
+ ['elder','もう4人で潰してきたらどうじゃ？ 行くならサーカス団の船を出してもらったらええ。'],
+ ['elder','のう、ダッシュミウよ？']
+];
+const postGameCircusDialog=[
+ ['dash','話は聞いたよ。ちぇすたぴサーカス団の船を出そう！'],
+ ['dash','海賊の拠点まで一気に送る。帰りのことは倒してから考えよう！']
+];
+const postGameRaidClearDialog=[
+ ['narrator','海賊の残党を率いていた三人が倒れ、隣の島にも静けさが戻った。'],
+ ['hero','これで、本当に終わったね。'],
+ ['suzu','ああ。今度こそ帰って、ゆっくり飯にしようぜ。']
+];
+function startPostGameRaidWave(){
+ const wave=postGameRaidWave;
+ if(wave<3){
+   const count=6;const es=[];
+   for(let i=0;i<count;i++)es.push({name:`海賊${wave*count+i+1}`,kind:i%3===0?'pirateBear':i%3===1?'pirateCat':'pirate',hp:220+wave*35,maxHP:220+wave*35});
+   startBattleGroup(es,980+wave);battleMessage=`海賊の大集団！ 第${wave+1}波、${count}人！`;return;
+ }
+ startPostGameRaidBoss();
+}
+function startPostGameRaidBoss(){
+ const lv=Math.max(20,progress.level||20),b=820+(lv-20)*28;
+ const es=[
+  {name:'副船長',kind:'viceCaptain',hp:Math.floor(b*.82),maxHP:Math.floor(b*.82)},
+  {name:'海賊船長',kind:'pirateCaptain',hp:b,maxHP:b,potions:2},
+  {name:'クラウス',kind:'pirate',hp:Math.floor(b*.72),maxHP:Math.floor(b*.72)}
+ ];
+ startBattleGroup(es,990);battle.bossTurn=0;battleMessage='船長・副船長・クラウスが立ちはだかった！';
+}
 const dragonCallDialog=[
 ['narrator','船長との死闘を終え、五人がようやくひと息ついた、その時だった。'],
 ['narrator','声ではない。五人全員の頭の中に、低く威厳のある言葉が直接響いた。'],
@@ -853,6 +889,15 @@ function dragonTrailEncounterGroup(first){
   return enemies;
 }
 
+function startBattleGroup(enemies,monsterId){
+  suzumaruActive=true;suzumaruJoined=true;yunoJoined=true;gyouJoinConfirmed=true;gyouJoined=true;syncStoryParty();
+  const ss=suzumaruStats(),ys=yunoStats(),gs=gyouStats(),first=enemies[0];
+  battle={heroHP:progress.maxHP,heroMP:progress.maxMP,suzuHP:ss.maxHP,suzuMaxHP:ss.maxHP,suzuMP:ss.maxMP,suzuMaxMP:ss.maxMP,
+    yunoHP:ys.maxHP,yunoMaxHP:ys.maxHP,yunoMP:ys.maxMP,yunoMaxMP:ys.maxMP,gyouHP:gs.maxHP,gyouMaxHP:gs.maxHP,gyouMP:gs.maxMP,gyouMaxMP:gs.maxMP,
+    enemyHP:first.hp,enemyMaxHP:first.maxHP,enemyName:first.name,enemyKind:first.kind,monsterId,turn:'player',defending:false,enemies};
+  damagePopups=[];battleMenu='main';battleActor='hero';battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
+  battleMessage=`${enemies.length}体の敵が現れた！`;scene='battle';touchUI.classList.add('hidden');
+}
 function startPostGameVolcanoBattle(mon){const pool=postGameVolcanoMobs.filter(m=>m.alive),count=2+Math.floor(Math.random()*2),chosen=[mon,...pool.filter(m=>m!==mon).sort(()=>Math.random()-.5).slice(0,count-1)];startBattleGroup(chosen.map(m=>({id:m.id,name:m.name,kind:m.kind,hp:m.hp,maxHP:m.maxHP})),mon.id);}
 function startDragonTrailBattle(mon){
   suzumaruActive=true;suzumaruJoined=true;yunoJoined=true;gyouJoinConfirmed=true;gyouJoined=true;
@@ -1006,7 +1051,7 @@ function saveGame(){
 
   const data={
     version:22,
-    postGameArea,
+    postGameArea,postGameElderTalked,postGameRaidUnlocked,postGameRaidWave,
     postGameHero:{x:postGameHero.x,y:postGameHero.y},
     postGameVolcanoHero:{x:postGameVolcanoHero.x,y:postGameVolcanoHero.y},
     scene,
@@ -1103,7 +1148,7 @@ function loadGame(){
     restoreList(route3Mobs,d.route3Mobs);restoreList(takezoMobs,d.takezoMobs);restoreList(volcanoSurveyMobs,d.volcanoSurveyMobs);repairTakezoSquads();
 
     lastFieldScene=d.lastFieldScene||'world';
-    if(d.postGameArea)postGameArea=d.postGameArea;apply(postGameHero,d.postGameHero);apply(postGameVolcanoHero,d.postGameVolcanoHero);
+    if(d.postGameArea)postGameArea=d.postGameArea;if(d.postGameElderTalked!==undefined)postGameElderTalked=d.postGameElderTalked;if(d.postGameRaidUnlocked!==undefined)postGameRaidUnlocked=d.postGameRaidUnlocked;if(d.postGameRaidWave!==undefined)postGameRaidWave=d.postGameRaidWave;apply(postGameHero,d.postGameHero);apply(postGameVolcanoHero,d.postGameVolcanoHero);
     let target=d.scene||lastFieldScene;
     if(progress.gameCleared){suzumaruActive=true;suzumaruJoined=true;yunoJoined=true;gyouJoinConfirmed=true;gyouJoined=true;syncStoryParty();target='postGameIsland';}
 
@@ -1465,7 +1510,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.00',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.01',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -2604,7 +2649,28 @@ function gyouShieldRecover(dmg){
   battle.gyouMP=Math.min(battle.gyouMaxMP,battle.gyouMP+mp);
   return battle.gyouMP-before;
 }
+function postGameRaidBossTurn(){
+ battle.bossTurn=(battle.bossTurn||0)+1;const live=livingEnemies();let lines=[];
+ const klaus=live.find(e=>e.name==='クラウス');
+ if(klaus&&battle.bossTurn%2===1){
+   for(const t of ['hero','suzu','yuno','gyou']){
+     let d=34+Math.floor(Math.random()*15);
+     if(t==='hero')battle.heroHP=Math.max(1,battle.heroHP-d);
+     else if(t==='suzu')battle.suzuHP=Math.max(1,battle.suzuHP-d);
+     else if(t==='yuno')battle.yunoHP=Math.max(1,battle.yunoHP-d);
+     else {d=gyouShieldReduce(d);battle.gyouHP=Math.max(1,battle.gyouHP-d);gyouShieldRecover(d);}
+     lines.push(`${t==='hero'?heroName:t==='suzu'?'スズマル':t==='yuno'?'ユーノ':'ジュウ'} -${d}`);
+   }
+   battleMessage=`クラウスのマシンガン掃射！ ${lines.join(' / ')}`;
+ }else{
+   const foe=live[Math.floor(Math.random()*live.length)],t=['hero','suzu','yuno','gyou'][Math.floor(Math.random()*4)],d=58+Math.floor(Math.random()*22);
+   if(t==='hero')battle.heroHP=Math.max(1,battle.heroHP-d);else if(t==='suzu')battle.suzuHP=Math.max(1,battle.suzuHP-d);else if(t==='yuno')battle.yunoHP=Math.max(1,battle.yunoHP-d);else battle.gyouHP=Math.max(1,battle.gyouHP-gyouShieldReduce(d));
+   battleMessage=`${foe.name}の強烈な攻撃！ ${t==='hero'?heroName:t==='suzu'?'スズマル':t==='yuno'?'ユーノ':'ジュウ'} -${d}`;
+ }
+ battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};battle.turn='enemyResult';battleCooldown=1.15;
+}
 function enemyTurn(){
+  if(battle&&battle.monsterId===990){postGameRaidBossTurn();return;}
   if(battle&&battle.monsterId===950){
     battle.bossTurn=(battle.bossTurn||0)+1;
     if(battle.enemyHP<=battle.enemyMaxHP*.5)battle.bossPhase=2;
@@ -2723,6 +2789,15 @@ function finishBattle(){
     battle=null;scene='volcanoBearAfter';dialogIndex=0;touchUI.classList.add('hidden');saveGame();return;
   }
 
+  if(battle && battle.monsterId>=980 && battle.monsterId<=982){
+    progress.gold+=220+postGameRaidWave*80;gainExp(260+postGameRaidWave*80);postGameRaidWave++;
+    battle=null;touchUI.classList.remove('hidden');saveProgress();saveGame();
+    startPostGameRaidWave();return;
+  }
+  if(battle && battle.monsterId===990){
+    progress.postGamePirateRaidCleared=true;progress.gold+=1000;gainExp(900);saveProgress();
+    battle=null;scene='postGameRaidClear';dialogIndex=0;touchUI.classList.add('hidden');saveGame();return;
+  }
   if(battle && battle.monsterId>=970 && battle.monsterId<=973){const ids=battle.enemies?battle.enemies.map(e=>e.id):[battle.monsterId];ids.forEach(id=>{const m=postGameVolcanoMobs.find(x=>x.id===id);if(m){m.alive=false;m.respawn=10;}});const count=battle.enemies?battle.enemies.length:1,expGain=150+(count-1)*45,goldGain=90+(count-1)*30;progress.gold+=goldGain;const leveled=gainExp(expGain);saveProgress();battle=null;scene='postGameVolcano';touchUI.classList.remove('hidden');flashText=leveled?`レベルアップ！ Lv.${progress.level}　SP+1`:`経験値 ${expGain} / ${goldGain}G 獲得！`;flashTimer=2.4;saveGame();return;}
   if(battle && battle.monsterId>=960 && battle.monsterId<=963){
     const mon=dragonTrailMobs.find(m=>m.id===battle.monsterId);
@@ -4423,12 +4498,15 @@ function drawPostGameIsland(){
 
   // Village locations: Brifo west, Sarubie southwest, Sarubibi southeast, Takezo north-east.
   const gates=[
-    ['brifo',135,365,'ぶりふぉ村','#dff4fb'],
-    ['sarubie',205,225,'さるびえ村','#f2c995'],
+    ['sarubie',135,365,'さるびえ村','#f2c995'],
+    ['brifo',205,225,'ぶりふぉ村','#dff4fb'],
     ['sarubibi',610,365,'さるびび村','#ccebdc'],
     ['takezo',630,195,'たけぞ村','#d9c99e']
   ];
   gates.forEach(([a,x,y,n,c])=>{outlineRect(x,y,145,54,c,'#587064',3);text(n,x+72,y+20,16,'center','#29434b',900);text('入口',x+72,y+40,12,'center','#536c70');});
+  if(postGameRaidUnlocked){
+    outlineRect(395,66,170,58,'#f4d7a0','#8a3f45',4);text('ちぇすたぴ',480,87,15,'center','#7b2635',900);text('サーカス団 拠点',480,108,14,'center','#7b2635',900);
+  }
 
   // small elemental landmarks make the hub read as the same island, not a menu
   drawTree(92,285);drawTree(815,330);drawTree(760,120);
@@ -4468,6 +4546,10 @@ function drawPostGameVillage(){
   }
   outlineRect(28,425,145,58,'#e8f4f2','#557a79',3);text('島へ出る',100,454,17,'center','#284b50',900);
   drawHeroFox(postGameHero.x,postGameHero.y,.96);drawSuzumaru(postGameHero.x-43,postGameHero.y+14,.88);drawYuno(postGameHero.x-82,postGameHero.y+18,.86);drawGyou(postGameHero.x-120,postGameHero.y+21,.86);
+  if(postGameArea==='brifo'){
+    // 村長。近づいてAで会話。
+    ctx.save();ctx.translate(700,385);ellipse(0,24,22,7,'rgba(0,0,0,.18)');ellipse(0,-18,19,18,'#c9b58e');ellipse(-13,-29,6,7,'#8a7259');ellipse(13,-29,6,7,'#8a7259');rect(-19,0,38,48,'#6e7f55');text('村長',0,-52,13,'center','#31443c',800);ctx.restore();
+  }
   const names={brifo:'ぶりふぉ村',sarubie:'さるびえ村',sarubibi:'さるびび村',takezo:'たけぞ村'};
   const ht=hudTop();ctx.fillStyle='rgba(18,40,50,.84)';ctx.fillRect(18,ht,330,45);text(`${names[postGameArea]}　平和な日常`,35,ht+22,17);
 }
@@ -4480,6 +4562,29 @@ function drawPostGameVolcano(){
   postGameVolcanoMobs.forEach(m=>drawSurveyMonster(m));
   drawHeroFox(postGameVolcanoHero.x,postGameVolcanoHero.y,.92);drawSuzumaru(postGameVolcanoHero.x-48,postGameVolcanoHero.y+15,.96);drawYuno(postGameVolcanoHero.x-92,postGameVolcanoHero.y+18,.94);drawGyou(postGameVolcanoHero.x-135,postGameVolcanoHero.y+22,.92);ctx.restore();
   const ht=hudTop();ctx.fillStyle='rgba(15,25,35,.88)';ctx.fillRect(18,ht,520,48);text(`火山　Lv.${progress.level}　${progress.gold}G`,35,ht+24,17);text('ドラゴン挑戦と同系統の強敵が出現',745,ht+24,14,'center','#ffe0b0');
+}
+function drawPostGameCircus(){
+ ctx.fillStyle='#91d7e4';ctx.fillRect(0,0,W,H);rect(0,300,W,240,'#79b86d');
+ // striped circus base and ship
+ outlineRect(95,180,330,180,'#f5e7bd','#9b3f45',4);
+ for(let x=105;x<415;x+=52)rect(x,190,26,160,'#d94d55');
+ text('ちぇすたぴサーカス団',260,215,20,'center','#6f2733',900);
+ ctx.fillStyle='#8c5438';ctx.beginPath();ctx.moveTo(565,330);ctx.lineTo(875,330);ctx.lineTo(820,420);ctx.lineTo(620,420);ctx.closePath();ctx.fill();
+ for(let x=600;x<840;x+=44)rect(x,285,22,45,x%88===0?'#e24d55':'#f0d27d');
+ text('ちぇすたぴサーカス団',720,365,18,'center','#fff3c8',900);
+ drawDash(470,360,1.0);drawHeroFox(postGameHero.x,postGameHero.y,.95);
+ text('ダッシュミウに話しかける',480,hudTop()+24,17,'center','#ffffff',900);
+}
+function drawPostGameRaid(){
+ const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#8aa1aa');gr.addColorStop(1,'#665b50');ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
+ rect(0,335,W,205,'#756854');ctx.fillStyle='#3e4850';ctx.beginPath();ctx.moveTo(0,335);ctx.lineTo(200,225);ctx.lineTo(390,335);ctx.lineTo(620,190);ctx.lineTo(850,335);ctx.closePath();ctx.fill();
+ outlineRect(700,250,180,120,'#5a3c32','#c56c55',4);text('海賊拠点',790,282,21,'center','#ffe0c0',900);
+ for(let i=0;i<8;i++){const x=110+i*92,y=365+(i%2)*35;ellipse(x,y,18,18,i%3===0?'#f0f0e8':'#b67a58');rect(x-17,y+15,34,42,'#d97832');}
+ drawHeroFox(350,430,.95);drawSuzumaru(305,445,.9);drawYuno(260,448,.88);drawGyou(218,450,.88);
+ text(`海賊拠点　連戦 ${Math.min(postGameRaidWave+1,4)}/4`,35,hudTop()+24,18,'left','#fff',900);
+}
+function drawPostGameRaidClear(){
+ drawPostGameRaid();const d=postGameRaidClearDialog[Math.min(dialogIndex,postGameRaidClearDialog.length-1)];drawDialog(d[0],d[1]);
 }
 function drawDragonTrail(){
   camera.x=Math.max(0,Math.min(700,dragonTrailHero.x-W*.42));
@@ -4657,7 +4762,8 @@ function update(dt){
     startPostDragonBattle();
     return;
   }
-  if(scene==='postGameIsland'){let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameHero.x+=dx*postGameHero.speed*dt;postGameHero.y+=dy*postGameHero.speed*dt;}postGameHero.x=Math.max(45,Math.min(920,postGameHero.x));postGameHero.y=Math.max(240,Math.min(500,postGameHero.y));const es=[['brifo',207,392],['sarubie',277,252],['sarubibi',682,392],['takezo',702,222]];for(const [a,x,y] of es)if(Math.hypot(postGameHero.x-x,postGameHero.y-y)<58){postGameArea=a;postGameHero.x=220;postGameHero.y=430;scene='postGameVillage';saveGame();return;}if(Math.hypot(postGameHero.x-480,postGameHero.y-222)<65){postGameVolcanoHero.x=180;postGameVolcanoHero.y=455;scene='postGameVolcano';saveGame();return;}return;}
+  if(scene==='postGameIsland'){let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameHero.x+=dx*postGameHero.speed*dt;postGameHero.y+=dy*postGameHero.speed*dt;}postGameHero.x=Math.max(45,Math.min(920,postGameHero.x));postGameHero.y=Math.max(240,Math.min(500,postGameHero.y));const es=[['sarubie',207,392],['brifo',277,252],['sarubibi',682,392],['takezo',702,222]];for(const [a,x,y] of es)if(Math.hypot(postGameHero.x-x,postGameHero.y-y)<58){postGameArea=a;postGameHero.x=220;postGameHero.y=430;scene='postGameVillage';saveGame();return;}if(Math.hypot(postGameHero.x-480,postGameHero.y-222)<65){postGameVolcanoHero.x=180;postGameVolcanoHero.y=455;scene='postGameVolcano';saveGame();return;}
+ if(postGameRaidUnlocked&&Math.hypot(postGameHero.x-480,postGameHero.y-95)<65){postGameHero.x=500;postGameHero.y=420;scene='postGameCircus';saveGame();return;}return;}
   if(scene==='postGameVillage'){let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameHero.x+=dx*postGameHero.speed*dt;postGameHero.y+=dy*postGameHero.speed*dt;}postGameHero.x=Math.max(45,Math.min(920,postGameHero.x));postGameHero.y=Math.max(250,Math.min(500,postGameHero.y));if(postGameHero.x<175&&postGameHero.y>385){const back={brifo:[285,410],sarubie:[350,270],sarubibi:[610,410],takezo:[625,240]}[postGameArea]||[480,400];postGameHero.x=back[0];postGameHero.y=back[1];scene='postGameIsland';saveGame();}return;}
   if(scene==='postGameVolcano'){for(const m of postGameVolcanoMobs){if(!m.alive&&m.respawn>0){m.respawn-=dt;if(m.respawn<=0){m.alive=true;m.hp=m.maxHP;m.x=m.spawnX;m.y=m.spawnY;}}}let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameVolcanoHero.x+=dx*postGameVolcanoHero.speed*dt;postGameVolcanoHero.y+=dy*postGameVolcanoHero.speed*dt;}postGameVolcanoHero.x=Math.max(55,Math.min(1430,postGameVolcanoHero.x));postGameVolcanoHero.y=Math.max(245,Math.min(495,postGameVolcanoHero.y));if(postGameVolcanoHero.x<165&&postGameVolcanoHero.y>385){postGameHero.x=480;postGameHero.y=300;scene='postGameIsland';saveGame();return;}for(const m of postGameVolcanoMobs){chaseFieldMob(m,postGameVolcanoHero.x,postGameVolcanoHero.y,dt,280,58);if(m.alive&&Math.hypot(postGameVolcanoHero.x-m.x,(postGameVolcanoHero.y-m.y)*1.25)<38){startPostGameVolcanoBattle(m);return;}}return;}
   if(scene==='dragonTrail'){
@@ -4905,7 +5011,9 @@ function update(dt){
         }
         else if(battle.turn==='win')finishBattle();
         else if(battle.turn==='run'){
-          scene=(battle&&battle.monsterId>=960&&battle.monsterId<=963)?'dragonTrail':
+          scene=(battle&&battle.monsterId>=980&&battle.monsterId<=990)?'postGameRaid':
+                (battle&&battle.monsterId>=970&&battle.monsterId<=973)?'postGameVolcano':
+                (battle&&battle.monsterId>=960&&battle.monsterId<=963)?'dragonTrail':
                 (battle&&battle.monsterId===460)?'coastSurveyField':
                 (battle&&(battle.monsterId===470||battle.monsterId===471))?'volcanoSurveyField':
                 (battle&&battle.monsterId===450)?'takezoTravel':
@@ -5295,6 +5403,16 @@ function pressAction(){
     scene='finalLaunch';dialogIndex=0;saveGame();return;
   }
 
+  if(scene==='postGameVillage'&&postGameArea==='brifo'&&Math.hypot(postGameHero.x-700,postGameHero.y-385)<100){
+    scene='postGameElderTalk';dialogIndex=0;touchUI.classList.add('hidden');return;
+  }
+  if(scene==='postGameElderTalk'){
+    const arr=progress.postDragonDefeated?postGameElderDragonDialog:postGameElderDialog;dialogIndex++;
+    if(dialogIndex>=arr.length){if(progress.postDragonDefeated){postGameRaidUnlocked=true;postGameElderTalked=true;}scene='postGameVillage';dialogIndex=0;touchUI.classList.remove('hidden');saveGame();}return;
+  }
+  if(scene==='postGameCircus'){scene='postGameCircusTalk';dialogIndex=0;touchUI.classList.add('hidden');return;}
+  if(scene==='postGameCircusTalk'){dialogIndex++;if(dialogIndex>=postGameCircusDialog.length){postGameRaidWave=0;scene='postGameRaid';dialogIndex=0;touchUI.classList.remove('hidden');saveGame();startPostGameRaidWave();}return;}
+  if(scene==='postGameRaidClear'){dialogIndex++;if(dialogIndex>=postGameRaidClearDialog.length){scene='postGameIsland';postGameHero.x=480;postGameHero.y=150;dialogIndex=0;touchUI.classList.remove('hidden');saveGame();}return;}
   if(scene==='world' || scene==='road2' || scene==='route3' || scene==='cave' || scene==='takezoTravel' || scene==='takezoRoute' || scene==='coastSurveyField' || scene==='volcanoSurveyField' || scene==='finalBearField' || scene==='dragonTrail' || scene==='postGameIsland' || scene==='postGameVillage' || scene==='postGameVolcano'){
     openFieldMenu(scene);
     return;
@@ -5361,6 +5479,11 @@ function frame(now){
   else if(scene==='pirateCaptainIntro')drawPirateCaptainIntro();
   else if(scene==='pirateCaptainAfter')drawPirateCaptainAfter();
   else if(scene==='ending')drawEnding();
+  else if(scene==='postGameElderTalk'){drawPostGameVillage();const a=progress.postDragonDefeated?postGameElderDragonDialog:postGameElderDialog,d=a[Math.min(dialogIndex,a.length-1)];drawDialog(d[0],d[1]);}
+  else if(scene==='postGameCircus')drawPostGameCircus();
+  else if(scene==='postGameCircusTalk'){drawPostGameCircus();const d=postGameCircusDialog[Math.min(dialogIndex,postGameCircusDialog.length-1)];drawDialog(d[0],d[1]);}
+  else if(scene==='postGameRaid')drawPostGameRaid();
+  else if(scene==='postGameRaidClear')drawPostGameRaidClear();
   else if(scene==='postGameIsland')drawPostGameIsland();
   else if(scene==='postGameVillage')drawPostGameVillage();
   else if(scene==='postGameVolcano')drawPostGameVolcano();

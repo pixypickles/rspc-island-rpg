@@ -1907,7 +1907,11 @@ function drawBattle(){
       outlineRect(70,by,180,48,'#dff4fb','#71bad7',2);text('こうげき',160,by+24,20,'center','#17324a');
       outlineRect(270,by,180,48,'#dff4fb','#71bad7',2);text('スキル',360,by+24,20,'center','#17324a');
       outlineRect(470,by,180,48,'#dff4fb','#71bad7',2);text('ぼうぎょ',560,by+24,20,'center','#17324a');
-      outlineRect(670,by,180,48,'#dff4fb','#71bad7',2);text('にげる',760,by+24,20,'center','#17324a');
+      if(battle.monsterId>=960&&battle.monsterId<=963){
+        outlineRect(670,by,180,48,'#39495a','#647688',2);text('逃走不可',760,by+24,17,'center','#a9b6c0');
+      }else{
+        outlineRect(670,by,180,48,'#dff4fb','#71bad7',2);text('にげる',760,by+24,20,'center','#17324a');
+      }
       const actorName=isGyouTurn()?'ジュウ':isYunoTurn()?'ユーノ':isSuzumaruTurn()?'スズマル':heroName;
       text(`${actorName}の行動`,480,by+78,15,'center','#c8e7f4');
     }else{
@@ -2320,8 +2324,10 @@ function battleDefend(){
 function battleRun(){
   if(!battle || battle.turn!=='player')return;
   if(battle.monsterId===99){
-    battleMessage='マグマガメからは逃げられない！';
-    return;
+    battleMessage='マグマガメからは逃げられない！';return;
+  }
+  if(battle.monsterId>=960&&battle.monsterId<=963){
+    battleMessage='頂上への登山道では逃げられない！';return;
   }
   battleMessage='うまく逃げ切った！';
   battle.turn='run';battleCooldown=.6;battleMenu='main';
@@ -3436,59 +3442,54 @@ function drawMenu(){
     }else{
       text(`スキルポイント：${progress.sp}`,55,212,21,'left','#ffe8a8');
 
-      // 主人公スキルツリー：スキルごとに横へ成長。
+      // 主人公スキルツリー：横幅を整理し、回復・魔力ルートも読みやすく表示。
       const il=progress.heroIceSkill||0;
-      const nodeW=245,nodeH=72,gap=28,startX=55;
+      const nodeW=205,nodeH=66,gap=20,startX=45;
       const iceNodes=[
         ['氷結斬り','MP7 / 単体1回',1],
         ['氷結二段斬り','MP9 / 単体2回',1],
         ['氷結三連斬り','MP11 / 単体3回',1]
       ];
-      text('氷剣ルート',55,244,15,'left','#bfe7f6',800);
+      text('氷剣ルート',45,239,15,'left','#bfe7f6',800);
       iceNodes.forEach((n,i)=>{
         const x=startX+i*(nodeW+gap),need=i+1,owned=il>=need,next=il===i;
-        outlineRect(x,258,nodeW,nodeH,owned?'#b9d9e8':next?'#e7f5fb':'#29394e',owned?'#6aaacb':next?'#78b9d7':'#536273',2);
-        text(n[0],x+14,282,17,'left',owned?'#17324a':next?'#18334a':'#8192a0',800);
-        text(n[1],x+14,304,12,'left',owned?'#35566d':next?'#3d5d73':'#697b89');
-        text(owned?'習得済み':next?`必要 SP${n[2]}`:'前の技を習得',x+nodeW-12,319,11,'right',owned?'#356b7b':next?'#3d6f8a':'#74838d',800);
-        if(i<2){
-          ctx.strokeStyle=owned?'#83bfd6':'#536273';ctx.lineWidth=3;
-          ctx.beginPath();ctx.moveTo(x+nodeW+4,294);ctx.lineTo(x+nodeW+gap-5,294);ctx.stroke();
-          ctx.fillStyle=owned?'#83bfd6':'#536273';
-          ctx.beginPath();ctx.moveTo(x+nodeW+gap-5,294);ctx.lineTo(x+nodeW+gap-13,289);ctx.lineTo(x+nodeW+gap-13,299);ctx.fill();
-        }
+        outlineRect(x,252,nodeW,nodeH,owned?'#b9d9e8':next?'#e7f5fb':'#29394e',owned?'#6aaacb':next?'#78b9d7':'#536273',2);
+        text(n[0],x+12,275,16,'left',owned?'#17324a':next?'#18334a':'#8192a0',800);
+        text(n[1],x+12,295,11,'left',owned?'#35566d':next?'#3d5d73':'#697b89');
+        text(owned?'習得済み':next?`必要 SP${n[2]}`:'前の技を習得',x+nodeW-10,311,10,'right',owned?'#356b7b':next?'#3d6f8a':'#74838d',800);
+        if(i<2){ctx.strokeStyle=owned?'#83bfd6':'#536273';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x+nodeW+3,285);ctx.lineTo(x+nodeW+gap-4,285);ctx.stroke();}
       });
 
-      text('氷のつぶて派生（初期技から2方向へ）',55,350,14,'left','#bfe7f6',800);
+      text('氷のつぶて派生（初期技から2方向）',45,343,14,'left','#bfe7f6',800);
       const pr=progress.heroPebbleRandom||0, pa=progress.heroPebbleAll||0;
       const pebNodes=[
-        [55,365,'氷つぶて乱射II','ランダム2発',1,pr>=1,pr===0],
-        [270,365,'氷つぶて乱射III','ランダム3発',1,pr>=2,pr===1],
-        [485,365,'氷つぶて乱射IV','ランダム4発',1,pr>=3,pr===2],
-        [55,447,'氷晶波','敵全体',1,pa>=1,pa===0],
-        [270,447,'氷晶大波','全体攻撃強化',1,pa>=2,pa===1]
+        [45,356,'氷つぶて乱射II','ランダム2発',1,pr>=1,pr===0],
+        [245,356,'氷つぶて乱射III','ランダム3発',1,pr>=2,pr===1],
+        [445,356,'氷つぶて乱射IV','ランダム4発',1,pr>=3,pr===2],
+        [45,425,'氷晶波','敵全体',1,pa>=1,pa===0],
+        [245,425,'氷晶大波','全体攻撃強化',1,pa>=2,pa===1]
       ];
-      // Branch marker from the common starter "氷のつぶて".
-      text('氷のつぶて',760,388,15,'center','#dff4fb',800);
-      text('↙ ランダム連射　／　全体攻撃 ↙',760,414,12,'center','#9fc9dc');
       pebNodes.forEach(n=>{
         const [x,y,name,desc,cost,owned,next]=n;
-        outlineRect(x,y,195,64,owned?'#c8e2ed':next?'#e7f5fb':'#29394e',owned?'#6aaacb':next?'#78b9d7':'#536273',2);
-        text(name,x+10,y+22,14,'left',owned?'#17324a':next?'#18334a':'#8192a0',800);
-        text(desc,x+10,y+42,11,'left',owned?'#35566d':next?'#3d5d73':'#697b89');
-        text(owned?'習得済み':next?`必要 SP${cost}`:'前段階を習得',x+184,y+57,10,'right',owned?'#356b7b':next?'#3d6f8a':'#74838d');
+        outlineRect(x,y,180,58,owned?'#c8e2ed':next?'#e7f5fb':'#29394e',owned?'#6aaacb':next?'#78b9d7':'#536273',2);
+        text(name,x+10,y+20,13,'left',owned?'#17324a':next?'#18334a':'#8192a0',800);
+        text(desc,x+10,y+39,10,'left',owned?'#35566d':next?'#3d5d73':'#697b89');
+        text(owned?'習得済み':next?`SP${cost}`:'要前段階',x+170,y+52,9,'right',owned?'#356b7b':next?'#3d6f8a':'#74838d');
       });
-      // 回復ルート：初期技「水のいやし」を2回強化してLv3まで。
-      const hh=progress.heroHealSkill||1;
-      text('回復ルート',705,447,14,'left','#bfe7f6',800);
+
+      const hh=progress.heroHealSkill||1, hm=progress.heroManaSkill||0;
+      text('回復・魔力ルート',690,239,15,'left','#bfe7f6',800);
+      outlineRect(690,252,225,92,'#e7f5fb','#78b9d7',2);
       const healName=hh>=3?'大水癒':hh>=2?'水の大いやし':'水のいやし';
-      outlineRect(705,466,185,48,hh>=3?'#c8e2ed':'#e7f5fb',hh>=3?'#6aaacb':'#78b9d7',2);
-      text(healName,715,484,14,'left','#17324a',800);
-      text(hh>=3?'HP全回復 / MP12':hh>=2?'HP120回復 / MP8':'HP50回復 / MP5',715,501,10,'left','#3d5d73');
-      text(hh>=3?'Lv.3 最大':hh===2?'次 Lv.3 / SP1':'次 Lv.2 / SP1',880,511,10,'right','#3d6f8a',800);
-      const hm=progress.heroManaSkill||0;
-      outlineRect(705,520,185,18,hm?'#c8e2ed':'#e7f5fb',hm?'#6aaacb':'#78b9d7',2);
-      text(hm?'水脈の雫　習得済':'水脈の雫　SP1',797,529,10,'center','#17324a',800);
+      text(healName,705,278,18,'left','#17324a',800);
+      text(hh>=3?'HP全回復 / MP12':hh>=2?'HP120回復 / MP8':'HP50回復 / MP5',705,302,12,'left','#3d5d73');
+      text(hh>=3?'Lv.3 最大':hh===2?'次 Lv.3　SP1':'次 Lv.2　SP1',900,329,11,'right','#3d6f8a',800);
+
+      outlineRect(690,360,225,92,hm?'#c8e2ed':'#e7f5fb',hm?'#6aaacb':'#78b9d7',2);
+      text('水脈の雫',705,386,18,'left','#17324a',800);
+      text('味方1人 MP18回復 / MP6',705,410,12,'left','#3d5d73');
+      text(hm?'習得済み':'必要 SP1',900,438,11,'right',hm?'#356b7b':'#3d6f8a',800);
+      text('主人公は技数が多いため、各ルートの必要SPは軽め。',480,510,13,'center','#c8e1ec');
     }
   }
 }
@@ -3577,8 +3578,8 @@ function menuTap(x,y){
   }
 
   // Hero ice-blade evolution: click the next unlocked node in the horizontal route.
-  if(menuPage==='skill' && menuCharacter==='hero' && y>=258 && y<=330){
-    const nodeW=245,gap=28,startX=55;
+  if(menuPage==='skill' && menuCharacter==='hero' && y>=252 && y<=318){
+    const nodeW=205,gap=20,startX=45;
     const index=Math.floor((x-startX)/(nodeW+gap));
     const within=index>=0&&index<3 && x>=startX+index*(nodeW+gap) && x<=startX+index*(nodeW+gap)+nodeW;
     if(within){
@@ -3593,12 +3594,12 @@ function menuTap(x,y){
     }
   }
   if(menuPage==='skill' && menuCharacter==='hero'){
-    if(x>=705&&x<=890&&y>=516&&y<=540){
+    if(x>=690&&x<=915&&y>=360&&y<=452){
       if(progress.heroManaSkill){flashText='水脈の雫は習得済みです';flashTimer=1.4;return;}
       if(progress.sp<1){flashText='SPが足りない（必要 1）';flashTimer=1.5;return;}
       progress.sp--;progress.heroManaSkill=1;saveProgress();saveGame();flashText='「水脈の雫」を習得！';flashTimer=1.8;return;
     }
-    if(x>=705&&x<=890&&y>=447&&y<=514){
+    if(x>=690&&x<=915&&y>=252&&y<=344){
       const lv=progress.heroHealSkill||1;
       if(lv>=3){flashText='回復ルートは最大強化です';flashTimer=1.5;return;}
       const cost=1;
@@ -3614,14 +3615,14 @@ function menuTap(x,y){
       progress.sp-=cost;progress[key]=lv+1;if(route==='all')progress.heroIceWave=true;
       saveProgress();saveGame();flashText=`「${name}」を習得！`;flashTimer=2;return true;
     };
-    if(y>=365&&y<=429){
-      if(x>=55&&x<=250){tryPebbleNode('random',0,1,'氷つぶて乱射II');return;}
-      if(x>=270&&x<=465){tryPebbleNode('random',1,1,'氷つぶて乱射III');return;}
-      if(x>=485&&x<=680){tryPebbleNode('random',2,1,'氷つぶて乱射IV');return;}
+    if(y>=356&&y<=414){
+      if(x>=45&&x<=225){tryPebbleNode('random',0,1,'氷つぶて乱射II');return;}
+      if(x>=245&&x<=425){tryPebbleNode('random',1,1,'氷つぶて乱射III');return;}
+      if(x>=445&&x<=625){tryPebbleNode('random',2,1,'氷つぶて乱射IV');return;}
     }
-    if(y>=447&&y<=511){
-      if(x>=55&&x<=250){tryPebbleNode('all',0,1,'氷晶波');return;}
-      if(x>=270&&x<=465){tryPebbleNode('all',1,1,'氷晶大波');return;}
+    if(y>=425&&y<=483){
+      if(x>=45&&x<=225){tryPebbleNode('all',0,1,'氷晶波');return;}
+      if(x>=245&&x<=425){tryPebbleNode('all',1,1,'氷晶大波');return;}
     }
   }
 
@@ -4139,7 +4140,10 @@ function update(dt){
     let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;
     const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);dragonTrailHero.x+=dx*dragonTrailHero.speed*dt;dragonTrailHero.y+=dy*dragonTrailHero.speed*dt;}
     dragonTrailHero.x=Math.max(55,Math.min(1605,dragonTrailHero.x));dragonTrailHero.y=Math.max(245,Math.min(495,dragonTrailHero.y));
-    for(const m of dragonTrailMobs){if(m.alive&&Math.hypot(dragonTrailHero.x-m.x,dragonTrailHero.y-m.y)<72){startDragonTrailBattle(m);return;}}
+    for(const m of dragonTrailMobs){
+      const dx=dragonTrailHero.x-m.x,dy=(dragonTrailHero.y-m.y)*1.25;
+      if(m.alive&&Math.hypot(dx,dy)<34){startDragonTrailBattle(m);return;}
+    }
     if(dragonTrailHero.x>1575){scene='dragonIntro';dialogIndex=0;touchUI.classList.add('hidden');saveGame();return;}
   } else if(scene==='finalBearField'){
     let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;
@@ -4368,7 +4372,8 @@ function update(dt){
         }
         else if(battle.turn==='win')finishBattle();
         else if(battle.turn==='run'){
-          scene=(battle&&battle.monsterId===460)?'coastSurveyField':
+          scene=(battle&&battle.monsterId>=960&&battle.monsterId<=963)?'dragonTrail':
+                (battle&&battle.monsterId===460)?'coastSurveyField':
                 (battle&&(battle.monsterId===470||battle.monsterId===471))?'volcanoSurveyField':
                 (battle&&battle.monsterId===450)?'takezoTravel':
                 (battle&&battle.monsterId>=400)?'takezoRoute':'road2';
@@ -4972,7 +4977,7 @@ canvas.addEventListener('pointerdown',e=>{
         }
         else if(x<460)battleMenu='skill';
         else if(x<660)battleDefend();
-        else battleRun();
+        else {if(battle.monsterId>=960&&battle.monsterId<=963){battleMessage='この登山道では逃走できない！';return;}battleRun();}
       }
     }else{
       if(y>=385 && y<=500){

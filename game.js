@@ -766,17 +766,23 @@ const endingDialog=[
 ['narrator','そして、ぴくるすたちの旅はひとまず終わる。――けれど、火山の奥ではまだ何かが眠っているらしい。']
 ];
 
-const dragonIntroDialog=[
-['narrator','海賊との戦いが終わり、五人がようやく静かな時間を取り戻した、その時だった。'],
-['narrator','声ではない。けれど五人全員の頭の中に、低く威厳のある言葉が直接響いた。'],
+const dragonCallDialog=[
+['narrator','「ドラゴンに挑戦」を選んだ五人が準備を始めた、その時だった。'],
+['narrator','声ではない。五人全員の頭の中に、低く威厳のある言葉が直接響いた。'],
 ['dragonVoice','面白いものを見せてもらった。強き者たちよ、我と腕試しをせぬか？'],
 ['dragonVoice','我に挑む勇気があるなら、火山の頂上へ来るがよい。'],
 ['dash','……今の、みんなにも聞こえた？'],
-['suzu','ああ。頭の中に直接な。……火山の頂上、か。'],
-['yuno','こちらの戦いを見ていたらしいね。危険だけど、敵意だけを向けている感じでもなかった。'],
-['gyou','行くなら万全の準備をしてからだ。今度は島を守る戦いじゃない。俺たち自身の挑戦になる。'],
-['hero','うん。準備ができたら、火山の頂上へ行こう。'],
-['narrator','五人は声に応え、火山の頂上へ向かった――。']
+['suzu','ああ。頭の中に直接な。火山の頂上で待ってるってわけか。'],
+['yuno','道中も険しそうだね。準備しながら登ろう。'],
+['gyou','万全の状態で行こう。これは俺たち自身の挑戦だ。'],
+['hero','うん。火山の頂上を目指そう！']
+];
+
+const dragonSummitDialog=[
+['narrator','険しい登山道を越え、五人はついに火山の頂上へたどり着いた。'],
+['narrator','熱気の向こうで、巨大な古竜が静かに五人を待っている。'],
+['dragonVoice','よくぞここまで来た。'],
+['narrator','ドラゴンと戦いますか？']
 ];
 
 
@@ -825,7 +831,7 @@ function startPostDragonBattle(){
   const ss=suzumaruStats(),ys=yunoStats(),gs=gyouStats();
   Object.assign(battle,{suzuMaxHP:ss.maxHP,suzuHP:ss.maxHP,suzuMaxMP:ss.maxMP,suzuMP:ss.maxMP,yunoMaxHP:ys.maxHP,yunoHP:ys.maxHP,yunoMaxMP:ys.maxMP,yunoMP:ys.maxMP,gyouMaxHP:gs.maxHP,gyouHP:gs.maxHP,gyouMaxMP:gs.maxMP,gyouMP:gs.maxMP});
   damagePopups=[];battleMenu='main';battleActor='hero';battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
-  battleMessage='険しい登山道を越え、火山の頂上で古竜と対峙した！';scene='battle';touchUI.classList.add('hidden');
+  battleMessage='火山の古竜との腕試しが始まった！';scene='battle';touchUI.classList.add('hidden');
 }
 const gyouTrainingDialog=[
   ['narrator','準備を進めていると、たけぞ村の老村長がジュウを呼び止めた。'],
@@ -4074,14 +4080,31 @@ function drawEnding(){
   text('海賊との戦いが終わった夜',480,95,30,'center','#f4e5b7');
   const item=endingDialog[Math.min(dialogIndex,endingDialog.length-1)];drawDialog(item[0],item[1]);
 }
-function drawDragonIntro(){
-  // 戦後の静かな場所。遠景の火山から、五人の頭へ古竜の声が直接届く。
+function drawDragonCall(){
+  // 登山道へ入る前。五人の頭へ古竜の声が直接届く。
   const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#9ccedb');sky.addColorStop(1,'#d9ddb5');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
   ctx.fillStyle='#59645b';ctx.beginPath();ctx.moveTo(560,300);ctx.lineTo(760,105);ctx.lineTo(950,300);ctx.closePath();ctx.fill();
   ctx.fillStyle='#71866a';ctx.beginPath();ctx.moveTo(0,330);ctx.lineTo(240,245);ctx.lineTo(430,330);ctx.lineTo(650,260);ctx.lineTo(960,340);ctx.lineTo(960,540);ctx.lineTo(0,540);ctx.closePath();ctx.fill();
   drawHeroFox(250,415,.72);drawSuzumaru(345,420,.77);drawDashmiu(440,427,.70);drawYuno(535,420,.77);drawGyou(630,420,.79);
   if(dialogIndex>=1&&dialogIndex<=3){ctx.fillStyle='rgba(20,15,30,.16)';ctx.fillRect(0,0,W,360);text('――五人の頭の中に、同じ声が響く――',480,105,20,'center','#f4edf8',800);}
-  const item=dragonIntroDialog[Math.min(dialogIndex,dragonIntroDialog.length-1)];drawDialog(item[0],item[1]);
+  const item=dragonCallDialog[Math.min(dialogIndex,dragonCallDialog.length-1)];drawDialog(item[0],item[1]);
+}
+function drawDragonSummit(){
+  const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#392f39');sky.addColorStop(1,'#a65739');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#352d2d';ctx.beginPath();ctx.moveTo(0,360);ctx.lineTo(180,270);ctx.lineTo(330,330);ctx.lineTo(500,235);ctx.lineTo(680,325);ctx.lineTo(820,245);ctx.lineTo(960,320);ctx.lineTo(960,540);ctx.lineTo(0,540);ctx.closePath();ctx.fill();
+  // 古竜は遠景で待っている。ここでは戦闘前の再勧誘はしない。
+  drawDragonEnemy(760,270,1.25);
+  drawHeroFox(225,410,.72);drawSuzumaru(315,418,.77);drawDashmiu(405,424,.70);drawYuno(495,418,.77);drawGyou(585,420,.79);
+  text('火山・山頂',480,74,31,'center','#ffe1b1',900);
+  const item=dragonSummitDialog[Math.min(dialogIndex,dragonSummitDialog.length-1)];drawDialog(item[0],item[1]);
+}
+function drawDragonConfirm(){
+  const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#392f39');sky.addColorStop(1,'#a65739');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+  drawDragonEnemy(720,250,1.35);
+  text('ドラゴンと戦いますか？',480,105,30,'center','#fff0ce',900);
+  outlineRect(320,330,320,64,'#e9f5f8','#79bed6',3);
+  text('戦う',480,362,24,'center','#17324a',900);
+  text('A / Enter で戦闘開始',480,425,16,'center','#dcebf0');
 }
 function drawPostDragonClear(){
   ctx.fillStyle='#241d2a';ctx.fillRect(0,0,W,H);text('火山の古竜　撃破！',480,160,42,'center','#f0c47a');
@@ -4144,7 +4167,7 @@ function update(dt){
       const dx=dragonTrailHero.x-m.x,dy=(dragonTrailHero.y-m.y)*1.25;
       if(m.alive&&Math.hypot(dx,dy)<34){startDragonTrailBattle(m);return;}
     }
-    if(dragonTrailHero.x>1575){scene='dragonIntro';dialogIndex=0;touchUI.classList.add('hidden');saveGame();return;}
+    if(dragonTrailHero.x>1575){scene='dragonSummit';dialogIndex=0;touchUI.classList.add('hidden');saveGame();return;}
   } else if(scene==='finalBearField'){
     let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;
     const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);finalBearHero.x+=dx*finalBearHero.speed*dt;finalBearHero.y+=dy*finalBearHero.speed*dt;}
@@ -4427,8 +4450,7 @@ function pressAction(){
       syncStoryParty();
       dragonTrailHero.x=130;dragonTrailHero.y=455;
       dragonTrailMobs.forEach(m=>{m.alive=true;m.respawn=0;m.x=m.spawnX;m.y=m.spawnY;});
-      scene='dragonTrail';touchUI.classList.remove('hidden');
-      flashText='火山頂上を目指そう。道中で鍛えられる';flashTimer=2.4;return;
+      scene='dragonCall';dialogIndex=0;touchUI.classList.add('hidden');return;
     }
     if(titleSelection===2){
       if(hasSaveGame()){if(loadGame())return;}
@@ -4682,9 +4704,20 @@ function pressAction(){
     openFieldMenu('dragonTrail');return;
   }
   if(scene==='dragonTrailShop'){buyDragonTrailShop();return;}
-  if(scene==='dragonIntro'){
-    dialogIndex++;if(dialogIndex>=dragonIntroDialog.length){startPostDragonBattle();}return;
+  if(scene==='dragonCall'){
+    dialogIndex++;
+    if(dialogIndex>=dragonCallDialog.length){
+      scene='dragonTrail';dialogIndex=0;touchUI.classList.remove('hidden');
+      flashText='火山頂上を目指そう。道中で鍛えられる';flashTimer=2.4;saveGame();
+    }
+    return;
   }
+  if(scene==='dragonSummit'){
+    dialogIndex++;
+    if(dialogIndex>=dragonSummitDialog.length){scene='dragonConfirm';dialogIndex=0;return;}
+    return;
+  }
+  if(scene==='dragonConfirm'){startPostDragonBattle();return;}
   if(scene==='postDragonClear'){scene='end';dialogIndex=0;return;}
   if(scene==='sarubibiArrival'){
     dialogIndex++;
@@ -4823,7 +4856,9 @@ function frame(now){
   else if(scene==='ending')drawEnding();
   else if(scene==='dragonTrail')drawDragonTrail();
   else if(scene==='dragonTrailShop')drawDragonTrailShop();
-  else if(scene==='dragonIntro')drawDragonIntro();
+  else if(scene==='dragonCall')drawDragonCall();
+  else if(scene==='dragonSummit')drawDragonSummit();
+  else if(scene==='dragonConfirm')drawDragonConfirm();
   else if(scene==='postDragonClear')drawPostDragonClear();
   else if(scene==='sarubibiTown')drawSarubibiTown();
   else if(scene==='sarubibiShop')drawSarubibiShop();

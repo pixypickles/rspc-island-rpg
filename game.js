@@ -1944,13 +1944,25 @@ function battleAttack(mode='attack'){
     if(battle.heroMP<cost){battleMessage='MPが足りない！';return;}
     battle.heroMP-=cost;
     const skillName=hits===4?'氷つぶて乱射IV':hits===3?'氷つぶて乱射III':hits===2?'氷つぶて乱射II':'氷のつぶて';
-    let parts=[],total=0;
+    let parts=[],total=0,targetCounts={};
     for(let i=0;i<hits;i++){
       const hit=Math.max(1,Math.floor(progress.atk*(hits===1?1:.55))+5+Math.floor(Math.random()*6));
-      damageEnemy(hit);parts.push(hit);total+=hit;
+      // Each shot independently selects one currently living enemy.
+      // With one enemy, every shot therefore lands on that enemy.
+      let targetIndex=0,targetName=battle.enemyName||'敵';
+      if(battle.enemies){
+        const live=livingEnemies();
+        if(!live.length)break;
+        const chosen=live[Math.floor(Math.random()*live.length)];
+        targetIndex=Math.max(0,live.indexOf(chosen));
+        targetName=chosen.name;
+      }
+      const actual=damageEnemy(hit,targetIndex);
+      parts.push(actual);total+=actual;targetCounts[targetName]=(targetCounts[targetName]||0)+1;
       if(enemiesDefeated())break;
     }
-    battleMessage=`${heroName}の「${skillName}」！ ${parts.join(' + ')} = ${total}ダメージ！`;setBattleFx('ice');
+    const distribution=Object.entries(targetCounts).map(([name,n])=>`${name}×${n}`).join(' / ');
+    battleMessage=`${heroName}の「${skillName}」！ ${distribution}　${parts.join(' + ')} = ${total}ダメージ！`;setBattleFx('ice');
     addDamagePopup(`${parts.length} HIT ${total}`,700,155,'#bdefff');
     if(battle.monsterId===99||battle.monsterId>=200)battleChoiceText.hero=skillName;
     if(enemiesDefeated()){battle.turn='win';battleCooldown=1.0;return;}

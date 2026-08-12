@@ -41,6 +41,10 @@ if(progress.heroManaSkill===undefined)progress.heroManaSkill=progress.gameCleare
 if(!progress.shopBought)progress.shopBought={};
 if(progress.shopBought.summitBow===undefined)progress.shopBought.summitBow=false;
 if(progress.shopBought.summitSpear===undefined)progress.shopBought.summitSpear=false;
+if(progress.shopBought.heroManaBlade===undefined)progress.shopBought.heroManaBlade=false;
+if(progress.shopBought.suzuGloves===undefined)progress.shopBought.suzuGloves=false;
+if(progress.shopBought.yunoBracelet===undefined)progress.shopBought.yunoBracelet=false;
+if(progress.shopBought.gyouShield===undefined)progress.shopBought.gyouShield=false;
 
 
 
@@ -767,7 +771,7 @@ const endingDialog=[
 ];
 
 const dragonCallDialog=[
-['narrator','「ドラゴンに挑戦」を選んだ五人が準備を始めた、その時だった。'],
+['narrator','船長との死闘を終え、五人がようやくひと息ついた、その時だった。'],
 ['narrator','声ではない。五人全員の頭の中に、低く威厳のある言葉が直接響いた。'],
 ['dragonVoice','面白いものを見せてもらった。強き者たちよ、我と腕試しをせぬか？'],
 ['dragonVoice','我に挑む勇気があるなら、火山の頂上へ来るがよい。'],
@@ -803,24 +807,32 @@ function startDragonTrailBattle(mon){
 
 function buyDragonTrailShop(){
   const i=dragonTrailShopSelection;
-  if(i===3){
+  if(i===7){
     scene='dragonTrail';touchUI.classList.remove('hidden');
     flashText='登山道へ戻った';flashTimer=1.2;return;
   }
+  const buyUnique=(flag,price,msg)=>{
+    if(progress.shopBought[flag]){flashText='この装備は購入済みです';flashTimer=1.5;return false;}
+    if(progress.gold<price){flashText='お金が足りません';flashTimer=1.5;return false;}
+    progress.gold-=price;progress.shopBought[flag]=true;flashText=msg;flashTimer=2;return true;
+  };
   if(i===0){
     if(progress.gold<75){flashText='お金が足りません';flashTimer=1.5;return;}
     progress.gold-=75;progress.items.highPotion=(progress.items.highPotion||0)+1;
     flashText=`高級回復薬を購入！ 所持 ${progress.items.highPotion}`;flashTimer=1.7;
   }else if(i===1){
-    if(progress.shopBought.summitBow){flashText='強弓は購入済みです';flashTimer=1.5;return;}
-    if(progress.gold<260){flashText='お金が足りません';flashTimer=1.5;return;}
-    progress.gold-=260;progress.shopBought.summitBow=true;progress.atk+=6;
-    flashText='烈風の強弓を購入！ パーティ攻撃補助 +6';flashTimer=2;
+    if(!buyUnique('summitBow',260,'烈風の強弓を購入！ パーティ攻撃補助 +6'))return;
+    progress.atk+=6;
   }else if(i===2){
-    if(progress.shopBought.summitSpear){flashText='剛槍は購入済みです';flashTimer=1.5;return;}
-    if(progress.gold<300){flashText='お金が足りません';flashTimer=1.5;return;}
-    progress.gold-=300;progress.shopBought.summitSpear=true;
-    flashText='黒曜の剛槍を購入！ ジュウの攻撃・防御が上昇';flashTimer=2;
+    if(!buyUnique('summitSpear',300,'黒曜の剛槍を購入！ ジュウの攻撃・防御が上昇'))return;
+  }else if(i===3){
+    if(!buyUnique('heroManaBlade',360,'水晶の小剣を購入！ 主人公のスキル消費MPが半減！'))return;
+  }else if(i===4){
+    if(!buyUnique('suzuGloves',340,'炎獣のグローブを購入！ スズマルはターンごとに攻撃力が上がる！'))return;
+  }else if(i===5){
+    if(!buyUnique('yunoBracelet',340,'風刻の腕輪を購入！ ユーノの支援効果が1ターン長く続く！'))return;
+  }else if(i===6){
+    if(!buyUnique('gyouShield',360,'地脈の大盾を購入！ ジュウは被ダメージ時にMPを少し回復！'))return;
   }
   saveProgress();saveGame();
 }
@@ -1761,7 +1773,11 @@ function advancePartyTurn(){
     battle.hasteUsed=false;battle.hasteTurns--;
     if(battle.hasteTurns<=0)battle.hasteTarget=null;
   }
-  if(battleActor==='hero' && suzumaruActive){battleActor='suzu';return;}
+  if(battleActor==='hero' && suzumaruActive){
+    battleActor='suzu';
+    if(progress.shopBought?.suzuGloves)battle.suzuGloveStacks=(battle.suzuGloveStacks||0)+1;
+    return;
+  }
   if(battleActor==='suzu' && yunoJoined && battle.monsterId>=400){
     if(battle.skipYunoThisRound){
       battle.skipYunoThisRound=false;
@@ -1990,11 +2006,14 @@ function drawBattle(){
     wrapText(battleMessage,80,405,790,28,22);
   }
 }
+function heroSkillMPCost(base){
+  return progress.shopBought?.heroManaBlade?Math.max(1,Math.ceil(base/2)):base;
+}
 function battleAttack(mode='attack',target='hero'){
   if(!battle || battle.turn!=='player')return;
   if(mode==='heal'){
     const hl=progress.heroHealSkill||1;
-    const cost=hl>=3?12:hl>=2?8:5;
+    const cost=heroSkillMPCost(hl>=3?12:hl>=2?8:5);
     const hpKey=partyHPKey(target),maxHP=partyMaxHP(target);
     const amount=hl>=3?Math.max(0,maxHP-battle[hpKey]):hl>=2?120:50;
     const hname=hl>=3?'大水癒':hl>=2?'水の大いやし':'水のいやし';
@@ -2012,7 +2031,7 @@ function battleAttack(mode='attack',target='hero'){
   }
   if(mode==='manaHeal'){
     if(!(progress.heroManaSkill||0)){battleMessage='水脈の雫は未習得！';return;}
-    const cost=6;if(battle.heroMP<cost){battleMessage='MPが足りない！';return;}
+    const cost=heroSkillMPCost(6);if(battle.heroMP<cost){battleMessage='MPが足りない！';return;}
     battle.heroMP-=cost;const k=partyMPKey(target),mx=partyMaxMP(target),amount=18;
     const before=battle[k]||0;battle[k]=Math.min(mx,before+amount);const actual=battle[k]-before;
     battleMessage=`${heroName}の「水脈の雫」！ ${partyTargetName(target)}のMPが${actual}回復！`;setBattleFx('heal',360,255);
@@ -2026,7 +2045,7 @@ function battleAttack(mode='attack',target='hero'){
       battleMessage='氷晶波は未習得！ スキル画面で習得できます。';
       flashText='氷晶波は未習得です';flashTimer=1.7;return;
     }
-    const waveCost=waveLv>=2?11:8;
+    const waveCost=heroSkillMPCost(waveLv>=2?11:8);
     if(battle.heroMP<waveCost){battleMessage='MPが足りない！';return;}
     battle.heroMP-=waveCost;
     dmg=(waveLv>=2?16:8)+Math.floor(progress.atk*(waveLv>=2?.48:.33));
@@ -2047,7 +2066,7 @@ function battleAttack(mode='attack',target='hero'){
       flashText='氷結斬りは未習得です';flashTimer=1.7;return;
     }
     const il=Math.max(1,progress.heroIceSkill||1);
-    const cost=il>=3?11:il>=2?9:7;
+    const cost=heroSkillMPCost(il>=3?11:il>=2?9:7);
     if(battle.heroMP<cost){battleMessage='MPが足りない！';return;}
     battle.heroMP-=cost;
     const hits=heroIceHits();
@@ -2063,7 +2082,7 @@ function battleAttack(mode='attack',target='hero'){
     if(battle.monsterId===99||battle.monsterId>=200)battleChoiceText.hero=skillName;
   }else if(mode==='ice'){
     const pr=progress.heroPebbleRandom||0,hits=pr>=3?4:pr>=2?3:pr>=1?2:1;
-    const cost=hits>=4?8:hits===3?7:hits===2?6:4;
+    const cost=heroSkillMPCost(hits>=4?8:hits===3?7:hits===2?6:4);
     if(battle.heroMP<cost){battleMessage='MPが足りない！';return;}
     battle.heroMP-=cost;
     const skillName=hits===4?'氷つぶて乱射IV':hits===3?'氷つぶて乱射III':hits===2?'氷つぶて乱射II':'氷のつぶて';
@@ -2163,7 +2182,8 @@ function beginEnemyTurn(){
   battleMenu='main';
 }
 function suzuAction(mode='attack'){
-  const ss=suzumaruStats();
+  const ss={...suzumaruStats()};
+  if(progress.shopBought?.suzuGloves)ss.atk+=(battle.suzuGloveStacks||0)*2;
   if(!battle || battle.turn!=='player' || battleActor!=='suzu')return;
   let dmg=0;
   if(mode==='counter'){
@@ -2266,24 +2286,24 @@ function yunoAction(mode,target='hero'){
     battle.yunoHP=Math.min(battle.yunoMaxHP,battle.yunoHP+heal);if(battle.gyouHP!==undefined)battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+heal);
     battleMessage=`ユーノの「風の癒し Lv.${lv}」！ 味方全体のHPが${heal}回復！`;setBattleFx('heal',360,255);
   }else if(mode==='regen'){
-    battle.regenTurns=3+(lv>=3?1:0);battle.regenPower=7+(lv-1)*5;
+    battle.regenTurns=3+(lv>=3?1:0)+(progress.shopBought?.yunoBracelet?1:0);battle.regenPower=7+(lv-1)*5;
     battleMessage=`ユーノの「そよぎの輪 Lv.${lv}」！ ${battle.regenTurns}ターン、毎ターンHP${battle.regenPower}回復！`;setBattleFx('heal',360,255);
   }else if(mode==='windAll'){
     const dmg=8+Math.floor(ys.atk*.65)+(lv-1)*12;const res=damageAllEnemies(dmg);
     battleMessage=`ユーノの「風刃嵐 Lv.${lv}」！ ${res.map(v=>`${v.name} ${v.damage}`).join(' / ')}`;setBattleFx('ice');addDamagePopup(`WIND ALL Lv.${lv}`,700,155,'#b8fff1');
     if(enemiesDefeated()){battle.turn='win';battleCooldown=1;return;}
   }else if(mode==='haste'){
-    battle.hasteTarget=target;battle.hasteTurns=2;battle.hasteUsed=false;
-    battleMessage=`ユーノの「疾風」！ ${partyTargetName(target)}は2ターン、行動を2回できる！`;
+    battle.hasteTarget=target;battle.hasteTurns=2+(progress.shopBought?.yunoBracelet?1:0);battle.hasteUsed=false;
+    battleMessage=`ユーノの「疾風」！ ${partyTargetName(target)}は${battle.hasteTurns}ターン、行動を2回できる！`;
   }else if(mode==='mpRegen'){
     // Recasting overwrites target, remaining turns and recovery amount.
-    battle.mpRegenTarget=target;battle.mpRegenTurns=lv>=2?4:3;battle.mpRegenPower=lv>=2?7:5;
+    battle.mpRegenTarget=target;battle.mpRegenTurns=(lv>=2?4:3)+(progress.shopBought?.yunoBracelet?1:0);battle.mpRegenPower=lv>=2?7:5;
     battleMessage=`ユーノの「風の泉${lv>=2?' Lv.2':''}」！ ${partyTargetName(target)}のMPが${battle.mpRegenTurns}ターン、毎ターン${battle.mpRegenPower}回復！`;
     setBattleFx('heal',target==='hero'?185:target==='suzu'?265:target==='yuno'?360:455,255);
   }else if(mode==='mpRegenAll'){
     // Recasting refreshes/overwrites duration rather than stacking another copy.
-    battle.mpRegenAllTurns=4;battle.mpRegenAllPower=5;
-    battleMessage='ユーノの「風巡りの泉」！ 4ターン、味方全体のMPが毎ターン5回復！';setBattleFx('heal',360,255);
+    battle.mpRegenAllTurns=4+(progress.shopBought?.yunoBracelet?1:0);battle.mpRegenAllPower=5;
+    battleMessage=`ユーノの「風巡りの泉」！ ${battle.mpRegenAllTurns}ターン、味方全体のMPが毎ターン5回復！`;setBattleFx('heal',360,255);
   }
   battleChoiceText.yuno=mode;advancePartyTurn();
 }
@@ -2367,7 +2387,18 @@ function pirateCaptainTurn(){
     if(target==='hero'){dmg=Math.max(1,(battle.defending?Math.floor(dmg/2):dmg)-Math.floor(progress.def/4));battle.heroHP=Math.max(1,battle.heroHP-dmg);}
     else if(target==='suzu'){dmg=Math.max(1,dmg-Math.floor(suzumaruStats().def/4));battle.suzuHP=Math.max(1,battle.suzuHP-dmg);}
     else if(target==='yuno'){dmg=Math.max(1,dmg-Math.floor(yunoStats().def/4));battle.yunoHP=Math.max(1,battle.yunoHP-dmg);}
-    else {dmg=Math.max(1,dmg-Math.floor((gyouStats().def+(battle.gyouDefTurns>0?10:0))/4));battle.gyouHP=Math.max(1,battle.gyouHP-dmg);if(battle.gyouManaGuard)battle.gyouMP=Math.min(battle.gyouMaxMP,battle.gyouMP+Math.ceil(dmg/2));}
+    else {
+      dmg=Math.max(1,dmg-Math.floor((gyouStats().def+(battle.gyouDefTurns>0?10:0))/4));
+      battle.gyouHP=Math.max(1,battle.gyouHP-dmg);
+      const shieldMP=gyouShieldRecover(dmg);
+      let skillMP=0;
+      if(battle.gyouManaGuard){
+        const before=battle.gyouMP;
+        battle.gyouMP=Math.min(battle.gyouMaxMP,battle.gyouMP+Math.ceil(dmg/2));
+        skillMP=battle.gyouMP-before;
+      }
+      if(shieldMP||skillMP)lines.push(`ジュウ MP回復：${skillMP?`土脈+${skillMP} `:''}${shieldMP?`盾+${shieldMP}`:''}`);
+    }
     lines.push(`${target==='hero'?heroName:target==='suzu'?'スズマル':target==='yuno'?'ユーノ':'ジュウ'} -${dmg}`);
     addDamagePopup(`-${dmg}`,target==='hero'?185:target==='suzu'?265:target==='yuno'?360:455,215,'#ff796e');
   }
@@ -2396,6 +2427,13 @@ function applyPartyMPRegen(){
   }
   return notes.length?' / '+notes.join(' / '):'';
 }
+function gyouShieldRecover(dmg){
+  if(!progress.shopBought?.gyouShield || !battle || battle.gyouMP===undefined)return 0;
+  const mp=Math.max(1,Math.ceil(dmg/6));
+  const before=battle.gyouMP;
+  battle.gyouMP=Math.min(battle.gyouMaxMP,battle.gyouMP+mp);
+  return battle.gyouMP-before;
+}
 function enemyTurn(){
   if(battle&&battle.monsterId===950){
     battle.bossTurn=(battle.bossTurn||0)+1;
@@ -2411,7 +2449,10 @@ function enemyTurn(){
       if(t==='hero'){d=Math.max(1,d-Math.floor(progress.def/5));battle.heroHP=Math.max(1,battle.heroHP-d);}
       else if(t==='suzu'){d=Math.max(1,d-Math.floor(suzumaruStats().def/5));battle.suzuHP=Math.max(1,battle.suzuHP-d);}
       else if(t==='yuno'){d=Math.max(1,d-Math.floor(yunoStats().def/5));battle.yunoHP=Math.max(1,battle.yunoHP-d);}
-      else {d=Math.max(1,d-Math.floor(gyouStats().def/5));battle.gyouHP=Math.max(1,battle.gyouHP-d);}
+      else {
+        d=Math.max(1,d-Math.floor(gyouStats().def/5));battle.gyouHP=Math.max(1,battle.gyouHP-d);
+        const shieldMP=gyouShieldRecover(d);if(shieldMP>0)lines.push(`地脈の大盾 MP+${shieldMP}`);
+      }
       lines.push(`${t==='hero'?heroName:t==='suzu'?'スズマル':t==='yuno'?'ユーノ':'ジュウ'} -${d}`);}
     battleMessage=`火山の古竜${phase>=2?'・覚醒':''}の${all?'「灼熱大咆哮」':'竜爪撃'}！ ${lines.join(' / ')}`;
     battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};battle.turn='enemyResult';battleCooldown=1.3;return;
@@ -2440,8 +2481,12 @@ function enemyTurn(){
     if(target==='gyou'){
       let def=gs.def+(battle.gyouDefTurns>0?10:0);dmg=Math.max(1,baseDmg-Math.floor(def/4));
       battle.gyouHP=Math.max(1,battle.gyouHP-dmg);totalGyou+=dmg;
-      if(battle.gyouManaGuard){const mp=Math.max(1,Math.ceil(dmg/2));battle.gyouMP=Math.min(battle.gyouMaxMP,battle.gyouMP+mp);attackLines.push(`${foe.name} → ジュウ ${dmg} / MP+${mp}`);}
-      else attackLines.push(`${foe.name} → ジュウ ${dmg}`);
+      const shieldMP=gyouShieldRecover(dmg);
+      if(battle.gyouManaGuard){
+        const before=battle.gyouMP,mp=Math.max(1,Math.ceil(dmg/2));battle.gyouMP=Math.min(battle.gyouMaxMP,battle.gyouMP+mp);
+        const skillMP=battle.gyouMP-before;
+        attackLines.push(`${foe.name} → ジュウ ${dmg} / 土脈+${skillMP}${shieldMP?` / 盾+${shieldMP}`:''}`);
+      }else attackLines.push(`${foe.name} → ジュウ ${dmg}${shieldMP?` / 盾MP+${shieldMP}`:''}`);
       if(battle.gyouCounter){const cd=Math.max(5,Math.floor(gs.atk*.8));damageEnemy(cd);attackLines.push(`迎撃 ${cd}`);}
     }else if(target==='yuno'){dmg=Math.max(1,baseDmg-Math.floor(ys.def/4));battle.yunoHP=Math.max(1,battle.yunoHP-dmg);totalYuno+=dmg;attackLines.push(`${foe.name} → ユーノ ${dmg}`);}
     else if(target==='suzu'){dmg=Math.max(1,baseDmg-Math.floor(ss.def/4));battle.suzuHP=Math.max(1,battle.suzuHP-dmg);totalSuzu+=dmg;attackLines.push(`${foe.name} → スズマル ${dmg}`);if(battle.suzuCounter){const cd=Math.max(7,Math.floor(ss.atk*.9)+6);damageEnemy(cd);attackLines.push(`炎返し ${cd}`);setBattleFx('fire');}}
@@ -4129,25 +4174,29 @@ function drawDragonTrail(){
 }
 function drawDragonTrailShop(){
   ctx.fillStyle='#172333';ctx.fillRect(0,0,W,H);
-  text('火山頂上への売店',70,48,30,'left','#fff0c5',900);
-  outlineRect(665,22,245,52,'#263a50','#e5bd68',2);
-  text('所持金',690,39,14,'left','#ffe9ad',800);
-  text(`${progress.gold} G`,885,53,23,'right','#fff6d7',900);
+  text('火山頂上への売店',52,42,27,'left','#fff0c5',900);
+  outlineRect(680,16,230,48,'#263a50','#e5bd68',2);
+  text('所持金',695,32,13,'left','#ffe9ad',800);
+  text(`${progress.gold} G`,890,48,21,'right','#fff6d7',900);
 
   const rows=[
     ['高級回復薬','HP70回復 / 75G',false],
-    ['烈風の強弓','ダッシュミウ用　仲間全体の攻撃補助 +6 / 260G',!!progress.shopBought.summitBow],
+    ['烈風の強弓','ダッシュミウ用　仲間全体の攻撃補助+6 / 260G',!!progress.shopBought.summitBow],
     ['黒曜の剛槍','ジュウ用　攻撃+12・防御+5 / 300G',!!progress.shopBought.summitSpear],
+    ['水晶の小剣','主人公専用　スキル消費MP半減 / 360G',!!progress.shopBought.heroManaBlade],
+    ['炎獣のグローブ','スズマル専用　毎ターン攻撃が少し上昇 / 340G',!!progress.shopBought.suzuGloves],
+    ['風刻の腕輪','ユーノ専用　支援効果の継続+1ターン / 340G',!!progress.shopBought.yunoBracelet],
+    ['地脈の大盾','ジュウ専用　被ダメージ時MPを少量回復 / 360G',!!progress.shopBought.gyouShield],
     ['店を出る','登山道へ戻る',false]
   ];
   rows.forEach((r,i)=>{
-    const y=92+i*86,sel=dragonTrailShopSelection===i;
-    outlineRect(100,y,760,66,sel?'#fff3d6':(i===3?'#344a64':'#e4edf2'),sel?'#e0a954':(i===3?'#718aa0':'#7793a6'),3);
-    text(`${sel?'▶ ':''}${r[0]}`,130,y+23,20,'left',i===3&&!sel?'#e5eef4':'#17324a',900);
-    text(r[1],130,y+47,14,'left',i===3&&!sel?'#b8c9d5':'#425f70');
-    if(r[2])text('購入済み',820,y+32,15,'right','#7a6955');
+    const y=72+i*50,sel=dragonTrailShopSelection===i;
+    outlineRect(70,y,820,43,sel?'#fff3d6':(i===7?'#344a64':'#e4edf2'),sel?'#e0a954':(i===7?'#718aa0':'#7793a6'),2);
+    text(`${sel?'▶ ':''}${r[0]}`,92,y+16,15,'left',i===7&&!sel?'#e5eef4':'#17324a',900);
+    text(r[1],310,y+16,12,'left',i===7&&!sel?'#b8c9d5':'#425f70');
+    if(r[2])text('購入済み',866,y+16,12,'right','#7a6955',800);
   });
-  text('↑↓ / タップ：選択　A / Enter：決定',480,465,16,'center','#d6e6ef');
+  text('↑↓ / タップ：選択　A / Enter：決定',480,493,14,'center','#d6e6ef');
 }
 function drawEnd(){
   ctx.fillStyle='#0c1830';ctx.fillRect(0,0,W,H);
@@ -4741,8 +4790,8 @@ function pressAction(){
     return;
   }
   if(scene==='dragonTrailShop'){
-    if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'){dragonTrailShopSelection=(dragonTrailShopSelection+3)%4;e.preventDefault();return;}
-    if(e.key==='ArrowDown'||e.key==='s'||e.key==='S'){dragonTrailShopSelection=(dragonTrailShopSelection+1)%4;e.preventDefault();return;}
+    if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'){dragonTrailShopSelection=(dragonTrailShopSelection+7)%8;e.preventDefault();return;}
+    if(e.key==='ArrowDown'||e.key==='s'||e.key==='S'){dragonTrailShopSelection=(dragonTrailShopSelection+1)%8;e.preventDefault();return;}
     if(e.key==='Enter'||e.key===' '||e.key==='z'||e.key==='Z'){e.preventDefault();buyDragonTrailShop();return;}
     if(e.key==='Escape'||e.key==='x'||e.key==='X'){scene='dragonTrail';touchUI.classList.remove('hidden');return;}
   }
@@ -4907,8 +4956,8 @@ addEventListener('keyup',e=>{keys[e.key]=false;});
 canvas.addEventListener('pointerdown',e=>{
   if(scene==='dragonTrailShop'){
     const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H;
-    if(y>=88&&y<438){
-      dragonTrailShopSelection=Math.max(0,Math.min(3,Math.floor((y-92)/86)));
+    if(y>=68&&y<474){
+      dragonTrailShopSelection=Math.max(0,Math.min(7,Math.floor((y-72)/50)));
       return;
     }
   }

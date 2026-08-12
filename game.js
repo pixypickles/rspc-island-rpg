@@ -74,10 +74,11 @@ function heroIceSkillName(){
   if(lv>=2)return '氷結二段斬り';
   return '氷結斬り';
 }
-function heroIceHits(){
-  const lv=progress.heroIceSkill||0;
-  return lv>=3?3:lv>=2?2:1;
-}
+if(progress.klausDefeated===undefined)progress.klausDefeated=false;
+if(progress.nineTailQuestUnlocked===undefined)progress.nineTailQuestUnlocked=false;
+if(progress.nineTailGear===undefined)progress.nineTailGear=false;
+if(progress.sealedCaveUnlocked===undefined)progress.sealedCaveUnlocked=false;
+if(progress.orochiDefeated===undefined)progress.orochiDefeated=false;
 if(progress.heroIceSkill===undefined){
   progress.heroIceSkill=progress.learned?.iceSlash?1:0;
 }
@@ -87,13 +88,26 @@ progress.learned.iceSlash=(progress.heroIceSkill||0)>=1;
 function partyLevel(){ return progress.level; }
 
 function heroStats(){
+  const nine=!!progress.nineTailGear;
   return {
-    maxHP:progress.maxHP,
-    maxMP:progress.maxMP,
-    atk:progress.atk,
-    def:progress.def
+    maxHP:progress.maxHP+(nine?100:0),
+    maxMP:progress.maxMP+(nine?50:0),
+    atk:progress.atk+(nine?100:0),
+    def:progress.def+(nine?50:0)
   };
 }
+function heroIceHits(){
+  const lv=progress.heroIceSkill||0;
+  const base=lv>=3?3:lv>=2?2:1;
+  return base*(progress.nineTailGear?3:1);
+}
+function heroPebbleHitCount(){
+  const pr=progress.heroPebbleRandom||0;
+  const base=pr>=3?7:pr>=2?5:pr>=1?3:1;
+  return base+(progress.nineTailGear?2:0);
+}
+function nineTailIceMultiplier(){const resist=(battle&&battle.enemyKind==='whiteDragon')?.5:1;return (progress.nineTailGear?1.5:1)*resist;}
+
 
 function suzumaruStats(){
   const lv=partyLevel();
@@ -827,6 +841,27 @@ const postGameElderDragonDialog=[
  ['elder','拠点を突き止めたらしいけど、お前さんたちドラゴンを倒したんじゃろ？'],
  ['elder','もう4人で潰してきたらどうじゃ？ 行くならサーカス団の船を出してもらったらええ。']
 ];
+const nineTailElderCheckDialog=[
+ ['elder','おぬし、氷撃は一度に何発出せるようになった？ 氷結斬りはどうじゃ？'],
+ ['elder','ほう？ 7発に3回じゃと。'],
+ ['elder','もうええ頃合いかもしれんな。'],
+ ['elder','今から信じられんような話をするが、本当のことなんじゃ。'],
+ ['elder','実はのう、この島の火山の麓に立ち入り禁止区域があるのは知ってるじゃろ？'],
+ ['elder','その奥には、異界へと通じる扉があるのじゃ。そしてその扉は絶対零度の氷に封じられておる。'],
+ ['elder','じゃが、100年に1度その氷が溶けるらしいのじゃ。'],
+ ['elder','わしも先代の村長から聞かされただけで、見た事はない。'],
+ ['elder','その異界の魔物は桁違いな強さだという。全島民が束になっても勝てぬほどじゃ。'],
+ ['elder','それなのにわしらの祖先は100年以上前からこの島で暮らしておる、何故だかわかるか？'],
+ ['elder','それはのぉ、九尾の加護を受けたキツネ族の者なら異界の魔物にも対抗出来るからなのじゃ。'],
+ ['elder','九尾の加護を得られるのは、お主しかおらんと思うのじゃ。'],
+ ['elder','ちとお前さん1人だけついてこい。']
+];
+const nineTailHouseDialog=[
+ ['elder','この九尾の妖刀と、九尾の衣、お主なら使いこなせるじゃろう。'],
+ ['narrator','九尾の妖刀を手に入れた！ 攻撃+100。氷結斬りの攻撃回数が3倍になる。'],
+ ['narrator','九尾の衣を手に入れた！ HP+100、MP+50、防御+50。氷魔法+50%、氷撃+2発。'],
+ ['elder','火山の麓の立ち入り禁止区域へ行くがよい。絶対零度の封印が解ける時が来たのじゃ。']
+];
 const postGameCircusDialog=[
  ['dash','話は聞いたよ。ちぇすたぴサーカス団の船を出そう！'],
  ['dash','海賊の拠点まで一気に送る。帰りのことは倒してから考えよう！']
@@ -1465,7 +1500,23 @@ function drawCyborgKlaus(x,y,s=1){
   rect(21,19,38,10,'#28323a');rect(53,21,26,6,'#171d22');rect(28,28,7,12,'#2a3238');
   text('CYBORG',0,35,8,'center','#d5e0e8',900);ctx.restore();
 }
+
+function drawAbyssDragon(x,y,s=1,white=false){
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);ellipse(0,30,30,7,'rgba(0,0,0,.25)');
+  const c=white?'#eef4f7':'#202633', c2=white?'#b9d4df':'#414a5a';
+  ellipse(0,0,27,25,c);ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(-18,-16);ctx.lineTo(-8,-42);ctx.lineTo(0,-20);ctx.lineTo(10,-43);ctx.lineTo(19,-15);ctx.fill();
+  ellipse(-9,-5,3,3,white?'#375d78':'#e04a45');ellipse(9,-5,3,3,white?'#375d78':'#e04a45');
+  ctx.fillStyle=c2;ctx.beginPath();ctx.moveTo(-22,3);ctx.lineTo(-50,-12);ctx.lineTo(-35,22);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(22,3);ctx.lineTo(50,-12);ctx.lineTo(35,22);ctx.closePath();ctx.fill();ctx.restore();
+}
+function drawYamataNoOrochi(x,y,s=1){
+ ctx.save();ctx.translate(x,y);ctx.scale(s,s);ellipse(0,45,80,13,'rgba(0,0,0,.3)');
+ for(let i=0;i<9;i++){const a=(i-4)*.24, hx=Math.sin(a)*70,hy=-35-Math.cos(a)*25;ctx.strokeStyle='#36594a';ctx.lineWidth=16;ctx.beginPath();ctx.moveTo(0,30);ctx.quadraticCurveTo(hx*.55,-5,hx,hy);ctx.stroke();ellipse(hx,hy,13,11,'#456d58');ellipse(hx-4,hy-2,2,2,'#f0d75a');ellipse(hx+4,hy-2,2,2,'#f0d75a');}
+ ellipse(0,30,55,35,'#36594a');ctx.restore();
+}
 function drawWildMonster(mon){
+  if(mon&&mon.kind==='blackDragon'){drawAbyssDragon(mon.x,mon.y,1.2,false);return;}
+  if(mon&&mon.kind==='whiteDragon'){drawAbyssDragon(mon.x,mon.y,1.2,true);return;}
+  if(mon&&mon.kind==='yamataOrochi'){drawYamataNoOrochi(mon.x,mon.y,.8);return;}
   if(mon && mon.kind==='pirateCaptain'){drawPirateCaptainEnemy(mon.x,mon.y,1.25);return;}
   if(mon && mon.kind==='viceCaptain'){drawViceCaptainEnemy(mon.x,mon.y,1.22);return;}
   if(mon && mon.kind==='cyborgKlaus'){drawCyborgKlaus(mon.x,mon.y,1.25);return;}
@@ -1548,7 +1599,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.06',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.07',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -2023,7 +2074,7 @@ function drawBattle(){
   // This area is intentionally sized for up to four party members.
   const bt=battleTop();
   const partyRows=[];
-  partyRows.push({name:heroName,hp:battle.heroHP,maxHP:progress.maxHP,mp:battle.heroMP,maxMP:progress.maxMP});
+  partyRows.push({name:heroName,hp:battle.heroHP,maxHP:heroStats().maxHP,mp:battle.heroMP,maxMP:heroStats().maxMP});
   if((battle.monsterId===99||battle.monsterId>=200) && suzumaruActive){
     partyRows.push({name:'スズマル',hp:battle.suzuHP,maxHP:battle.suzuMaxHP,mp:battle.suzuMP,maxMP:battle.suzuMaxMP});
   }
@@ -2146,7 +2197,7 @@ function drawBattle(){
         outlineRect(220,378,170,52,'#dff4fb','#71bad7',2);
         const pr=progress.heroPebbleRandom||0;
         const pebbleName=pr>=3?'氷つぶて乱射IV':pr>=2?'氷つぶて乱射III':pr>=1?'氷つぶて乱射II':'氷のつぶて';
-        const pebbleHits=pr>=3?7:pr>=2?5:pr>=1?3:1;
+        const pebbleHits=heroPebbleHitCount();
         const pebbleCost=heroSkillMPCost(pebbleHits>=7?10:pebbleHits>=5?8:pebbleHits>=3?6:4);
         text(`${pebbleName} (${pebbleCost})`,305,404,pr?17:20,'center','#17324a',900);
 
@@ -2832,8 +2883,15 @@ function finishBattle(){
     battle=null;touchUI.classList.remove('hidden');saveProgress();saveGame();
     startPostGameRaidWave();return;
   }
+  if(battle && battle.monsterId>=1101 && battle.monsterId<=1104){
+    const m=sealedCaveMobs.find(x=>x.id===battle.monsterId);if(m)m.alive=false;
+    gainExp(2500);progress.gold+=1200;saveProgress();battle=null;scene='sealedCave';touchUI.classList.remove('hidden');saveGame();return;
+  }
+  if(battle && battle.monsterId===1199){
+    progress.orochiDefeated=true;gainExp(15000);progress.gold+=10000;saveProgress();battle=null;scene='sealedCave';sealedCaveHero.x=760;sealedCaveHero.y=430;touchUI.classList.remove('hidden');flashText='ヤマタノオロチを討伐した！';flashTimer=3;saveGame();return;
+  }
   if(battle && battle.monsterId===990){
-    progress.postGamePirateRaidCleared=true;postGameRaidUnlocked=false;
+    progress.postGamePirateRaidCleared=true;progress.klausDefeated=true;postGameRaidUnlocked=false;
     progress.gold+=1000;gainExp(900);saveProgress();
     battle=null;scene='postGameRaidClear';dialogIndex=0;touchUI.classList.remove('hidden');saveGame();return;
   }
@@ -3498,7 +3556,7 @@ function damageAllEnemies(base){
     if(e.hp<=0)return;
     const dmg=Math.max(1,base+Math.floor(Math.random()*5)-2);
     const actual=Math.min(dmg,e.hp);
-    e.hp=Math.max(0,e.hp-dmg);
+    if(e.kind==='blackDragon')dmg=Math.max(1,Math.floor(dmg*.5));e.hp=Math.max(0,e.hp-dmg);
     damages.push({name:e.name,damage:actual});
     const p=spots[Math.min(idx,spots.length-1)]||[700,245];
     addDamagePopup(`${actual}`,p[0],p[1]-30,'#ffffff');
@@ -4547,6 +4605,9 @@ function drawPostGameIsland(){
     outlineRect(395,66,170,58,'#f4d7a0','#8a3f45',4);text('ちぇすたぴ',480,87,15,'center','#7b2635',900);text('サーカス団 拠点',480,108,14,'center','#7b2635',900);
   }
 
+  if(progress.sealedCaveUnlocked){
+    outlineRect(675,75,155,50,'#d9eef5','#54758a',3);text('立入禁止区域',752,92,13,'center','#263d50',900);text('封印の洞窟',752,111,14,'center','#263d50',900);
+  }
   // small elemental landmarks make the hub read as the same island, not a menu
   drawTree(92,285);drawTree(815,330);drawTree(760,120);
   rect(95,420,14,58,'#bcecf5');rect(112,425,9,50,'rgba(255,255,255,.55)');
@@ -4554,6 +4615,22 @@ function drawPostGameIsland(){
 
   const ht=hudTop();ctx.fillStyle='rgba(13,39,54,.88)';ctx.fillRect(18,ht,520,46);
   text(`平和になった りすぺく島　Lv.${progress.level}　${progress.gold}G`,35,ht+23,16);
+}
+
+function drawNineTailHouse(){
+  ctx.fillStyle='#d8e8e5';ctx.fillRect(0,0,W,H);rect(0,350,W,190,'#9a7654');
+  rect(90,70,780,300,'#f1eadc');for(let x=120;x<850;x+=120)rect(x,70,10,300,'#785b48');
+  outlineRect(340,115,280,120,'#d9f2f6','#6a91a0',4);
+  // ceremonial blue-white garment and thin rapier-like blade
+  rect(440,142,80,65,'#ffffff');ctx.fillStyle='#72bddd';ctx.beginPath();ctx.moveTo(440,150);ctx.lineTo(400,215);ctx.lineTo(455,205);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(520,150);ctx.lineTo(560,215);ctx.lineTo(505,205);ctx.closePath();ctx.fill();
+  rect(476,118,8,102,'#dbeef5');rect(477,85,6,58,'#c8d9e5');rect(470,138,20,4,'#466e8a');
+  text('九尾の妖刀　／　九尾の衣',480,255,20,'center','#31546c',900);
+  drawElder(270,385,1.1);drawHeroFox(620,390,1.05);
+  drawDialog(...nineTailHouseDialog[Math.min(dialogIndex,nineTailHouseDialog.length-1)]);
+}
+function drawNineTailElderTalk(){
+  drawPostGameVillage();
+  drawDialog(...nineTailElderCheckDialog[Math.min(dialogIndex,nineTailElderCheckDialog.length-1)]);
 }
 function drawPostGameVillage(){
   if(postGameArea==='brifo'){
@@ -4592,6 +4669,23 @@ function drawPostGameVillage(){
   }
   const names={brifo:'ぶりふぉ村',sarubie:'さるびえ村',sarubibi:'さるびび村',takezo:'たけぞ村'};
   const ht=hudTop();ctx.fillStyle='rgba(18,40,50,.84)';ctx.fillRect(18,ht,330,45);text(`${names[postGameArea]}　平和な日常`,35,ht+22,17);
+}
+
+function drawSealedCave(){
+ ctx.fillStyle='#101b29';ctx.fillRect(0,0,W,H);rect(0,225,W,315,'#243548');
+ for(let x=0;x<W;x+=90){ctx.fillStyle='#bcecff';ctx.beginPath();ctx.moveTo(x,225);ctx.lineTo(x+22,255);ctx.lineTo(x+45,225);ctx.fill();}
+ text('封印の洞窟　異界の門',30,55,22,'left','#d8f4ff',900);
+ for(const m of sealedCaveMobs)if(m.alive)drawWildMonster(m);
+ if(!progress.orochiDefeated){drawYamataNoOrochi(885,310,.72);text('異界の門',885,205,16,'center','#e9f5ff',900);}
+ drawHeroFox(sealedCaveHero.x,sealedCaveHero.y,.9);
+}
+function startSealedDragonBattle(m){
+ const hp=m.maxHP;battle={heroHP:heroStats().maxHP,heroMP:heroStats().maxMP,enemyHP:hp,enemyMaxHP:hp,enemyName:m.name,enemyKind:m.kind,monsterId:m.id,turn:'player',defending:false,sealedMobId:m.id};
+ damagePopups=[];battleMenu='main';battleActor='hero';battleMessage=`${m.name}が現れた！`;scene='battle';touchUI.classList.add('hidden');
+}
+function startOrochiBattle(){
+ const hp=12000;battle={heroHP:heroStats().maxHP,heroMP:heroStats().maxMP,enemyHP:hp,enemyMaxHP:hp,enemyName:'ヤマタノオロチ',enemyKind:'yamataOrochi',monsterId:1199,turn:'player',defending:false};
+ damagePopups=[];battleMenu='main';battleActor='hero';battleMessage='異界の裏ボス、ヤマタノオロチが九つの首をもたげた！';scene='battle';touchUI.classList.add('hidden');
 }
 function drawPostGameVolcano(){
   camera.x=Math.max(0,Math.min(520,postGameVolcanoHero.x-W*.42));ctx.save();ctx.translate(-camera.x,0);
@@ -4833,7 +4927,10 @@ function update(dt){
     startPostDragonBattle();
     return;
   }
-  if(scene==='postGameIsland'){let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameHero.x+=dx*postGameHero.speed*dt;postGameHero.y+=dy*postGameHero.speed*dt;}postGameHero.x=Math.max(45,Math.min(920,postGameHero.x));postGameHero.y=Math.max(82,Math.min(500,postGameHero.y));const es=[['sarubie',207,392],['brifo',277,252],['sarubibi',682,392],['takezo',702,222]];for(const [a,x,y] of es)if(Math.hypot(postGameHero.x-x,postGameHero.y-y)<34){postGameArea=a;postGameHero.x=220;postGameHero.y=430;scene='postGameVillage';saveGame();return;}if(Math.hypot(postGameHero.x-480,postGameHero.y-222)<65){postGameVolcanoHero.x=180;postGameVolcanoHero.y=455;scene='postGameVolcano';saveGame();return;}
+  if(scene==='postGameIsland'){let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameHero.x+=dx*postGameHero.speed*dt;postGameHero.y+=dy*postGameHero.speed*dt;}postGameHero.x=Math.max(45,Math.min(920,postGameHero.x));postGameHero.y=Math.max(82,Math.min(500,postGameHero.y));const es=[['sarubie',207,392],['brifo',277,252],['sarubibi',682,392],['takezo',702,222]];for(const [a,x,y] of es)if(Math.hypot(postGameHero.x-x,postGameHero.y-y)<34){postGameArea=a;postGameHero.x=220;postGameHero.y=430;scene='postGameVillage';saveGame();return;}if(progress.sealedCaveUnlocked&&Math.hypot(postGameHero.x-752,postGameHero.y-112)<55){
+   sealedCaveHero.x=120;sealedCaveHero.y=430;scene='sealedCave';saveGame();return;
+ }
+ if(Math.hypot(postGameHero.x-480,postGameHero.y-222)<65){postGameVolcanoHero.x=180;postGameVolcanoHero.y=455;scene='postGameVolcano';saveGame();return;}
  if(postGameRaidUnlocked&&Math.hypot(postGameHero.x-480,postGameHero.y-95)<65){
   postGameHero.x=500;postGameHero.y=420;
   scene='postGameCircusTalk';dialogIndex=0;
@@ -4842,6 +4939,15 @@ function update(dt){
 }return;}
   if(scene==='postGameVillage'){let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameHero.x+=dx*postGameHero.speed*dt;postGameHero.y+=dy*postGameHero.speed*dt;}postGameHero.x=Math.max(45,Math.min(920,postGameHero.x));postGameHero.y=Math.max(250,Math.min(500,postGameHero.y));if(postGameHero.x<175&&postGameHero.y>385){const back={sarubie:[207,430],brifo:[277,290],sarubibi:[682,430],takezo:[702,260]}[postGameArea]||[480,400];postGameHero.x=back[0];postGameHero.y=back[1];scene='postGameIsland';saveGame();}return;}
   if(scene==='postGameVolcano'){for(const m of postGameVolcanoMobs){if(!m.alive&&m.respawn>0){m.respawn-=dt;if(m.respawn<=0){m.alive=true;m.hp=m.maxHP;m.x=m.spawnX;m.y=m.spawnY;}}}let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameVolcanoHero.x+=dx*postGameVolcanoHero.speed*dt;postGameVolcanoHero.y+=dy*postGameVolcanoHero.speed*dt;}postGameVolcanoHero.x=Math.max(55,Math.min(1430,postGameVolcanoHero.x));postGameVolcanoHero.y=Math.max(245,Math.min(495,postGameVolcanoHero.y));if(postGameVolcanoHero.x<165&&postGameVolcanoHero.y>385){postGameHero.x=480;postGameHero.y=300;scene='postGameIsland';saveGame();return;}for(const m of postGameVolcanoMobs){chaseFieldMob(m,postGameVolcanoHero.x,postGameVolcanoHero.y,dt,280,58);if(m.alive&&Math.hypot(postGameVolcanoHero.x-m.x,(postGameVolcanoHero.y-m.y)*1.25)<38){startPostGameVolcanoBattle(m);return;}}return;}
+  if(scene==='sealedCave'){
+    let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;
+    const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);sealedCaveHero.x+=dx*sealedCaveHero.speed*dt;sealedCaveHero.y+=dy*sealedCaveHero.speed*dt;}
+    sealedCaveHero.x=Math.max(45,Math.min(920,sealedCaveHero.x));sealedCaveHero.y=Math.max(245,Math.min(500,sealedCaveHero.y));
+    if(sealedCaveHero.x<70){postGameHero.x=720;postGameHero.y=150;scene='postGameIsland';saveGame();return;}
+    for(const m of sealedCaveMobs){if(m.alive&&Math.hypot(sealedCaveHero.x-m.x,sealedCaveHero.y-m.y)<42){startSealedDragonBattle(m);return;}}
+    if(!progress.orochiDefeated&&sealedCaveHero.x>845){startOrochiBattle();return;}
+    return;
+  }
   if(scene==='dragonTrail'){
     for(const m of dragonTrailMobs){if(!m.alive&&m.respawn>0){m.respawn-=dt;if(m.respawn<=0){m.alive=true;m.hp=m.maxHP;m.x=m.spawnX;m.y=m.spawnY;}}}
     let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;
@@ -5480,7 +5586,28 @@ function pressAction(){
   }
 
   if(scene==='postGameVillage'&&postGameArea==='brifo'&&Math.hypot(postGameHero.x-700,postGameHero.y-385)<100){
+    if(progress.klausDefeated && !progress.nineTailGear && (progress.heroPebbleRandom||0)>=3 && (progress.heroIceSkill||0)>=3){
+      scene='nineTailElderTalk';dialogIndex=0;touchUI.classList.add('hidden');return;
+    }
     scene='postGameElderTalk';dialogIndex=0;touchUI.classList.add('hidden');return;
+  }
+  if(scene==='nineTailElderTalk'){
+    dialogIndex++;
+    if(dialogIndex>=nineTailElderCheckDialog.length){
+      scene='nineTailHouse';dialogIndex=0;touchUI.classList.add('hidden');saveGame();
+    }
+    return;
+  }
+  if(scene==='nineTailHouse'){
+    dialogIndex++;
+    if(dialogIndex===2 && !progress.nineTailGear){
+      progress.nineTailGear=true;progress.nineTailQuestUnlocked=true;progress.sealedCaveUnlocked=true;saveProgress();saveGame();
+    }
+    if(dialogIndex>=nineTailHouseDialog.length){
+      scene='postGameVillage';postGameArea='brifo';postGameHero.x=650;postGameHero.y=420;dialogIndex=0;
+      touchUI.classList.remove('hidden');saveGame();
+    }
+    return;
   }
   if(scene==='postGameElderTalk'){
     const arr=progress.postDragonDefeated?postGameElderDragonDialog:postGameElderDialog;dialogIndex++;
@@ -5512,7 +5639,7 @@ function pressAction(){
     }
     return;
   }
-  if(scene==='world' || scene==='road2' || scene==='route3' || scene==='cave' || scene==='takezoTravel' || scene==='takezoRoute' || scene==='coastSurveyField' || scene==='volcanoSurveyField' || scene==='finalBearField' || scene==='dragonTrail' || scene==='postGameIsland' || scene==='postGameVillage' || scene==='postGameVolcano'){
+  if(scene==='world' || scene==='road2' || scene==='route3' || scene==='cave' || scene==='takezoTravel' || scene==='takezoRoute' || scene==='coastSurveyField' || scene==='volcanoSurveyField' || scene==='finalBearField' || scene==='dragonTrail' || scene==='postGameIsland' || scene==='postGameVillage' || scene==='postGameVolcano' || scene==='sealedCave'){
     openFieldMenu(scene);
     return;
   }
@@ -5578,6 +5705,8 @@ function frame(now){
   else if(scene==='pirateCaptainIntro')drawPirateCaptainIntro();
   else if(scene==='pirateCaptainAfter')drawPirateCaptainAfter();
   else if(scene==='ending')drawEnding();
+  else if(scene==='nineTailElderTalk')drawNineTailElderTalk();
+  else if(scene==='nineTailHouse')drawNineTailHouse();
   else if(scene==='postGameElderTalk'){drawPostGameVillage();const a=progress.postDragonDefeated?postGameElderDragonDialog:postGameElderDialog,d=a[Math.min(dialogIndex,a.length-1)];drawDialog(d[0],d[1]);}
   else if(scene==='postGameCircus')drawPostGameCircus();
   else if(scene==='postGameCircusTalk'){drawPostGameCircus();const d=postGameCircusDialog[Math.min(dialogIndex,postGameCircusDialog.length-1)];drawDialog(d[0],d[1]);}
@@ -5587,6 +5716,7 @@ function frame(now){
   else if(scene==='postGameIsland')drawPostGameIsland();
   else if(scene==='postGameVillage')drawPostGameVillage();
   else if(scene==='postGameVolcano')drawPostGameVolcano();
+  else if(scene==='sealedCave')drawSealedCave();
   else if(scene==='dragonTrail')drawDragonTrail();
   else if(scene==='dragonTrailShop')drawDragonTrailShop();
   else if(scene==='dragonCall')drawDragonCall();

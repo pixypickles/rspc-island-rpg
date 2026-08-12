@@ -36,6 +36,7 @@ if(progress.items.highPotion===undefined)progress.items.highPotion=0;
 if(progress.heroIceWave===undefined)progress.heroIceWave=false;
 if(progress.heroPebbleRandom===undefined)progress.heroPebbleRandom=0;
 if(progress.heroPebbleAll===undefined)progress.heroPebbleAll=progress.heroIceWave?1:0;
+if(progress.heroHealSkill===undefined)progress.heroHealSkill=1;
 
 
 
@@ -1847,7 +1848,8 @@ function drawBattle(){
         outlineRect(315,445,245,44,suzuCounterLearned?'#ffe0d6':'#626d78',suzuCounterLearned?'#c95f48':'#8d969e',2);
         text(suzuCounterLearned?'炎返し MP7':'炎返し（未習得）',437,467,suzuCounterLearned?15:13,'center',suzuCounterLearned?'#6b231d':'#ffffff',800);
       }else{
-        outlineRect(40,378,170,48,'#dff4fb','#71bad7',2);text('水のいやし',125,402,14,'center','#17324a');
+        outlineRect(40,378,170,48,'#dff4fb','#71bad7',2);
+        {const hl=progress.heroHealSkill||1,hname=hl>=3?'大水癒':hl>=2?'水の大いやし':'水のいやし',hcost=hl>=3?12:hl>=2?8:5;text(`${hname} MP${hcost}`,125,402,hl>=2?12:13,'center','#17324a',800);}
         outlineRect(220,378,170,48,'#dff4fb','#71bad7',2);
         const pr=progress.heroPebbleRandom||0;
         text(pr>=3?'氷つぶて乱射IV':pr>=2?'氷つぶて乱射III':pr>=1?'氷つぶて乱射II':'氷のつぶて',305,402,pr?12:14,'center','#17324a',800);
@@ -1878,10 +1880,17 @@ function drawBattle(){
 function battleAttack(mode='attack'){
   if(!battle || battle.turn!=='player')return;
   if(mode==='heal'){
-    if(battle.heroMP>=5){
-      battle.heroMP-=5;battle.heroHP=Math.min(progress.maxHP,battle.heroHP+16);
-      battleMessage=`${heroName}は「水のいやし」を使った！ HPが回復した。`;setBattleFx('heal',185,255);
-      if(battle.monsterId===99)battleChoiceText.hero='水のいやし';
+    const hl=progress.heroHealSkill||1;
+    const cost=hl>=3?12:hl>=2?8:5;
+    const amount=hl>=3?Math.max(0,progress.maxHP-battle.heroHP):hl>=2?120:50;
+    const hname=hl>=3?'大水癒':hl>=2?'水の大いやし':'水のいやし';
+    if(battle.heroMP>=cost){
+      battle.heroMP-=cost;battle.heroHP=hl>=3?progress.maxHP:Math.min(progress.maxHP,battle.heroHP+amount);
+      battleMessage=hl>=3
+        ?`${heroName}は「${hname}」を使った！ HPが全回復！`
+        :`${heroName}は「${hname}」を使った！ HPが${amount}回復！`;
+      setBattleFx('heal',185,255);
+      if(battle.monsterId===99)battleChoiceText.hero=hname;
     }else battleMessage='MPが足りない！';
     if(isPartyBattle()){advancePartyTurn();}
     else{battle.turn='enemy';battleCooldown=.8;battleMenu='main';}
@@ -3284,8 +3293,8 @@ function drawMenu(){
       const nodeW=245,nodeH=72,gap=28,startX=55;
       const iceNodes=[
         ['氷結斬り','MP7 / 単体1回',1],
-        ['氷結二段斬り','MP9 / 単体2回',2],
-        ['氷結三連斬り','MP11 / 単体3回',3]
+        ['氷結二段斬り','MP9 / 単体2回',1],
+        ['氷結三連斬り','MP11 / 単体3回',1]
       ];
       text('氷剣ルート',55,244,15,'left','#bfe7f6',800);
       iceNodes.forEach((n,i)=>{
@@ -3306,10 +3315,10 @@ function drawMenu(){
       const pr=progress.heroPebbleRandom||0, pa=progress.heroPebbleAll||0;
       const pebNodes=[
         [55,365,'氷つぶて乱射II','ランダム2発',1,pr>=1,pr===0],
-        [270,365,'氷つぶて乱射III','ランダム3発',2,pr>=2,pr===1],
-        [485,365,'氷つぶて乱射IV','ランダム4発',3,pr>=3,pr===2],
-        [55,447,'氷晶波','敵全体',2,pa>=1,pa===0],
-        [270,447,'氷晶大波','全体攻撃強化',3,pa>=2,pa===1]
+        [270,365,'氷つぶて乱射III','ランダム3発',1,pr>=2,pr===1],
+        [485,365,'氷つぶて乱射IV','ランダム4発',1,pr>=3,pr===2],
+        [55,447,'氷晶波','敵全体',1,pa>=1,pa===0],
+        [270,447,'氷晶大波','全体攻撃強化',1,pa>=2,pa===1]
       ];
       // Branch marker from the common starter "氷のつぶて".
       text('氷のつぶて',760,388,15,'center','#dff4fb',800);
@@ -3321,7 +3330,15 @@ function drawMenu(){
         text(desc,x+10,y+42,11,'left',owned?'#35566d':next?'#3d5d73':'#697b89');
         text(owned?'習得済み':next?`必要 SP${cost}`:'前段階を習得',x+184,y+57,10,'right',owned?'#356b7b':next?'#3d6f8a':'#74838d');
       });
-      text('主人公は回復・単体・全体を扱える万能型。',480,490,15,'center','#c8e1ec');
+      // 回復ルート：初期技「水のいやし」を2回強化してLv3まで。
+      const hh=progress.heroHealSkill||1;
+      text('回復ルート',705,447,14,'left','#bfe7f6',800);
+      const healName=hh>=3?'大水癒':hh>=2?'水の大いやし':'水のいやし';
+      outlineRect(705,466,185,48,hh>=3?'#c8e2ed':'#e7f5fb',hh>=3?'#6aaacb':'#78b9d7',2);
+      text(healName,715,484,14,'left','#17324a',800);
+      text(hh>=3?'HP全回復 / MP12':hh>=2?'HP120回復 / MP8':'HP50回復 / MP5',715,501,10,'left','#3d5d73');
+      text(hh>=3?'Lv.3 最大':hh===2?'次 Lv.3 / SP1':'次 Lv.2 / SP1',880,511,10,'right','#3d6f8a',800);
+      text('主人公は技数が多いため、習得・強化SPは軽め。',480,532,14,'center','#c8e1ec');
     }
   }
 }
@@ -3419,13 +3436,21 @@ function menuTap(x,y){
       if(index<lv){flashText='この技は習得済みです';flashTimer=1.4;return;}
       if(index>lv){flashText='ひとつ前の技を先に習得してください';flashTimer=1.6;return;}
       if(lv>=3){flashText='氷剣ルートは最大強化です';flashTimer=1.6;return;}
-      const cost=lv+1;
+      const cost=1;
       if(progress.sp<cost){flashText=`SPが足りない（必要 ${cost}）`;flashTimer=1.7;return;}
       progress.sp-=cost;progress.heroIceSkill=lv+1;progress.learned.iceSlash=true;
       saveProgress();saveGame();flashText=`「${heroIceSkillName()}」を習得！`;flashTimer=2.0;return;
     }
   }
   if(menuPage==='skill' && menuCharacter==='hero'){
+    if(x>=705&&x<=890&&y>=447&&y<=514){
+      const lv=progress.heroHealSkill||1;
+      if(lv>=3){flashText='回復ルートは最大強化です';flashTimer=1.5;return;}
+      const cost=1;
+      if(progress.sp<cost){flashText='SPが足りない（必要 1）';flashTimer=1.6;return;}
+      progress.sp-=cost;progress.heroHealSkill=lv+1;saveProgress();saveGame();
+      flashText=lv===1?'「水の大いやし」に強化！':'「大水癒」に強化！';flashTimer=1.9;return;
+    }
     const tryPebbleNode=(route,idx,cost,name)=>{
       const key=route==='random'?'heroPebbleRandom':'heroPebbleAll',lv=progress[key]||0;
       if(idx<lv){flashText='この技は習得済みです';flashTimer=1.4;return true;}
@@ -3436,12 +3461,12 @@ function menuTap(x,y){
     };
     if(y>=365&&y<=429){
       if(x>=55&&x<=250){tryPebbleNode('random',0,1,'氷つぶて乱射II');return;}
-      if(x>=270&&x<=465){tryPebbleNode('random',1,2,'氷つぶて乱射III');return;}
-      if(x>=485&&x<=680){tryPebbleNode('random',2,3,'氷つぶて乱射IV');return;}
+      if(x>=270&&x<=465){tryPebbleNode('random',1,1,'氷つぶて乱射III');return;}
+      if(x>=485&&x<=680){tryPebbleNode('random',2,1,'氷つぶて乱射IV');return;}
     }
     if(y>=447&&y<=511){
-      if(x>=55&&x<=250){tryPebbleNode('all',0,2,'氷晶波');return;}
-      if(x>=270&&x<=465){tryPebbleNode('all',1,3,'氷晶大波');return;}
+      if(x>=55&&x<=250){tryPebbleNode('all',0,1,'氷晶波');return;}
+      if(x>=270&&x<=465){tryPebbleNode('all',1,1,'氷晶大波');return;}
     }
   }
 

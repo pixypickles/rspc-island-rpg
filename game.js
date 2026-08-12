@@ -1465,7 +1465,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.99',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.00',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -4404,9 +4404,83 @@ function drawPostDragonClear(){
   text('A / Enter でクリア後メニューへ',480,350,19,'center','#b9cad8');
 }
 
-function drawPostGameIsland(){const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#a9e3ef');gr.addColorStop(1,'#9bd58b');ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);rect(0,245,W,295,'#80bd72');ctx.fillStyle='#d8c38f';ctx.fillRect(0,365,W,115);const gs=[[90,280,'ぶりふぉ村'],[300,280,'さるびえ村'],[510,280,'さるびび村'],[720,280,'たけぞ村']];gs.forEach(([x,y,n])=>{outlineRect(x,y,150,75,'#e9e2c6','#587064',3);text(n,x+75,y+27,18,'center','#29434b',900);text('入口',x+75,y+55,14,'center','#536c70');});outlineRect(785,165,150,65,'#65534a','#d29b67',3);text('火山入口',860,197,18,'center','#fff1d3',900);drawHeroFox(postGameHero.x,postGameHero.y,1);drawSuzumaru(postGameHero.x-46,postGameHero.y+15,.92);drawYuno(postGameHero.x-88,postGameHero.y+19,.9);drawGyou(postGameHero.x-128,postGameHero.y+22,.9);const ht=hudTop();ctx.fillStyle='rgba(13,39,54,.88)';ctx.fillRect(18,ht,560,48);text(`平和になった りすぺく島　Lv.${progress.level}　${progress.gold}G`,35,ht+24,17);}
-function drawPostGameVillage(){const names={brifo:'ぶりふぉ村',sarubie:'さるびえ村',sarubibi:'さるびび村',takezo:'たけぞ村'};ctx.fillStyle='#b9dfc1';ctx.fillRect(0,0,W,H);rect(0,245,W,295,'#7eb272');for(let x=150;x<800;x+=210){outlineRect(x,280,130,105,'#efe4c8','#725e4c',3);}outlineRect(35,405,150,60,'#e8f4f2','#557a79',3);text('島へ出る',110,435,18,'center','#284b50',900);drawHeroFox(postGameHero.x,postGameHero.y,1);drawSuzumaru(postGameHero.x-46,postGameHero.y+15,.92);drawYuno(postGameHero.x-88,postGameHero.y+19,.9);drawGyou(postGameHero.x-128,postGameHero.y+22,.9);text(`${names[postGameArea]}　平和な日常`,35,hudTop()+24,18);}
-function drawPostGameVolcano(){camera.x=Math.max(0,Math.min(520,postGameVolcanoHero.x-W*.42));ctx.save();ctx.translate(-camera.x,0);ctx.fillStyle='#735f55';ctx.fillRect(0,0,1480,H);rect(0,260,1480,280,'#4d4b48');ctx.strokeStyle='#c58b61';ctx.lineWidth=16;ctx.beginPath();ctx.moveTo(70,465);ctx.bezierCurveTo(430,420,850,350,1430,270);ctx.stroke();outlineRect(35,405,125,55,'#e7ddc8','#8d6e55',3);text('島へ出る',97,433,16,'center','#4e3b31',900);postGameVolcanoMobs.forEach(m=>drawSurveyMonster(m));drawHeroFox(postGameVolcanoHero.x,postGameVolcanoHero.y,.92);drawSuzumaru(postGameVolcanoHero.x-48,postGameVolcanoHero.y+15,.96);drawYuno(postGameVolcanoHero.x-92,postGameVolcanoHero.y+18,.94);drawGyou(postGameVolcanoHero.x-135,postGameVolcanoHero.y+22,.92);ctx.restore();text('火山　ドラゴン挑戦と同系統の強敵が出現',35,hudTop()+24,17);}
+
+function drawPostGameIsland(){
+  // One-screen pentagonal island: village positions follow the story geography.
+  ctx.fillStyle='#5ab5d0';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#79bd72';ctx.strokeStyle='#e7d29a';ctx.lineWidth=12;
+  ctx.beginPath();ctx.moveTo(480,62);ctx.lineTo(885,205);ctx.lineTo(795,500);ctx.lineTo(165,500);ctx.lineTo(75,205);ctx.closePath();ctx.fill();ctx.stroke();
+
+  // central volcano
+  ctx.fillStyle='#66675f';ctx.beginPath();ctx.moveTo(350,310);ctx.lineTo(480,125);ctx.lineTo(610,310);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#bf5b3d';ctx.beginPath();ctx.moveTo(447,172);ctx.lineTo(480,125);ctx.lineTo(516,174);ctx.closePath();ctx.fill();
+  outlineRect(430,205,100,34,'#6a5549','#d29b67',2);text('火山',480,222,14,'center','#fff1d3');
+
+  // roads radiating from the volcano / island center
+  ctx.strokeStyle='#d8c48f';ctx.lineWidth=28;ctx.lineCap='round';
+  [[480,315,205,405],[480,315,275,265],[480,315,685,405],[480,315,700,235],[480,315,480,205]].forEach(p=>{ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(p[2],p[3]);ctx.stroke();});
+  ctx.lineCap='butt';
+
+  // Village locations: Brifo west, Sarubie southwest, Sarubibi southeast, Takezo north-east.
+  const gates=[
+    ['brifo',135,365,'ぶりふぉ村','#dff4fb'],
+    ['sarubie',205,225,'さるびえ村','#f2c995'],
+    ['sarubibi',610,365,'さるびび村','#ccebdc'],
+    ['takezo',630,195,'たけぞ村','#d9c99e']
+  ];
+  gates.forEach(([a,x,y,n,c])=>{outlineRect(x,y,145,54,c,'#587064',3);text(n,x+72,y+20,16,'center','#29434b',900);text('入口',x+72,y+40,12,'center','#536c70');});
+
+  // small elemental landmarks make the hub read as the same island, not a menu
+  drawTree(92,285);drawTree(815,330);drawTree(760,120);
+  rect(95,420,14,58,'#bcecf5');rect(112,425,9,50,'rgba(255,255,255,.55)');
+  drawHeroFox(postGameHero.x,postGameHero.y,.88);drawSuzumaru(postGameHero.x-38,postGameHero.y+13,.82);drawYuno(postGameHero.x-73,postGameHero.y+17,.80);drawGyou(postGameHero.x-108,postGameHero.y+20,.80);
+
+  const ht=hudTop();ctx.fillStyle='rgba(13,39,54,.88)';ctx.fillRect(18,ht,520,46);
+  text(`平和になった りすぺく島　Lv.${progress.level}　${progress.gold}G`,35,ht+23,16);
+}
+function drawPostGameVillage(){
+  if(postGameArea==='brifo'){
+    // Reuse the Brifo village look from the opening event.
+    ctx.fillStyle='#8fd47f';ctx.fillRect(0,0,W,H);rect(0,0,W,92,'#89d9e8');
+    drawHouse(95,145);drawHouse(225,105);drawHouse(725,135);drawTree(30,300);drawTree(845,290);drawTree(720,330);
+  }else if(postGameArea==='sarubie'){
+    // Same village background used by the Sarubie story scenes.
+    drawSarubieVillageBG();
+    outlineRect(455,250,150,112,'#6a4c3d','#3e2c27',2);rect(478,215,104,42,'#482f2a');text('武器屋・鍛冶場',530,235,15,'center','#f3d9b1');
+    drawFireHouse(720,255);outlineRect(722,225,88,30,'#f0d39a','#83593d',2);text('道具屋',766,240,14,'center','#4d332c');
+  }else if(postGameArea==='sarubibi'){
+    // Same village background used by the Sarubibi story scenes.
+    drawSarubibiVillageBG();
+    drawWindHouse(430,285);outlineRect(432,252,92,30,'#d8f1e9','#3c7776',2);text('武器屋',478,267,14,'center','#315a5e');
+    drawWindHouse(600,285);outlineRect(602,252,92,30,'#d8f1e9','#3c7776',2);text('道具屋',648,267,14,'center','#315a5e');
+    outlineRect(765,270,135,88,'#eaf5ee','#3d7776',2);text('防衛隊詰所',832,293,15,'center','#315a5e');
+  }else{
+    // New peaceful Takezo village, based on its stone/earth defensive architecture.
+    const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#a9d7e4');sky.addColorStop(1,'#d7dfb5');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+    rect(0,230,W,310,'#8fbf91');
+    ctx.fillStyle='#66725d';ctx.beginPath();ctx.moveTo(0,230);ctx.lineTo(145,125);ctx.lineTo(285,230);ctx.lineTo(470,95);ctx.lineTo(640,230);ctx.lineTo(820,120);ctx.lineTo(960,230);ctx.closePath();ctx.fill();
+    // sturdy earth-and-stone homes, now repaired after the battle
+    for(const [x,y] of [[115,275],[330,245],[555,280],[750,245]]){
+      outlineRect(x,y,145,105,'#9c9479','#5d6860',3);rect(x+18,y+20,109,22,'#c8b98f');rect(x+50,y+57,45,48,'#4f6063');
+      rect(x-8,y-12,161,18,'#7b694f');
+    }
+    outlineRect(400,380,160,50,'#d7c89b','#776044',2);text('たけぞ村 集会所',480,405,16,'center','#4a3c30',900);
+  }
+  outlineRect(28,425,145,58,'#e8f4f2','#557a79',3);text('島へ出る',100,454,17,'center','#284b50',900);
+  drawHeroFox(postGameHero.x,postGameHero.y,.96);drawSuzumaru(postGameHero.x-43,postGameHero.y+14,.88);drawYuno(postGameHero.x-82,postGameHero.y+18,.86);drawGyou(postGameHero.x-120,postGameHero.y+21,.86);
+  const names={brifo:'ぶりふぉ村',sarubie:'さるびえ村',sarubibi:'さるびび村',takezo:'たけぞ村'};
+  const ht=hudTop();ctx.fillStyle='rgba(18,40,50,.84)';ctx.fillRect(18,ht,330,45);text(`${names[postGameArea]}　平和な日常`,35,ht+22,17);
+}
+function drawPostGameVolcano(){
+  camera.x=Math.max(0,Math.min(520,postGameVolcanoHero.x-W*.42));ctx.save();ctx.translate(-camera.x,0);
+  const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#5f6670');gr.addColorStop(1,'#9c694c');ctx.fillStyle=gr;ctx.fillRect(0,0,1480,H);
+  ctx.fillStyle='#4e4b49';ctx.beginPath();ctx.moveTo(0,500);ctx.lineTo(300,380);ctx.lineTo(620,440);ctx.lineTo(900,285);ctx.lineTo(1200,365);ctx.lineTo(1480,240);ctx.lineTo(1480,540);ctx.lineTo(0,540);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#c58b61';ctx.lineWidth=16;ctx.beginPath();ctx.moveTo(80,465);ctx.bezierCurveTo(500,420,780,390,1030,350);ctx.bezierCurveTo(1230,320,1370,285,1430,260);ctx.stroke();
+  outlineRect(35,405,125,55,'#e7ddc8','#8d6e55',3);text('島へ出る',97,433,16,'center','#4e3b31',900);
+  postGameVolcanoMobs.forEach(m=>drawSurveyMonster(m));
+  drawHeroFox(postGameVolcanoHero.x,postGameVolcanoHero.y,.92);drawSuzumaru(postGameVolcanoHero.x-48,postGameVolcanoHero.y+15,.96);drawYuno(postGameVolcanoHero.x-92,postGameVolcanoHero.y+18,.94);drawGyou(postGameVolcanoHero.x-135,postGameVolcanoHero.y+22,.92);ctx.restore();
+  const ht=hudTop();ctx.fillStyle='rgba(15,25,35,.88)';ctx.fillRect(18,ht,520,48);text(`火山　Lv.${progress.level}　${progress.gold}G`,35,ht+24,17);text('ドラゴン挑戦と同系統の強敵が出現',745,ht+24,14,'center','#ffe0b0');
+}
 function drawDragonTrail(){
   camera.x=Math.max(0,Math.min(700,dragonTrailHero.x-W*.42));
   ctx.save();ctx.translate(-camera.x,0);
@@ -4583,9 +4657,9 @@ function update(dt){
     startPostDragonBattle();
     return;
   }
-  if(scene==='postGameIsland'){let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameHero.x+=dx*postGameHero.speed*dt;postGameHero.y+=dy*postGameHero.speed*dt;}postGameHero.x=Math.max(45,Math.min(920,postGameHero.x));postGameHero.y=Math.max(240,Math.min(500,postGameHero.y));const es=[['brifo',165,320],['sarubie',375,320],['sarubibi',585,320],['takezo',795,320]];for(const [a,x,y] of es)if(Math.hypot(postGameHero.x-x,postGameHero.y-y)<58){postGameArea=a;postGameHero.x=220;postGameHero.y=430;scene='postGameVillage';saveGame();return;}if(Math.hypot(postGameHero.x-860,postGameHero.y-197)<70){postGameVolcanoHero.x=180;postGameVolcanoHero.y=455;scene='postGameVolcano';saveGame();return;}return;}
-  if(scene==='postGameVillage'){let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameHero.x+=dx*postGameHero.speed*dt;postGameHero.y+=dy*postGameHero.speed*dt;}postGameHero.x=Math.max(45,Math.min(920,postGameHero.x));postGameHero.y=Math.max(250,Math.min(500,postGameHero.y));if(postGameHero.x<175&&postGameHero.y>385){postGameHero.x=480;postGameHero.y=400;scene='postGameIsland';saveGame();}return;}
-  if(scene==='postGameVolcano'){for(const m of postGameVolcanoMobs){if(!m.alive&&m.respawn>0){m.respawn-=dt;if(m.respawn<=0){m.alive=true;m.hp=m.maxHP;m.x=m.spawnX;m.y=m.spawnY;}}}let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameVolcanoHero.x+=dx*postGameVolcanoHero.speed*dt;postGameVolcanoHero.y+=dy*postGameVolcanoHero.speed*dt;}postGameVolcanoHero.x=Math.max(55,Math.min(1430,postGameVolcanoHero.x));postGameVolcanoHero.y=Math.max(245,Math.min(495,postGameVolcanoHero.y));if(postGameVolcanoHero.x<165&&postGameVolcanoHero.y>385){postGameHero.x=850;postGameHero.y=250;scene='postGameIsland';saveGame();return;}for(const m of postGameVolcanoMobs){chaseFieldMob(m,postGameVolcanoHero.x,postGameVolcanoHero.y,dt,280,58);if(m.alive&&Math.hypot(postGameVolcanoHero.x-m.x,(postGameVolcanoHero.y-m.y)*1.25)<38){startPostGameVolcanoBattle(m);return;}}return;}
+  if(scene==='postGameIsland'){let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameHero.x+=dx*postGameHero.speed*dt;postGameHero.y+=dy*postGameHero.speed*dt;}postGameHero.x=Math.max(45,Math.min(920,postGameHero.x));postGameHero.y=Math.max(240,Math.min(500,postGameHero.y));const es=[['brifo',207,392],['sarubie',277,252],['sarubibi',682,392],['takezo',702,222]];for(const [a,x,y] of es)if(Math.hypot(postGameHero.x-x,postGameHero.y-y)<58){postGameArea=a;postGameHero.x=220;postGameHero.y=430;scene='postGameVillage';saveGame();return;}if(Math.hypot(postGameHero.x-480,postGameHero.y-222)<65){postGameVolcanoHero.x=180;postGameVolcanoHero.y=455;scene='postGameVolcano';saveGame();return;}return;}
+  if(scene==='postGameVillage'){let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameHero.x+=dx*postGameHero.speed*dt;postGameHero.y+=dy*postGameHero.speed*dt;}postGameHero.x=Math.max(45,Math.min(920,postGameHero.x));postGameHero.y=Math.max(250,Math.min(500,postGameHero.y));if(postGameHero.x<175&&postGameHero.y>385){const back={brifo:[285,410],sarubie:[350,270],sarubibi:[610,410],takezo:[625,240]}[postGameArea]||[480,400];postGameHero.x=back[0];postGameHero.y=back[1];scene='postGameIsland';saveGame();}return;}
+  if(scene==='postGameVolcano'){for(const m of postGameVolcanoMobs){if(!m.alive&&m.respawn>0){m.respawn-=dt;if(m.respawn<=0){m.alive=true;m.hp=m.maxHP;m.x=m.spawnX;m.y=m.spawnY;}}}let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameVolcanoHero.x+=dx*postGameVolcanoHero.speed*dt;postGameVolcanoHero.y+=dy*postGameVolcanoHero.speed*dt;}postGameVolcanoHero.x=Math.max(55,Math.min(1430,postGameVolcanoHero.x));postGameVolcanoHero.y=Math.max(245,Math.min(495,postGameVolcanoHero.y));if(postGameVolcanoHero.x<165&&postGameVolcanoHero.y>385){postGameHero.x=480;postGameHero.y=300;scene='postGameIsland';saveGame();return;}for(const m of postGameVolcanoMobs){chaseFieldMob(m,postGameVolcanoHero.x,postGameVolcanoHero.y,dt,280,58);if(m.alive&&Math.hypot(postGameVolcanoHero.x-m.x,(postGameVolcanoHero.y-m.y)*1.25)<38){startPostGameVolcanoBattle(m);return;}}return;}
   if(scene==='dragonTrail'){
     for(const m of dragonTrailMobs){if(!m.alive&&m.respawn>0){m.respawn-=dt;if(m.respawn<=0){m.alive=true;m.hp=m.maxHP;m.x=m.spawnX;m.y=m.spawnY;}}}
     let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;

@@ -1610,7 +1610,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.11',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.12',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -4708,7 +4708,7 @@ function drawSealedCave(){
  }
  if(!progress.orochiDefeated){drawYamataNoOrochi(885,310,.72);text('異界の門',885,205,16,'center','#e9f5ff',900);}
  drawHeroFox(sealedCaveHero.x,sealedCaveHero.y,.9);
- outlineRect(20,455,120,45,'#d9eef5','#54758a',2);text('島へ戻る',80,478,14,'center','#263d50',900);
+ outlineRect(8,455,105,45,'#d9eef5','#54758a',2);text('島へ戻る',60,478,14,'center','#263d50',900);
 }
 function startSealedDragonBattle(m){
  const hs=heroStats(),hp=m.maxHP;
@@ -4946,6 +4946,11 @@ function bgmToggle(){
 },{once:true,passive:true}));
 
 function update(dt){
+  if(scene==='sealedGateIntro' && dialogIndex>=sealedGateDialog.length){
+    enterSealedCave();
+    return;
+  }
+
   if(scene==='postGameElderTalk' &&
      (progress.klausDefeated||progress.postGamePirateRaidCleared) &&
      !progress.nineTailStoryComplete &&
@@ -4986,7 +4991,7 @@ function update(dt){
     let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;
     const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);sealedCaveHero.x+=dx*sealedCaveHero.speed*dt;sealedCaveHero.y+=dy*sealedCaveHero.speed*dt;}
     sealedCaveHero.x=Math.max(45,Math.min(920,sealedCaveHero.x));sealedCaveHero.y=Math.max(245,Math.min(500,sealedCaveHero.y));
-    if(sealedCaveHero.x<55){postGameHero.x=700;postGameHero.y=165;scene='postGameIsland';touchUI.classList.remove('hidden');saveGame();return;}
+    if(sealedCaveHero.x<42){postGameHero.x=700;postGameHero.y=165;scene='postGameIsland';touchUI.classList.remove('hidden');saveGame();return;}
     for(const m of sealedCaveMobs){if(m.alive&&Math.hypot(sealedCaveHero.x-m.x,sealedCaveHero.y-m.y)<42){startSealedDragonBattle(m);return;}}
     if(!progress.orochiDefeated&&sealedCaveHero.x>845){startOrochiBattle();return;}
     return;
@@ -5284,6 +5289,16 @@ function openFieldMenu(fromScene){
 function startFromInitialState(){
   ['risupekuProgress','risupekuSave','risupekuHeroName'].forEach(k=>localStorage.removeItem(k));
   location.reload();
+}
+function enterSealedCave(){
+  progress.nineTailSoloQuest=true;
+  sealedCaveHero.x=220;
+  sealedCaveHero.y=455;
+  dialogIndex=0;
+  scene='sealedCave';
+  touchUI.classList.remove('hidden');
+  saveProgress();
+  saveGame();
 }
 function pressAction(){
   if(!nameOverlay.classList.contains('hidden'))return;
@@ -5675,9 +5690,12 @@ function pressAction(){
   }
   if(scene==='sealedGateIntro'){
     touchUI.classList.remove('hidden');
-    if(dialogIndex < sealedGateDialog.length-1){dialogIndex++;return;}
-    sealedCaveHero.x=105;sealedCaveHero.y=455;
-    scene='sealedCave';dialogIndex=0;touchUI.classList.remove('hidden');saveGame();return;
+    if(dialogIndex < sealedGateDialog.length-1){
+      dialogIndex++;
+      return;
+    }
+    enterSealedCave();
+    return;
   }
   if(scene==='nineTailPostTalk'){
     scene='postGameVillage';dialogIndex=0;touchUI.classList.remove('hidden');saveGame();return;
@@ -5718,7 +5736,7 @@ function pressAction(){
     scene='sealedGateIntro';dialogIndex=0;
     touchUI.classList.remove('hidden');saveProgress();saveGame();return;
   }
-  if(scene==='sealedCave'&&sealedCaveHero.x<150){
+  if(scene==='sealedCave'&&sealedCaveHero.x<78){
     postGameHero.x=700;postGameHero.y=165;scene='postGameIsland';touchUI.classList.remove('hidden');saveGame();return;
   }
   if(scene==='world' || scene==='road2' || scene==='route3' || scene==='cave' || scene==='takezoTravel' || scene==='takezoRoute' || scene==='coastSurveyField' || scene==='volcanoSurveyField' || scene==='finalBearField' || scene==='dragonTrail' || scene==='postGameIsland' || scene==='postGameVillage' || scene==='postGameVolcano' || scene==='sealedCave'){
@@ -6011,7 +6029,7 @@ canvas.addEventListener('pointerdown',e=>{
         }
       }
     }
-  } else if(scene!=='world'&&scene!=='road2'&&scene!=='route3'&&scene!=='sarubieTown'&&scene!=='shop'&&scene!=='cave'&&scene!=='sarubibiTown'&&scene!=='sarubibiShop'&&scene!=='nightTrail'&&scene!=='takezoTravel'&&scene!=='takezoRoute'&&scene!=='coastSurveyField'&&scene!=='volcanoSurveyField'&&scene!=='dragonTrail'&&scene!=='dragonTrailShop') pressAction();
+  } else if(scene!=='sealedGateIntro'&&scene!=='world'&&scene!=='road2'&&scene!=='route3'&&scene!=='sarubieTown'&&scene!=='shop'&&scene!=='cave'&&scene!=='sarubibiTown'&&scene!=='sarubibiShop'&&scene!=='nightTrail'&&scene!=='takezoTravel'&&scene!=='takezoRoute'&&scene!=='coastSurveyField'&&scene!=='volcanoSurveyField'&&scene!=='dragonTrail'&&scene!=='dragonTrailShop') pressAction();
 });
 let lastActionAt=0;
 function triggerActionButton(e){
@@ -6019,6 +6037,17 @@ function triggerActionButton(e){
   const now=performance.now();
   if(now-lastActionAt<220)return;
   lastActionAt=now;
+
+  // Dedicated path for the sealed gate so the final A never falls
+  // through to field/menu handling on mobile browsers.
+  if(scene==='sealedGateIntro'){
+    if(dialogIndex < sealedGateDialog.length-1){
+      dialogIndex++;
+    }else{
+      enterSealedCave();
+    }
+    return;
+  }
 
   // Route3 gets a direct path because some mobile browsers were
   // dropping the general handler on this field.

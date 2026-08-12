@@ -827,8 +827,7 @@ const dragonCallDialog=[
 const dragonSummitDialog=[
 ['narrator','険しい登山道を越え、五人はついに火山の頂上へたどり着いた。'],
 ['narrator','熱気の向こうで、巨大な古竜が静かに五人を待っている。'],
-['dragonVoice','よくぞここまで来た。'],
-['narrator','ドラゴンと戦いますか？']
+['dragonVoice','よくぞここまで来た。']
 ];
 
 
@@ -1454,7 +1453,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.88',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.89',480,121,18,'center','#eef8ff');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
   if(cleared)labels.push(progress.postDragonDefeated?'ドラゴンに挑戦（再戦）':'ドラゴンに挑戦');
@@ -4359,9 +4358,10 @@ function drawDragonConfirm(){
   const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#392f39');sky.addColorStop(1,'#a65739');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
   drawDragonEnemy(720,250,1.35);
   text('ドラゴンと戦いますか？',480,105,30,'center','#fff0ce',900);
-  outlineRect(320,330,320,64,'#e9f5f8','#79bed6',3);
-  text('戦う',480,362,24,'center','#17324a',900);
-  text('A / Enter で戦闘開始',480,425,16,'center','#dcebf0');
+  outlineRect(300,315,360,64,'#e9f5f8','#79bed6',3);
+  text('戦う',480,347,24,'center','#17324a',900);
+  text('A / Enter：戦闘開始',480,410,16,'center','#dcebf0');
+  text('X / Esc：登山道へ戻る',480,442,14,'center','#c5d7df');
 }
 function drawPostDragonClear(){
   ctx.fillStyle='#241d2a';ctx.fillRect(0,0,W,H);text('火山の古竜　撃破！',480,160,42,'center','#f0c47a');
@@ -4433,7 +4433,7 @@ function update(dt){
       const dx=dragonTrailHero.x-m.x,dy=(dragonTrailHero.y-m.y)*1.25;
       if(m.alive&&Math.hypot(dx,dy)<34){startDragonTrailBattle(m);return;}
     }
-    if(dragonTrailHero.x>1575){scene='dragonSummit';dialogIndex=0;touchUI.classList.add('hidden');saveGame();return;}
+    if(dragonTrailHero.x>1575){scene='dragonSummit';dialogIndex=0;touchUI.classList.remove('hidden');saveGame();return;}
   } else if(scene==='finalBearField'){
     let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;
     const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);finalBearHero.x+=dx*finalBearHero.speed*dt;finalBearHero.y+=dy*finalBearHero.speed*dt;}
@@ -4985,7 +4985,7 @@ function pressAction(){
   }
   if(scene==='dragonSummit'){
     dialogIndex++;
-    if(dialogIndex>=dragonSummitDialog.length){scene='dragonConfirm';dialogIndex=0;return;}
+    if(dialogIndex>=dragonSummitDialog.length){scene='dragonConfirm';dialogIndex=0;touchUI.classList.remove('hidden');return;}
     return;
   }
   if(scene==='dragonConfirm'){startPostDragonBattle();return;}
@@ -5010,6 +5010,9 @@ function pressAction(){
     }
     flashText='武器屋・道具屋・防衛隊詰所を調べよう';flashTimer=1.6;
     return;
+  }
+  if(scene==='dragonConfirm' && (e.key==='Escape'||e.key==='x'||e.key==='X')){
+    scene='dragonTrail';dragonTrailHero.x=1510;dragonTrailHero.y=285;touchUI.classList.remove('hidden');return;
   }
   if(scene==='dragonTrailShop'){
     if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'){dragonTrailShopSelection=(dragonTrailShopSelection+7)%8;e.preventDefault();return;}

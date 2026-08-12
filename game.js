@@ -1836,7 +1836,7 @@ function advancePartyTurn(){
   if(battleActor==='hero' && suzumaruActive){
     battleActor='suzu';
     if(progress.shopBought?.suzuGloves)battle.suzuGloveStacks=(battle.suzuGloveStacks||0)+1;
-    if((progress.suzuSkills?.fightingFlame||0)>0)battle.suzuFightingFlameStacks=Math.min(5,(battle.suzuFightingFlameStacks||0)+1);
+    if((progress.suzuSkills?.fightingFlame||0)>0)battle.suzuFightingFlameStacks=(battle.suzuFightingFlameStacks||0)+1;
     return;
   }
   if(battleActor==='suzu' && yunoJoined && battle.monsterId>=400){
@@ -2101,14 +2101,22 @@ function battleAttack(mode='attack',target='hero'){
     const hl=progress.heroHealSkill||1;
     const cost=heroSkillMPCost(hl>=3?12:hl>=2?8:5);
     const hpKey=partyHPKey(target),maxHP=partyMaxHP(target);
-    const amount=hl>=3?Math.max(0,maxHP-battle[hpKey]):hl>=2?120:50;
+    const amount=hl>=2?120:50;
     const hname=hl>=3?'大水癒':hl>=2?'水の大いやし':'水のいやし';
     if(battle.heroMP>=cost){
-      battle.heroMP-=cost;battle[hpKey]=hl>=3?maxHP:Math.min(maxHP,battle[hpKey]+amount);
-      battleMessage=hl>=3
-        ?`${heroName}は${partyTargetName(target)}に「${hname}」！ HPが全回復！`
-        :`${heroName}は${partyTargetName(target)}に「${hname}」！ HPが${amount}回復！`;
-      setBattleFx('heal',target==='hero'?185:target==='suzu'?265:target==='yuno'?360:455,255);
+      battle.heroMP-=cost;
+      if(hl>=3){
+        const allHeal=130;
+        battle.heroHP=Math.min(progress.maxHP,battle.heroHP+allHeal);
+        if(battle.suzuHP!==undefined)battle.suzuHP=Math.min(battle.suzuMaxHP,battle.suzuHP+allHeal);
+        if(battle.yunoHP!==undefined)battle.yunoHP=Math.min(battle.yunoMaxHP,battle.yunoHP+allHeal);
+        if(battle.gyouHP!==undefined)battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+allHeal);
+        battleMessage=`${heroName}の「${hname}」！ 味方全体のHPが${allHeal}回復！`;setBattleFx('heal',360,255);
+      }else{
+        battle[hpKey]=Math.min(maxHP,battle[hpKey]+amount);
+        battleMessage=`${heroName}は${partyTargetName(target)}に「${hname}」！ HPが${amount}回復！`;
+        setBattleFx('heal',target==='hero'?185:target==='suzu'?265:target==='yuno'?360:455,255);
+      }
       if(battle.monsterId===99)battleChoiceText.hero=hname;
     }else battleMessage='MPが足りない！';
     if(isPartyBattle()){advancePartyTurn();}
@@ -2167,14 +2175,14 @@ function battleAttack(mode='attack',target='hero'){
     addDamagePopup(`${hits} HIT ${dmg}`,700,155,'#bdefff');
     if(battle.monsterId===99||battle.monsterId>=200)battleChoiceText.hero=skillName;
   }else if(mode==='ice'){
-    const pr=progress.heroPebbleRandom||0,hits=pr>=3?4:pr>=2?3:pr>=1?2:1;
-    const cost=heroSkillMPCost(hits>=4?8:hits===3?7:hits===2?6:4);
+    const pr=progress.heroPebbleRandom||0,hits=pr>=3?7:pr>=2?5:pr>=1?3:1;
+    const cost=heroSkillMPCost(hits>=7?10:hits>=5?8:hits>=3?6:4);
     if(battle.heroMP<cost){battleMessage='MPが足りない！';return;}
     battle.heroMP-=cost;
-    const skillName=hits===4?'氷つぶて乱射IV':hits===3?'氷つぶて乱射III':hits===2?'氷つぶて乱射II':'氷のつぶて';
+    const skillName=hits===7?'氷つぶて乱射IV':hits===5?'氷つぶて乱射III':hits===3?'氷つぶて乱射II':'氷のつぶて';
     let parts=[],total=0,targetCounts={};
     for(let i=0;i<hits;i++){
-      const hit=heroMagicFlowPower(heroIcePower(Math.max(1,Math.floor(heroEquipAtk()*(hits===1?1:.55))+5+Math.floor(Math.random()*6))));
+      const hit=heroMagicFlowPower(heroIcePower(Math.max(1,Math.floor((heroEquipAtk()+5+Math.floor(Math.random()*6))*(hits===1?1:.70)))));
       // Each shot independently selects one currently living enemy.
       // With one enemy, every shot therefore lands on that enemy.
       let targetIndex=0,targetName=battle.enemyName||'敵';
@@ -2270,7 +2278,7 @@ function beginEnemyTurn(){
 function suzuFightingFlameBonus(baseAtk){
   const lv=progress.suzuSkills?.fightingFlame||0;
   if(lv<=0||!battle)return 0;
-  const stacks=Math.min(5,battle.suzuFightingFlameStacks||0);
+  const stacks=battle.suzuFightingFlameStacks||0;
   const rate=lv>=2?.05:.03;
   return Math.floor(baseAtk*rate*stacks);
 }
@@ -2364,12 +2372,9 @@ function heroYunoCombo(mode){
   battle.heroMP-=12;battle.yunoMP-=12;
   battle.skipYunoThisRound=true;
   if(mode==='grandHeal'){
-    const heal=34+Math.floor((progress.atk+ys.atk)/4);
-    battle.heroHP=Math.min(progress.maxHP,battle.heroHP+heal);
-    battle.suzuHP=Math.min(battle.suzuMaxHP,battle.suzuHP+heal);
-    battle.yunoHP=Math.min(battle.yunoMaxHP,battle.yunoHP+heal);
-    if(battle.gyouHP!==undefined)battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+heal);
-    battleMessage=`${heroName}＆ユーノの合体技「蒼風大癒」！ 味方全体のHPが${heal}回復！`;
+    battle.heroHP=progress.maxHP;battle.suzuHP=battle.suzuMaxHP;battle.yunoHP=battle.yunoMaxHP;
+    if(battle.gyouHP!==undefined)battle.gyouHP=battle.gyouMaxHP;
+    battleMessage=`${heroName}＆ユーノの合体技「蒼風大癒」！ 味方全員のHPが全回復！`;
     setBattleFx('heal',360,255);
   }else{
     const dmg=30+Math.floor((progress.atk+ys.atk)*.65);
@@ -3665,7 +3670,7 @@ function drawMenu(){
         const fl=progress.suzuSkills?.fightingFlame||0;
         outlineRect(500,365,390,70,fl?'#ffe7d1':'#3b4653',fl?'#e08a4e':'#7c8790',2);
         text('闘炎（パッシブ）',525,390,18,'left',fl?'#6b2d1e':'#d9dde0',800);
-        text(fl>=2?'毎ターン攻撃+5% / 最大5段階':fl===1?'毎ターン攻撃+3% / 最大5段階':'長期戦ほど攻撃力上昇',525,414,12,'left',fl?'#8d4a3b':'#aab0b5');
+        text(fl>=2?'毎ターン攻撃+5% / 上限なし':fl===1?'毎ターン攻撃+3% / 上限なし':'長期戦ほど攻撃力上昇',525,414,12,'left',fl?'#8d4a3b':'#aab0b5');
         text(fl>=2?'Lv.2 最大':fl===1?'次 Lv.2 SP3':'習得 SP2',865,414,11,'right',fl?'#8a4931':'#ffe7a5',800);
       }
       text('闘炎は炎獣のグローブの毎ターン攻撃上昇と重複します。',480,470,14,'center','#ffffff');
@@ -3712,7 +3717,7 @@ function drawMenu(){
       outlineRect(690,252,225,92,'#e7f5fb','#78b9d7',2);
       const healName=hh>=3?'大水癒':hh>=2?'水の大いやし':'水のいやし';
       text(healName,705,278,18,'left','#17324a',800);
-      text(hh>=3?'HP全回復 / MP12':hh>=2?'HP120回復 / MP8':'HP50回復 / MP5',705,302,12,'left','#3d5d73');
+      text(hh>=3?'味方全体 HP130回復 / MP12':hh>=2?'HP120回復 / MP8':'HP50回復 / MP5',705,302,12,'left','#3d5d73');
       text(hh>=3?'Lv.3 最大':hh===2?'次 Lv.3　SP2':'次 Lv.2　SP1',900,329,11,'right','#3d6f8a',800);
 
       outlineRect(690,360,225,92,hm?'#c8e2ed':'#e7f5fb',hm?'#6aaacb':'#78b9d7',2);
@@ -5303,7 +5308,7 @@ canvas.addEventListener('pointerdown',e=>{
           else battleMenu='main';
         }else{
           if(y>=370&&y<=432){
-            if(x<215){openPartyTarget('hero','heal',(progress.heroHealSkill||1)>=3?'大水癒':(progress.heroHealSkill||1)>=2?'水の大いやし':'水のいやし');return;}
+            if(x<215){if((progress.heroHealSkill||1)>=3){battleAttack('heal');return;}openPartyTarget('hero','heal',(progress.heroHealSkill||1)>=2?'水の大いやし':'水のいやし');return;}
             else if(x<395)battleAttack('ice');
             else if(x<575)battleAttack('iceSlash');
             else if(x<755)battleAttack('iceWave');

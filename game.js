@@ -1453,7 +1453,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.96',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.97',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -1940,28 +1940,25 @@ function drawBattle(){
     partyRows.push({name:'ジュウ',hp:battle.gyouHP,maxHP:battle.gyouMaxHP,mp:battle.gyouMP,maxMP:battle.gyouMaxMP});
   }
 
-  const rosterX=32, rosterY=bt, rosterW=350;
-  const rowH=34;
-  const rosterH=12+partyRows.length*rowH;
-  ctx.fillStyle='rgba(14,30,55,.90)';
+  const rosterX=32, rosterY=bt, rosterW=370;
+  const rowH=29;
+  const rosterH=10+partyRows.length*rowH;
+  ctx.fillStyle='rgba(14,30,55,.92)';
   ctx.fillRect(rosterX,rosterY,rosterW,rosterH);
 
   partyRows.forEach((m,i)=>{
     const y=rosterY+20+i*rowH;
-    text(m.name,rosterX+14,y,14,'left','#ffffff',800);
-    text(`HP ${m.hp}/${m.maxHP}`,rosterX+112,y,12,'left','#ffffff');
-    text(`MP ${m.mp}/${m.maxMP}`,rosterX+235,y,12,'left','#ffffff');
+    text(m.name,rosterX+14,y,18,'left','#ffffff',900);
+    text(`HP ${m.hp}/${m.maxHP}`,rosterX+122,y,16,'left','#ffffff',800);
+    text(`MP ${m.mp}/${m.maxMP}`,rosterX+252,y,16,'left','#ffffff',800);
   });
 
-  // Enemy information gets its own small panel above/right of the monsters.
-  ctx.fillStyle='rgba(255,255,255,.88)';
-  ctx.fillRect(650,bt,265,72);
-  if(battle.enemies){
-    text(battle.monsterId===900?`海賊本陣　残り ${livingEnemies().length}人`:`敵グループ　残り ${livingEnemies().length}体`,670,bt+28,17,'left','#243245',800);
-    text('HPは各敵の下に表示',670,bt+54,13,'left','#52606f');
-  }else{
-    text(battle.enemyName,670,bt+28,18,'left','#243245',800);
-    text(`HP ${Math.max(0,battle.enemyHP)}/${battle.enemyMaxHP}`,670,bt+54,15,'left','#52606f');
+  // 複数敵では「敵グループ 残り○体」のパネルを出さず、各敵の名前とHPだけで確認できるようにする。
+  if(!battle.enemies){
+    ctx.fillStyle='rgba(255,255,255,.88)';
+    ctx.fillRect(650,bt,265,72);
+    text(battle.enemyName,670,bt+28,19,'left','#243245',800);
+    text(`HP ${Math.max(0,battle.enemyHP)}/${battle.enemyMaxHP}`,670,bt+55,17,'left','#52606f',800);
   }
   // battle phase
   if(battle.turn==='enemy'){
@@ -2009,69 +2006,69 @@ function drawBattle(){
       text(`${actorName}の行動`,480,by+78,15,'center','#c8e7f4');
     }else{
       if(isGyouTurn()){
-        text('ジュウのスキル',480,366,16,'center','#f4efcf',800);
+        text('ジュウのスキル',480,366,19,'center','#f4efcf',800);
         const opts=[
-          ['fortify','岩守り','MP5'],['cover','かばう','MP5'],['taunt','挑発','MP4'],['manaGuard','土脈吸収','MP4'],
-          ['healGuard','守りの呼吸','MP7'],['doubleThrust','二段突き','MP6'],['counter','迎撃の構え','MP7'],['grandGuard','大守護','MP16']
+          ['fortify','岩守り','(5)'],['cover','かばう','(5)'],['taunt','挑発','(4)'],['manaGuard','土脈吸収','(4)'],
+          ['healGuard','守りの呼吸','(7)'],['doubleThrust','二段突き','(6)'],['counter','迎撃の構え','(7)'],['grandGuard','大守護','(16)']
         ];
         opts.forEach((o,i)=>{
           const x=28+i*114,learned=o[0]==='grandGuard'?!!progress.gyouGrandGuard:!!progress.gyouSkills[o[0]];
           outlineRect(x,385,106,54,learned?'#ece8ce':'#53554f',learned?'#999064':'#777970',2);
-          text(learned?o[1]:`${o[1]} 未`,x+53,406,learned?11:10,'center',learned?'#494427':'#ffffff',800);
-          text(learned?o[2]:'未習得',x+53,425,10,'center',learned?'#69633e':'#d7d7d2');
+          text(learned?o[1]:`${o[1]} 未`,x+53,406,learned?15:14,'center',learned?'#494427':'#ffffff',800);
+          text(learned?o[2]:'未習得',x+53,427,13,'center',learned?'#69633e':'#d7d7d2');
         });
         outlineRect(365,447,230,42,'#dff4fb','#71bad7',2);text('もどる',480,468,17,'center','#17324a',800);
       }else if(isYunoTurn()){
-        text('ユーノのスキル',480,366,16,'center','#d8fff5',800);
+        text('ユーノのスキル',480,366,19,'center','#d8fff5',800);
         const yu=[
-          ['heal','風の癒し','MP8'],['regen','そよぎの輪','MP10'],['wind','風刃嵐','MP9'],
-          ['haste','疾風','MP8'],['archery','二連射','MP7'],['mpRegenAll','風巡りの泉','MP12']
+          ['heal','風の癒し','(8)'],['regen','そよぎの輪','(10)'],['wind','風刃嵐','(9)'],
+          ['haste','疾風','(8)'],['archery','二連射','(7)'],['mpRegenAll','風巡りの泉','(12)']
         ];
         yu.forEach((o,i)=>{
           const x=35+i*145,w=i===5?150:135,lv=progress.yunoSkills[o[0]]||0,locked=(o[0]==='evadeAll'&&(progress.yunoSkills.evade||0)<1);
           outlineRect(x,385,w,54,lv?'#d8f2ed':'#536273',lv?'#59aaa6':'#7d8992',2);
-          text(lv?`${o[1]} ${o[2]}`:`${o[1]} 未習得`,x+w/2,407,lv?12:11,'center',lv?'#174c4b':'#ffffff',800);
-          text(lv>1?`Lv.${lv}`:(locked?'要：風の泉':lv?'使用可':'SPで習得'),x+w/2,427,10,'center',lv?'#356c69':'#d7dde1');
+          text(lv?`${o[1]} ${o[2]}`:`${o[1]} 未習得`,x+w/2,407,lv?16:14,'center',lv?'#174c4b':'#ffffff',800);
+          text(lv>1?`Lv.${lv}`:(locked?'要：風の泉':lv?'使用可':'SPで習得'),x+w/2,429,13,'center',lv?'#356c69':'#d7dde1');
         });
         outlineRect(365,447,230,42,'#dff4fb','#71bad7',2);text('もどる',480,468,17,'center','#17324a',800);
       }else if(isSuzumaruTurn()){
-        text('スズマルのスキル',480,372,14,'center','#ffe5c8');
-        outlineRect(55,385,245,54,'#ffd9cf','#d86145',2);text(`${suzuSingleSkillName()} MP5`,177,406,16,'center','#6b231d');text('単体・高威力',177,425,11,'center','#934a3e');
+        text('スズマルのスキル',480,372,18,'center','#ffe5c8');
+        outlineRect(55,385,245,54,'#ffd9cf','#d86145',2);text(`${suzuSingleSkillName()} (5)`,177,408,20,'center','#6b231d');text('単体・高威力',177,430,14,'center','#934a3e');
         const suzuAllLearned=(progress.suzuSkills?.all||0)>=1;
         outlineRect(315,385,245,54,suzuAllLearned?'#ffe2cf':'#626d78',suzuAllLearned?'#d78251':'#8d969e',2);
-        text(suzuAllLearned?`${suzuAllSkillName()} MP${(progress.suzuSkills?.all||0)>=5?13:(progress.suzuSkills?.all||0)>=4?11:8}`:'火走り（未習得）',437,406,suzuAllLearned?19:15,'center',suzuAllLearned?'#4b2118':'#ffffff',800);
-        text(suzuAllLearned?'敵全体':'SPで習得',437,428,13,'center',suzuAllLearned?'#684436':'#f2f2f2',700);
+        text(suzuAllLearned?`${suzuAllSkillName()} (${(progress.suzuSkills?.all||0)>=5?13:(progress.suzuSkills?.all||0)>=4?11:8})`:'火走り（未習得）',437,406,suzuAllLearned?20:17,'center',suzuAllLearned?'#4b2118':'#ffffff',800);
+        text(suzuAllLearned?'敵全体':'SPで習得',437,430,14,'center',suzuAllLearned?'#684436':'#f2f2f2',700);
         outlineRect(575,385,180,54,'#fff0d0','#d2a24d',2);text(`回復薬 x${progress.items.potion}`,665,412,14,'center','#5f4623');
         outlineRect(770,385,140,54,'#dff4fb','#71bad7',2);text('もどる',840,412,15,'center','#17324a');
         const suzuCounterLearned=(progress.suzuSkills?.counter||0)>=1;
         outlineRect(315,445,245,44,suzuCounterLearned?'#ffe0d6':'#626d78',suzuCounterLearned?'#c95f48':'#8d969e',2);
-        text(suzuCounterLearned?'炎返し MP7':'炎返し（未習得）',437,467,suzuCounterLearned?15:13,'center',suzuCounterLearned?'#6b231d':'#ffffff',800);
+        text(suzuCounterLearned?'炎返し (7)':'炎返し（未習得）',437,467,suzuCounterLearned?15:13,'center',suzuCounterLearned?'#6b231d':'#ffffff',800);
       }else{
         outlineRect(40,378,170,48,'#dff4fb','#71bad7',2);
-        {const hl=progress.heroHealSkill||1,hname=hl>=3?'大水癒':hl>=2?'水の大いやし':'水のいやし',hcost=hl>=3?12:hl>=2?8:5;text(`${hname} MP${hcost}`,125,402,hl>=2?12:13,'center','#17324a',800);}
+        {const hl=progress.heroHealSkill||1,hname=hl>=3?'大水癒':hl>=2?'水の大いやし':'水のいやし',hcost=hl>=3?12:hl>=2?8:5;text(`${hname} (${1})`,125,402,hl>=2?12:13,'center','#17324a',800);}
         outlineRect(220,378,170,48,'#dff4fb','#71bad7',2);
         const pr=progress.heroPebbleRandom||0;
         text(pr>=3?'氷つぶて乱射IV':pr>=2?'氷つぶて乱射III':pr>=1?'氷つぶて乱射II':'氷のつぶて',305,402,pr?12:14,'center','#17324a',800);
         const iceLearned=(progress.heroIceSkill||0)>=1 && !!progress.learned.iceSlash;
         outlineRect(400,378,170,48,iceLearned?'#dff4fb':'#626d78',iceLearned?'#71bad7':'#8d969e',2);
         const iceCost=(progress.heroIceSkill||0)>=3?11:(progress.heroIceSkill||0)>=2?9:7;
-        text(iceLearned?`${heroIceSkillName()} MP${iceCost}`:'氷結斬り（未習得）',485,402,iceLearned?16:14,'center',iceLearned?'#102b40':'#ffffff',800);
+        text(iceLearned?`${heroIceSkillName()} (${1})`:'氷結斬り（未習得）',485,402,iceLearned?16:14,'center',iceLearned?'#102b40':'#ffffff',800);
         const waveLv=progress.heroPebbleAll||0,waveLearned=waveLv>=1;
         outlineRect(580,378,170,48,waveLearned?'#d9f4ff':'#626d78',waveLearned?'#62afd1':'#8d969e',2);
-        text(waveLearned?(waveLv>=2?'氷晶大波 MP11':'氷晶波 MP8'):'氷晶波（未習得）',665,402,waveLearned?15:14,'center',waveLearned?'#102b40':'#ffffff',800);
+        text(waveLearned?(waveLv>=2?'氷晶大波 (11)':'氷晶波 (8)'):'氷晶波（未習得）',665,402,waveLearned?15:14,'center',waveLearned?'#102b40':'#ffffff',800);
         outlineRect(760,378,160,48,(progress.heroManaSkill||0)?'#d9f4ff':'#626d78',(progress.heroManaSkill||0)?'#62afd1':'#8d969e',2);
-        text((progress.heroManaSkill||0)?'水脈の雫 MP6':'水脈の雫（未習得）',840,402,(progress.heroManaSkill||0)?13:11,'center',(progress.heroManaSkill||0)?'#102b40':'#ffffff',800);
+        text((progress.heroManaSkill||0)?'水脈の雫 (6)':'水脈の雫（未習得）',840,402,(progress.heroManaSkill||0)?13:11,'center',(progress.heroManaSkill||0)?'#102b40':'#ffffff',800);
         if(yunoJoined && progress.heroYunoComboUnlocked && battle.monsterId>=400){
-          outlineRect(40,438,250,44,'#d8f2ed','#59aaa6',2);text('合体：蒼風大癒 MP12+12',165,460,12,'center','#174c4b');
-          outlineRect(305,438,300,44,'#d8eef7','#5d9fbd',2);text('合体：氷嵐大旋風 MP12+12',455,460,12,'center','#173f57');
-          outlineRect(620,438,145,44,'#ffe7c7','#c47b45',2);text(`高級薬 x${progress.items.highPotion||0}`,692,460,12,'center','#63371d');
-          outlineRect(775,438,145,44,'#dff4fb','#71bad7',2);text('もどる',847,460,14,'center','#17324a');
+          outlineRect(40,438,250,44,'#d8f2ed','#59aaa6',2);text('合体：蒼風大癒 (24)',165,460,18,'center','#174c4b');
+          outlineRect(305,438,300,44,'#d8eef7','#5d9fbd',2);text('合体：氷嵐大旋風 (24)',455,460,18,'center','#173f57');
+          outlineRect(620,438,145,44,'#ffe7c7','#c47b45',2);text(`高級薬 x${progress.items.highPotion||0}`,692,460,17,'center','#63371d');
+          outlineRect(775,438,145,44,'#dff4fb','#71bad7',2);text('もどる',847,460,18,'center','#17324a');
         }else{
-          outlineRect(330,442,210,42,'#ffe7c7','#c47b45',2);text(`高級回復薬 x${progress.items.highPotion||0}`,435,463,12,'center','#63371d');
+          outlineRect(330,442,210,42,'#ffe7c7','#c47b45',2);text(`高級回復薬 x${progress.items.highPotion||0}`,435,463,17,'center','#63371d');
           outlineRect(560,442,210,42,'#dff4fb','#71bad7',2);text('もどる',665,463,15,'center','#17324a');
         }
       }
-      text('スキルを選択',480,474,15,'center','#c8e7f4');
+      text('スキルを選択',480,474,17,'center','#c8e7f4');
     }
   }else{
     wrapText(battleMessage,80,405,790,28,22);

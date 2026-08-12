@@ -268,10 +268,10 @@ let dragonTrailHero={x:130,y:455,speed:210};
 let dragonTrailShopOpen=false;
 let dragonTrailShopSelection=0;
 let dragonTrailMobs=[
-  {id:960,name:'溶岩オオヤマネコ',kind:'emberLizard',x:500,y:430,spawnX:500,spawnY:430,alive:true,hp:210,maxHP:210,respawn:0},
-  {id:961,name:'火口イワモグラ',kind:'rockMole',x:820,y:350,spawnX:820,spawnY:350,alive:true,hp:240,maxHP:240,respawn:0},
-  {id:962,name:'黒曜ドリアングマ',kind:'durianBear',x:1120,y:405,spawnX:1120,spawnY:405,alive:true,hp:285,maxHP:285,respawn:0},
-  {id:963,name:'噴煙オオヤマネコ',kind:'emberLizard',x:1450,y:315,spawnX:1450,spawnY:315,alive:true,hp:260,maxHP:260,respawn:0}
+  {id:960,name:'溶岩オオヤマネコ',kind:'emberLizard',x:500,y:430,spawnX:500,spawnY:430,alive:true,hp:380,maxHP:380,respawn:0},
+  {id:961,name:'火口イワモグラ',kind:'rockMole',x:820,y:350,spawnX:820,spawnY:350,alive:true,hp:320,maxHP:320,respawn:0},
+  {id:962,name:'黒曜ドリアングマ',kind:'durianBear',x:1120,y:405,spawnX:1120,spawnY:405,alive:true,hp:380,maxHP:380,respawn:0},
+  {id:963,name:'噴煙オオヤマネコ',kind:'emberLizard',x:1450,y:315,spawnX:1450,spawnY:315,alive:true,hp:345,maxHP:345,respawn:0}
 ];
 let takezoWave=0;
 let takezoIntroDone=false;
@@ -804,10 +804,10 @@ const dragonSummitDialog=[
 
 function dragonTrailEncounterGroup(first){
   const pool=[
-    {name:'溶岩オオヤマネコ',kind:'emberLizard',hp:210,maxHP:210},
-    {name:'火口イワモグラ',kind:'rockMole',hp:240,maxHP:240},
-    {name:'黒曜ドリアングマ',kind:'durianBear',hp:285,maxHP:285},
-    {name:'噴煙オオヤマネコ',kind:'emberLizard',hp:260,maxHP:260}
+    {name:'溶岩オオヤマネコ',kind:'emberLizard',hp:380,maxHP:380},
+    {name:'火口イワモグラ',kind:'rockMole',hp:320,maxHP:320},
+    {name:'黒曜ドリアングマ',kind:'durianBear',hp:380,maxHP:380},
+    {name:'噴煙オオヤマネコ',kind:'emberLizard',hp:345,maxHP:345}
   ];
   const count=2+Math.floor(Math.random()*2);
   const enemies=[{name:first.name,kind:first.kind,hp:first.hp,maxHP:first.maxHP}];
@@ -850,23 +850,23 @@ function buyDragonTrailShop(){
     progress.gold-=75;progress.items.highPotion=(progress.items.highPotion||0)+1;
     flashText=`高級回復薬を購入！ 所持 ${progress.items.highPotion}`;flashTimer=1.7;
   }else if(i===1){
-    if(!buyUnique('summitBow',260,'烈風の強弓を購入！ ユーノの攻撃 +6'))return;
+    if(!buyUnique('summitBow',260,'烈風の強弓を購入！ ユーノ攻撃+6・消費MP約1/3減！'))return;
   }else if(i===2){
     if(!buyUnique('summitSpear',300,'黒曜の剛槍を購入！ ジュウの攻撃・防御が上昇'))return;
   }else if(i===3){
-    if(!buyUnique('heroManaBlade',360,'水晶の小剣を購入！ 主人公のスキル消費MPが半減！'))return;
+    if(!buyUnique('heroManaBlade',360,'水晶の小剣を購入！ 攻撃+10・氷威力+30%・消費MP半減！'))return;
   }else if(i===4){
-    if(!buyUnique('suzuGloves',340,'炎獣のグローブを購入！ スズマルはターンごとに攻撃力が上がる！'))return;
+    if(!buyUnique('suzuGloves',340,'炎獣のグローブを購入！ 毎ターン攻撃UP・炎威力+30%・MP25%減！'))return;
   }else if(i===5){
-    if(!buyUnique('yunoBracelet',340,'風刻の腕輪を購入！ ユーノの支援効果が1ターン長く続く！'))return;
+    if(!buyUnique('yunoBracelet',340,'風刻の腕輪を購入！ 支援+1ターン・風魔法威力+30%！'))return;
   }else if(i===6){
-    if(!buyUnique('gyouShield',360,'地脈の大盾を購入！ ジュウは被ダメージ時にMPを少し回復！'))return;
+    if(!buyUnique('gyouShield',360,'地脈の大盾を購入！ 被ダメージ25%減＋被弾時MP回復！'))return;
   }
   saveProgress();saveGame();
 }
 function startPostDragonBattle(){
   // Postgame superboss: intended to remain threatening after a normal clear.
-  const lv=Math.max(1,progress.level||1),hp=2400+Math.min(1200,Math.max(0,lv-15)*100);
+  const lv=Math.max(1,progress.level||1),hp=4000+Math.min(1800,Math.max(0,lv-15)*140);
   battle={heroHP:progress.maxHP,heroMP:progress.maxMP,enemyHP:hp,enemyMaxHP:hp,enemyName:'火山の古竜',enemyKind:'dragon',monsterId:950,turn:'player',defending:false,bossPhase:1,bossTurn:0};
   const ss=suzumaruStats(),ys=yunoStats(),gs=gyouStats();
   Object.assign(battle,{suzuMaxHP:ss.maxHP,suzuHP:ss.maxHP,suzuMaxMP:ss.maxMP,suzuMP:ss.maxMP,yunoMaxHP:ys.maxHP,yunoHP:ys.maxHP,yunoMaxMP:ys.maxMP,yunoMP:ys.maxMP,gyouMaxHP:gs.maxHP,gyouHP:gs.maxHP,gyouMaxMP:gs.maxMP,gyouMP:gs.maxMP});
@@ -2034,6 +2034,12 @@ function drawBattle(){
     wrapText(battleMessage,80,405,790,28,22);
   }
 }
+function heroEquipAtk(){
+  return progress.atk+(progress.shopBought?.heroManaBlade?10:0);
+}
+function heroIcePower(v){
+  return progress.shopBought?.heroManaBlade?Math.floor(v*1.30):v;
+}
 function heroSkillMPCost(base){
   return progress.shopBought?.heroManaBlade?Math.max(1,Math.ceil(base/2)):base;
 }
@@ -2076,7 +2082,7 @@ function battleAttack(mode='attack',target='hero'){
     const waveCost=heroSkillMPCost(waveLv>=2?11:8);
     if(battle.heroMP<waveCost){battleMessage='MPが足りない！';return;}
     battle.heroMP-=waveCost;
-    dmg=(waveLv>=2?16:8)+Math.floor(progress.atk*(waveLv>=2?.48:.33));
+    dmg=heroIcePower((waveLv>=2?16:8)+Math.floor(heroEquipAtk()*(waveLv>=2?.48:.33)));
     const allDmg=damageAllEnemies(dmg);
     const summary=Array.isArray(allDmg)?allDmg.map(v=>typeof v==='object'?`${v.name} ${v.damage}`:v).join(' / '):'';
     const waveName=waveLv>=2?'氷晶大波':'氷晶波';
@@ -2100,7 +2106,7 @@ function battleAttack(mode='attack',target='hero'){
     const hits=heroIceHits();
     let total=0,parts=[];
     for(let i=0;i<hits;i++){
-      const hit=Math.max(1,progress.atk+(il>=3?11:il>=2?9:15)+Math.floor(Math.random()*7));
+      const hit=heroIcePower(Math.max(1,heroEquipAtk()+(il>=3?11:il>=2?9:15)+Math.floor(Math.random()*7)));
       total+=hit;parts.push(hit);
     }
     dmg=total;
@@ -2116,7 +2122,7 @@ function battleAttack(mode='attack',target='hero'){
     const skillName=hits===4?'氷つぶて乱射IV':hits===3?'氷つぶて乱射III':hits===2?'氷つぶて乱射II':'氷のつぶて';
     let parts=[],total=0,targetCounts={};
     for(let i=0;i<hits;i++){
-      const hit=Math.max(1,Math.floor(progress.atk*(hits===1?1:.55))+5+Math.floor(Math.random()*6));
+      const hit=heroIcePower(Math.max(1,Math.floor(heroEquipAtk()*(hits===1?1:.55))+5+Math.floor(Math.random()*6)));
       // Each shot independently selects one currently living enemy.
       // With one enemy, every shot therefore lands on that enemy.
       let targetIndex=0,targetName=battle.enemyName||'敵';
@@ -2139,7 +2145,7 @@ function battleAttack(mode='attack',target='hero'){
     if(isPartyBattle())advancePartyTurn();else{battle.turn='enemy';battleCooldown=.8;battleMenu='main';}
     return;
   }else{
-    dmg=progress.atk+4+Math.floor(Math.random()*5);
+    dmg=heroEquipAtk()+4+Math.floor(Math.random()*5);
     battleMessage=`${heroName}のこうげき！ ${dmg}ダメージ！`;setBattleFx('slash');
     if(battle.monsterId===99)battleChoiceText.hero='こうげき';
   }
@@ -2209,6 +2215,12 @@ function beginEnemyTurn(){
   battleCooldown=.55;
   battleMenu='main';
 }
+function suzuSkillMPCost(base){
+  return progress.shopBought?.suzuGloves?Math.max(1,Math.ceil(base*.75)):base;
+}
+function suzuFirePower(v){
+  return progress.shopBought?.suzuGloves?Math.floor(v*1.30):v;
+}
 function suzuAction(mode='attack'){
   const ss={...suzumaruStats()};
   if(progress.shopBought?.suzuGloves)ss.atk+=(battle.suzuGloveStacks||0)*2;
@@ -2216,8 +2228,8 @@ function suzuAction(mode='attack'){
   let dmg=0;
   if(mode==='counter'){
     if((progress.suzuSkills?.counter||0)<1){battleMessage='炎返しは未習得！';return;}
-    if(battle.suzuMP<7){battleMessage='MPが足りない！';return;}
-    battle.suzuMP-=7;battle.suzuCounter=true;
+    const counterCost=suzuSkillMPCost(7);if(battle.suzuMP<counterCost){battleMessage='MPが足りない！';return;}
+    battle.suzuMP-=counterCost;battle.suzuCounter=true;
     battleMessage='スズマルの「炎返し」！ 攻撃を受ければ炎をまとった剣で反撃する！';
     battleChoiceText.suzu='炎返し';advancePartyTurn();return;
   }
@@ -2226,14 +2238,14 @@ function suzuAction(mode='attack'){
       battleMessage='火走りは未習得！ スキル画面でSP1を使って習得できます。';
       flashText='火走りは未習得です';flashTimer=1.7;return;
     }
-    const allLv=progress.suzuSkills.all||0,allCost=allLv>=5?13:allLv>=4?11:8;
+    const allLv=progress.suzuSkills.all||0,allCost=suzuSkillMPCost(allLv>=5?13:allLv>=4?11:8);
     if(battle.suzuMP<allCost){battleMessage='MPが足りない！';return;}
     battle.suzuMP-=allCost;
     {
       const al=progress.suzuSkills.all||0;
       const bonus=al>=5?34:al>=4?23:al>=3?14:al>=2?8:3;
       const ratio=al>=5?.72:al>=4?.62:al>=3?.54:.45;
-      dmg=Math.floor(ss.atk*ratio)+bonus+Math.floor(Math.random()*5);
+      dmg=suzuFirePower(Math.floor(ss.atk*ratio)+bonus+Math.floor(Math.random()*5));
     }
     const allDmg=damageAllEnemies(dmg);
     const summary=Array.isArray(allDmg)?allDmg.map(v=>typeof v==='object'?`${v.name} ${v.damage}`:v).join(' / '):'';
@@ -2243,12 +2255,12 @@ function suzuAction(mode='attack'){
     advancePartyTurn();return;
   }
   if(mode==='fire'){
-    if(battle.suzuMP<5){battleMessage='MPが足りない！';return;}
-    battle.suzuMP-=5;
+    const fireCost=suzuSkillMPCost(5);if(battle.suzuMP<fireCost){battleMessage='MPが足りない！';return;}
+    battle.suzuMP-=fireCost;
     {
       const sl=progress.suzuSkills.single||0;
       const bonus=sl>=3?68:sl>=2?28:12;
-      dmg=ss.atk+bonus+Math.floor(Math.random()*7);
+      dmg=suzuFirePower(ss.atk+bonus+Math.floor(Math.random()*7));
     }
     const skillName=suzuSingleSkillName();
     battleMessage=`スズマルの「${skillName}」！ ${dmg}ダメージ！`;setBattleFx('fire');addDamagePopup(skillName,700,155,'#ffb093');battleChoiceText.suzu=skillName;
@@ -2259,7 +2271,7 @@ function suzuAction(mode='attack'){
   damageEnemy(dmg);
   if(progress.finalFlameBlade && !enemiesDefeated()){
     const sl=progress.suzuSkills?.single||0;
-    const follow=(sl>=3?18:7)+Math.floor(ss.atk*(sl>=3?.45:.28))+Math.floor(Math.random()*(sl>=3?9:5));
+    const follow=suzuFirePower((sl>=3?18:7)+Math.floor(ss.atk*(sl>=3?.45:.28))+Math.floor(Math.random()*(sl>=3?9:5)));
     damageEnemy(follow);
     battleMessage+=`　爆炎大剣の炎が追撃！ ${follow}ダメージ！`;
     setBattleFx('fire');addDamagePopup(`+炎 ${follow}`,700,185,'#ff9b70');
@@ -2299,13 +2311,19 @@ function heroYunoCombo(mode){
   advancePartyTurn();
 }
 
+function yunoSkillMPCost(base){
+  return progress.shopBought?.summitBow?Math.max(1,Math.ceil(base*2/3)):base;
+}
+function yunoWindPower(v){
+  return progress.shopBought?.yunoBracelet?Math.floor(v*1.30):v;
+}
 function yunoAction(mode,target='hero'){
   if(!isYunoTurn())return;
   const key={healAll:'heal',regen:'regen',windAll:'wind',haste:'haste',mpRegen:'mpRegen',mpRegenAll:'mpRegenAll'}[mode];
   const lv=progress.yunoSkills[key]||0;
   if(!lv){battleMessage='その風術はまだ習得していない！ 「もどる」で行動選択へ戻れます。';return;}
   const ys=yunoStats();
-  const cost={healAll:8,regen:10,windAll:9,haste:8,mpRegen:7,mpRegenAll:12}[mode]||0;
+  const cost=yunoSkillMPCost({healAll:8,regen:10,windAll:9,haste:8,mpRegen:7,mpRegenAll:12}[mode]||0);
   if(battle.yunoMP<cost){battleMessage='MPが足りない！ 「もどる」で行動選択へ戻れます。';return;}
   battle.yunoMP-=cost;
   if(mode==='healAll'){
@@ -2317,7 +2335,7 @@ function yunoAction(mode,target='hero'){
     battle.regenTurns=3+(lv>=3?1:0)+(progress.shopBought?.yunoBracelet?1:0);battle.regenPower=7+(lv-1)*5;
     battleMessage=`ユーノの「そよぎの輪 Lv.${lv}」！ ${battle.regenTurns}ターン、毎ターンHP${battle.regenPower}回復！`;setBattleFx('heal',360,255);
   }else if(mode==='windAll'){
-    const dmg=8+Math.floor(ys.atk*.65)+(lv-1)*12;const res=damageAllEnemies(dmg);
+    const dmg=yunoWindPower(8+Math.floor(ys.atk*.65)+(lv-1)*12);const res=damageAllEnemies(dmg);
     battleMessage=`ユーノの「風刃嵐 Lv.${lv}」！ ${res.map(v=>`${v.name} ${v.damage}`).join(' / ')}`;setBattleFx('ice');addDamagePopup(`WIND ALL Lv.${lv}`,700,155,'#b8fff1');
     if(enemiesDefeated()){battle.turn='win';battleCooldown=1;return;}
   }else if(mode==='haste'){
@@ -2426,7 +2444,7 @@ function pirateCaptainTurn(){
     else if(target==='suzu'){dmg=Math.max(1,dmg-Math.floor(suzumaruStats().def/4));battle.suzuHP=Math.max(1,battle.suzuHP-dmg);}
     else if(target==='yuno'){dmg=Math.max(1,dmg-Math.floor(yunoStats().def/4));battle.yunoHP=Math.max(1,battle.yunoHP-dmg);}
     else {
-      dmg=Math.max(1,dmg-Math.floor((gyouStats().def+(battle.gyouDefTurns>0?10:0))/4));
+      dmg=Math.max(1,dmg-Math.floor((gyouStats().def+(battle.gyouDefTurns>0?10:0))/4));dmg=gyouShieldReduce(dmg);
       battle.gyouHP=Math.max(1,battle.gyouHP-dmg);
       const shieldMP=gyouShieldRecover(dmg);
       let skillMP=0;
@@ -2465,6 +2483,9 @@ function applyPartyMPRegen(){
   }
   return notes.length?' / '+notes.join(' / '):'';
 }
+function gyouShieldReduce(dmg){
+  return progress.shopBought?.gyouShield?Math.max(1,Math.ceil(dmg*.75)):dmg;
+}
 function gyouShieldRecover(dmg){
   if(!progress.shopBought?.gyouShield || !battle || battle.gyouMP===undefined)return 0;
   const mp=Math.max(1,Math.ceil(dmg/6));
@@ -2476,23 +2497,24 @@ function enemyTurn(){
   if(battle&&battle.monsterId===950){
     battle.bossTurn=(battle.bossTurn||0)+1;
     if(battle.enemyHP<=battle.enemyMaxHP*.5)battle.bossPhase=2;
+    if(battle.enemyHP<=battle.enemyMaxHP*.25)battle.bossPhase=3;
     const phase=battle.bossPhase||1;
     const all=battle.bossTurn%3===0;
-    const base=all?(phase>=2?46:36):(phase>=2?56:42);
+    const base=all?(phase>=2?72:52):(phase>=2?84:60);
     const targets=all?['hero','suzu','yuno','gyou']:[['hero','suzu','yuno','gyou'][Math.floor(Math.random()*4)]];
     let lines=[];
     for(const t0 of targets){
       const t=(battle.gyouGrandGuard||battle.gyouCover===t0)?'gyou':t0;
-      let d=base+Math.floor(Math.random()*11);
+      let d=base+(phase>=3?18:0)+Math.floor(Math.random()*13);
       if(t==='hero'){d=Math.max(1,d-Math.floor(progress.def/5));battle.heroHP=Math.max(1,battle.heroHP-d);}
       else if(t==='suzu'){d=Math.max(1,d-Math.floor(suzumaruStats().def/5));battle.suzuHP=Math.max(1,battle.suzuHP-d);}
       else if(t==='yuno'){d=Math.max(1,d-Math.floor(yunoStats().def/5));battle.yunoHP=Math.max(1,battle.yunoHP-d);}
       else {
-        d=Math.max(1,d-Math.floor(gyouStats().def/5));battle.gyouHP=Math.max(1,battle.gyouHP-d);
+        d=Math.max(1,d-Math.floor(gyouStats().def/5));d=gyouShieldReduce(d);battle.gyouHP=Math.max(1,battle.gyouHP-d);
         const shieldMP=gyouShieldRecover(d);if(shieldMP>0)lines.push(`地脈の大盾 MP+${shieldMP}`);
       }
       lines.push(`${t==='hero'?heroName:t==='suzu'?'スズマル':t==='yuno'?'ユーノ':'ジュウ'} -${d}`);}
-    battleMessage=`火山の古竜${phase>=2?'・覚醒':''}の${all?'「灼熱大咆哮」':'竜爪撃'}！ ${lines.join(' / ')}`;
+    battleMessage=`火山の古竜${phase>=3?'・激昂':phase>=2?'・覚醒':''}の${all?'「灼熱大咆哮」':'竜爪撃'}！ ${lines.join(' / ')}`;
     battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};battle.turn='enemyResult';battleCooldown=1.3;return;
   }
   if(battle&&battle.monsterId===900){pirateCaptainTurn();return;}
@@ -2501,7 +2523,7 @@ function enemyTurn(){
   let totalHero=0,totalSuzu=0,totalYuno=0,totalGyou=0;
   const attackLines=[];
   attackers.forEach((foe,idx)=>{
-    const baseDmg=5+Math.floor(Math.random()*5);
+    const baseDmg=(battle.monsterId>=960&&battle.monsterId<=963)?(14+Math.floor(Math.random()*9)):(5+Math.floor(Math.random()*5));
     let target='hero';
     if(gyouJoinConfirmed && battle.monsterId>=400){
       if(battle.gyouGrandGuard||battle.gyouTauntTurns>0)target='gyou';
@@ -2517,7 +2539,7 @@ function enemyTurn(){
     addDamagePopup('攻撃！',ep[0],ep[1]-45,'#ffcf9d');
     let dmg=baseDmg;
     if(target==='gyou'){
-      let def=gs.def+(battle.gyouDefTurns>0?10:0);dmg=Math.max(1,baseDmg-Math.floor(def/4));
+      let def=gs.def+(battle.gyouDefTurns>0?10:0);dmg=Math.max(1,baseDmg-Math.floor(def/4));dmg=gyouShieldReduce(dmg);
       battle.gyouHP=Math.max(1,battle.gyouHP-dmg);totalGyou+=dmg;
       const shieldMP=gyouShieldRecover(dmg);
       if(battle.gyouManaGuard){
@@ -2527,7 +2549,7 @@ function enemyTurn(){
       }else attackLines.push(`${foe.name} → ジュウ ${dmg}${shieldMP?` / 盾MP+${shieldMP}`:''}`);
       if(battle.gyouCounter){const cd=Math.max(5,Math.floor(gs.atk*.8));damageEnemy(cd);attackLines.push(`迎撃 ${cd}`);}
     }else if(target==='yuno'){dmg=Math.max(1,baseDmg-Math.floor(ys.def/4));battle.yunoHP=Math.max(1,battle.yunoHP-dmg);totalYuno+=dmg;attackLines.push(`${foe.name} → ユーノ ${dmg}`);}
-    else if(target==='suzu'){dmg=Math.max(1,baseDmg-Math.floor(ss.def/4));battle.suzuHP=Math.max(1,battle.suzuHP-dmg);totalSuzu+=dmg;attackLines.push(`${foe.name} → スズマル ${dmg}`);if(battle.suzuCounter){const cd=Math.max(7,Math.floor(ss.atk*.9)+6);damageEnemy(cd);attackLines.push(`炎返し ${cd}`);setBattleFx('fire');}}
+    else if(target==='suzu'){dmg=Math.max(1,baseDmg-Math.floor(ss.def/4));battle.suzuHP=Math.max(1,battle.suzuHP-dmg);totalSuzu+=dmg;attackLines.push(`${foe.name} → スズマル ${dmg}`);if(battle.suzuCounter){const cd=suzuFirePower(Math.max(7,Math.floor(ss.atk*.9)+6));damageEnemy(cd);attackLines.push(`炎返し ${cd}`);setBattleFx('fire');}}
     else{dmg=Math.max(1,(battle.defending?Math.floor(baseDmg/2):baseDmg)-Math.floor(progress.def/4));battle.heroHP=Math.max(1,battle.heroHP-dmg);totalHero+=dmg;attackLines.push(`${foe.name} → ${heroName} ${dmg}`);}
   });
   battle.defending=false;
@@ -2581,7 +2603,9 @@ function finishBattle(){
   if(battle && battle.monsterId>=960 && battle.monsterId<=963){
     const mon=dragonTrailMobs.find(m=>m.id===battle.monsterId);
     if(mon){mon.alive=false;mon.respawn=10;}
-    const expGain=95+(battle.monsterId-960)*15,goldGain=55+(battle.monsterId-960)*10;
+    const count=battle.enemies?battle.enemies.length:1;
+    const expGain=145+(battle.monsterId-960)*20+(count-2)*45;
+    const goldGain=85+(battle.monsterId-960)*15+(count-2)*30;
     progress.gold+=goldGain;const leveled=gainExp(expGain);saveProgress();
     battle=null;scene='dragonTrail';touchUI.classList.remove('hidden');
     flashText=leveled?`レベルアップ！ Lv.${progress.level}　SP+1`:`経験値 ${expGain} / ${goldGain}G 獲得！`;
@@ -4223,12 +4247,12 @@ function drawDragonTrailShop(){
 
   const rows=[
     ['高級回復薬','HP70回復 / 75G',false],
-    ['烈風の強弓','ユーノ専用　攻撃+6 / 260G',!!progress.shopBought.summitBow],
+    ['烈風の強弓','ユーノ専用　攻撃+6・MP約1/3減 / 260G',!!progress.shopBought.summitBow],
     ['黒曜の剛槍','ジュウ用　攻撃+12・防御+5 / 300G',!!progress.shopBought.summitSpear],
-    ['水晶の小剣','主人公専用　スキル消費MP半減 / 360G',!!progress.shopBought.heroManaBlade],
-    ['炎獣のグローブ','スズマル専用　毎ターン攻撃が少し上昇 / 340G',!!progress.shopBought.suzuGloves],
-    ['風刻の腕輪','ユーノ専用　支援効果の継続+1ターン / 340G',!!progress.shopBought.yunoBracelet],
-    ['地脈の大盾','ジュウ専用　被ダメージ時MPを少量回復 / 360G',!!progress.shopBought.gyouShield],
+    ['水晶の小剣','主人公専用　攻撃+10・氷威力+30%・MP半減 / 360G',!!progress.shopBought.heroManaBlade],
+    ['炎獣のグローブ','スズマル専用　毎T攻撃UP・炎威力+30%・MP25%減 / 340G',!!progress.shopBought.suzuGloves],
+    ['風刻の腕輪','ユーノ専用　支援+1T・風魔法威力+30% / 340G',!!progress.shopBought.yunoBracelet],
+    ['地脈の大盾','ジュウ専用　被ダメ25%減・被弾時MP回復 / 360G',!!progress.shopBought.gyouShield],
     ['店を出る','登山道へ戻る',false]
   ];
   rows.forEach((r,i)=>{

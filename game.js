@@ -144,28 +144,37 @@ if(progress.yunoSP===undefined) progress.yunoSP=totalSPForLevel(progress.level);
 if(!progress.yunoSkills)progress.yunoSkills={heal:0,regen:0,wind:0,haste:0,mpRegen:0,mpRegenAll:0};
 if(progress.yunoSkills.mpRegen===undefined)progress.yunoSkills.mpRegen=progress.yunoSkills.evade||0;
 if(progress.yunoSkills.mpRegenAll===undefined)progress.yunoSkills.mpRegenAll=progress.yunoSkills.evadeAll||0;
+if(progress.yunoSkills.archery===undefined)progress.yunoSkills.archery=Math.min(2,progress.yunoSkills.mpRegen||0);
+progress.yunoSkills.mpRegen=0;
+if(progress.yunoSkills.windFlow===undefined)progress.yunoSkills.windFlow=0;
+progress.yunoSkills.windFlow=Math.max(0,Math.min(2,progress.yunoSkills.windFlow||0));
+if(progress.heroMagicFlow===undefined)progress.heroMagicFlow=0;
+progress.heroMagicFlow=Math.max(0,Math.min(2,progress.heroMagicFlow||0));
 if(progress.gyouSP===undefined)progress.gyouSP=totalSPForLevel(progress.level);
 if(!progress.gyouSkills)progress.gyouSkills={fortify:0,cover:0,taunt:0,manaGuard:0,healGuard:0,doubleThrust:0,counter:0};
 progress.gyouSkills.taunt=Math.min(2,progress.gyouSkills.taunt||0);
 progress.gyouSkills.doubleThrust=Math.min(2,progress.gyouSkills.doubleThrust||0);
+if(progress.gyouSkills.earthBreath===undefined)progress.gyouSkills.earthBreath=0;
+progress.gyouSkills.earthBreath=Math.max(0,Math.min(2,progress.gyouSkills.earthBreath||0));
 
 function yunoSkillCost(key,lv){
   const table={
     heal:[2,1,2], regen:[2,1,2], wind:[2,1,2],
-    haste:[3], mpRegen:[2,1], mpRegenAll:[2]
+    haste:[3], mpRegenAll:[2], archery:[2,3], windFlow:[2,3]
   };
   const arr=table[key]||[3];
   return arr[Math.min(lv,arr.length-1)];
 }
 function yunoSkillMax(key){
-  return ({heal:3,regen:3,wind:3,haste:1,mpRegen:2,mpRegenAll:1})[key]||1;
+  return ({heal:3,regen:3,wind:3,haste:1,mpRegenAll:1,archery:2,windFlow:2})[key]||1;
 }
 function gyouSkillMax(key){
-  return (key==='taunt'||key==='doubleThrust')?2:1;
+  return (key==='taunt'||key==='doubleThrust'||key==='earthBreath')?2:1;
 }
 function gyouSkillCost(key,lv=0){
   if(key==='taunt')return lv===0?2:2;
   if(key==='doubleThrust')return lv===0?3:2;
+  if(key==='earthBreath')return lv===0?2:3;
   return ({fortify:2,cover:2,manaGuard:3,healGuard:3,counter:3})[key]||3;
 }
 
@@ -1833,13 +1842,17 @@ function advancePartyTurn(){
   if(battleActor==='suzu' && yunoJoined && battle.monsterId>=400){
     if(battle.skipYunoThisRound){
       battle.skipYunoThisRound=false;
-      if(gyouJoinConfirmed){ensureGyouBattle();battleActor='gyou';return;}
+      if(gyouJoinConfirmed){ensureGyouBattle();battleActor='gyou';{const r=gyouPassiveHP();if(r>0)battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+r);}return;}
       beginEnemyTurn();return;
     }
-    battleActor='yuno';return;
+    battleActor='yuno';
+    {const r=yunoPassiveMP();if(r>0)battle.yunoMP=Math.min(battle.yunoMaxMP,battle.yunoMP+r);}
+    return;
   }
   if(battleActor==='yuno' && gyouJoinConfirmed && battle.monsterId>=400){
-    ensureGyouBattle();battleActor='gyou';return;
+    ensureGyouBattle();battleActor='gyou';
+    {const r=gyouPassiveHP();if(r>0)battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+r);}
+    return;
   }
   beginEnemyTurn();
 }
@@ -2006,7 +2019,7 @@ function drawBattle(){
         text('ユーノのスキル',480,366,16,'center','#d8fff5',800);
         const yu=[
           ['heal','風の癒し','MP8'],['regen','そよぎの輪','MP10'],['wind','風刃嵐','MP9'],
-          ['haste','疾風','MP8'],['mpRegen','風の泉','MP7'],['mpRegenAll','風巡りの泉','MP12']
+          ['haste','疾風','MP8'],['archery','二連射','MP7'],['mpRegenAll','風巡りの泉','MP12']
         ];
         yu.forEach((o,i)=>{
           const x=35+i*145,w=i===5?150:135,lv=progress.yunoSkills[o[0]]||0,locked=(o[0]==='evadeAll'&&(progress.yunoSkills.evade||0)<1);
@@ -2058,6 +2071,20 @@ function drawBattle(){
     wrapText(battleMessage,80,405,790,28,22);
   }
 }
+function heroMagicFlowPower(v){
+  const lv=progress.heroMagicFlow||0;
+  if(lv<=0||!battle)return v;
+  const stacks=Math.min(5,battle.heroMagicFlowStacks||0),rate=lv>=2?.05:.03;
+  return Math.floor(v*(1+rate*stacks));
+}
+function yunoPassiveMP(){
+  const lv=progress.yunoSkills?.windFlow||0;
+  return lv>=2?5:lv>=1?3:0;
+}
+function gyouPassiveHP(){
+  const lv=progress.gyouSkills?.earthBreath||0;
+  return lv>=2?10:lv>=1?6:0;
+}
 function heroEquipAtk(){
   return progress.atk+(progress.shopBought?.heroManaBlade?10:0);
 }
@@ -2068,6 +2095,7 @@ function heroSkillMPCost(base){
   return progress.shopBought?.heroManaBlade?Math.max(1,Math.ceil(base/2)):base;
 }
 function battleAttack(mode='attack',target='hero'){
+  if((progress.heroMagicFlow||0)>0 && battle && battleActor==='hero' && !battle.heroMagicFlowStarted){battle.heroMagicFlowStacks=1;battle.heroMagicFlowStarted=true;}
   if(!battle || battle.turn!=='player')return;
   if(mode==='heal'){
     const hl=progress.heroHealSkill||1;
@@ -2106,7 +2134,7 @@ function battleAttack(mode='attack',target='hero'){
     const waveCost=heroSkillMPCost(waveLv>=2?11:8);
     if(battle.heroMP<waveCost){battleMessage='MPが足りない！';return;}
     battle.heroMP-=waveCost;
-    dmg=heroIcePower((waveLv>=2?16:8)+Math.floor(heroEquipAtk()*(waveLv>=2?.48:.33)));
+    dmg=heroMagicFlowPower(heroIcePower((waveLv>=2?16:8)+Math.floor(heroEquipAtk()*(waveLv>=2?.48:.33))));
     const allDmg=damageAllEnemies(dmg);
     const summary=Array.isArray(allDmg)?allDmg.map(v=>typeof v==='object'?`${v.name} ${v.damage}`:v).join(' / '):'';
     const waveName=waveLv>=2?'氷晶大波':'氷晶波';
@@ -2146,7 +2174,7 @@ function battleAttack(mode='attack',target='hero'){
     const skillName=hits===4?'氷つぶて乱射IV':hits===3?'氷つぶて乱射III':hits===2?'氷つぶて乱射II':'氷のつぶて';
     let parts=[],total=0,targetCounts={};
     for(let i=0;i<hits;i++){
-      const hit=heroIcePower(Math.max(1,Math.floor(heroEquipAtk()*(hits===1?1:.55))+5+Math.floor(Math.random()*6)));
+      const hit=heroMagicFlowPower(heroIcePower(Math.max(1,Math.floor(heroEquipAtk()*(hits===1?1:.55))+5+Math.floor(Math.random()*6))));
       // Each shot independently selects one currently living enemy.
       // With one enemy, every shot therefore lands on that enemy.
       let targetIndex=0,targetName=battle.enemyName||'敵';
@@ -2362,11 +2390,11 @@ function yunoWindPower(v){
 }
 function yunoAction(mode,target='hero'){
   if(!isYunoTurn())return;
-  const key={healAll:'heal',regen:'regen',windAll:'wind',haste:'haste',mpRegen:'mpRegen',mpRegenAll:'mpRegenAll'}[mode];
+  const key={healAll:'heal',regen:'regen',windAll:'wind',haste:'haste',mpRegenAll:'mpRegenAll',archery:'archery'}[mode];
   const lv=progress.yunoSkills[key]||0;
   if(!lv){battleMessage='その風術はまだ習得していない！ 「もどる」で行動選択へ戻れます。';return;}
   const ys=yunoStats();
-  const cost=yunoSkillMPCost({healAll:8,regen:10,windAll:9,haste:8,mpRegen:7,mpRegenAll:12}[mode]||0);
+  const cost=yunoSkillMPCost({healAll:8,regen:10,windAll:9,haste:8,mpRegenAll:12,archery:6}[mode]||0);
   if(battle.yunoMP<cost){battleMessage='MPが足りない！ 「もどる」で行動選択へ戻れます。';return;}
   battle.yunoMP-=cost;
   if(mode==='healAll'){
@@ -2384,11 +2412,15 @@ function yunoAction(mode,target='hero'){
   }else if(mode==='haste'){
     battle.hasteTarget=target;battle.hasteTurns=2+(progress.shopBought?.yunoBracelet?1:0);battle.hasteUsed=false;
     battleMessage=`ユーノの「疾風」！ ${partyTargetName(target)}は${battle.hasteTurns}ターン、行動を2回できる！`;
-  }else if(mode==='mpRegen'){
-    // Recasting overwrites target, remaining turns and recovery amount.
-    battle.mpRegenTarget=target;battle.mpRegenTurns=(lv>=2?4:3)+(progress.shopBought?.yunoBracelet?1:0);battle.mpRegenPower=lv>=2?7:5;
-    battleMessage=`ユーノの「風の泉${lv>=2?' Lv.2':''}」！ ${partyTargetName(target)}のMPが${battle.mpRegenTurns}ターン、毎ターン${battle.mpRegenPower}回復！`;
-    setBattleFx('heal',target==='hero'?185:target==='suzu'?265:target==='yuno'?360:455,255);
+  }else if(mode==='archery'){
+    const hits=lv>=2?3:2,ratio=lv>=2?.78:.68,parts=[];
+    for(let i=0;i<hits;i++){
+      const d=yunoWindPower(Math.floor(ys.atk*ratio)+(lv>=2?8:5)+Math.floor(Math.random()*5));
+      parts.push(d);damageEnemy(d);if(enemiesDefeated())break;
+    }
+    const nm=lv>=2?'風纏三連射':'二連射';
+    battleMessage=`ユーノの「${nm}」！ ${parts.join('＋')}ダメージ！`;setBattleFx('slash');addDamagePopup(`${parts.length} HIT`,700,155,'#b8fff1');
+    if(enemiesDefeated()){battle.turn='win';battleCooldown=1;return;}
   }else if(mode==='mpRegenAll'){
     // Recasting refreshes/overwrites duration rather than stacking another copy.
     battle.mpRegenAllTurns=4+(progress.shopBought?.yunoBracelet?1:0);battle.mpRegenAllPower=5;
@@ -3574,7 +3606,8 @@ function drawMenu(){
         ['manaGuard','土脈吸収','被ダメージでMP回復'],
         ['healGuard','守りの呼吸','防御＋自分を回復'],
         ['doubleThrust','二段突き','槍で単体2回攻撃'],
-        ['counter','迎撃の構え','攻撃を受けて反撃']
+        ['counter','迎撃の構え','攻撃を受けて反撃'],
+        ['earthBreath','大地の息吹','パッシブ：毎ターンHP回復']
       ];
       gsks.forEach((s,i)=>{
         const key=s[0],col=i%4,row=Math.floor(i/4),x=35+col*225,y=238+row*103,lv=progress.gyouSkills[key]||0,max=gyouSkillMax(key),cost=gyouSkillCost(key,lv);
@@ -3591,22 +3624,16 @@ function drawMenu(){
       const ysks=[
         ['heal','風の癒し','全体回復'],['regen','そよぎの輪','全体徐々に回復'],
         ['wind','風刃嵐','敵全体攻撃'],['haste','疾風','1人を2回行動'],
-        ['mpRegen','風の泉','単体 MP+5×3T / Lv2:+7×4T'],['mpRegenAll','風巡りの泉','全体 MP+5×4T']
+        ['mpRegenAll','風巡りの泉','全体MP徐々に回復'],['archery','二連射','Lv2で風纏三連射'],
+        ['windFlow','風巡の呼吸','パッシブ：毎ターンMP回復']
       ];
       ysks.forEach((s,i)=>{
-        const key=s[0],col=i%3,row=Math.floor(i/3),x=55+col*300,y=245+row*105,lv=progress.yunoSkills[key]||0,max=yunoSkillMax(key);
-        const locked=(key==='mpRegenAll' && (progress.yunoSkills.mpRegen||0)<1);
-        outlineRect(x,y,280,88,locked?'#29363f':'#183a43',locked?'#536273':'#59aaa6',2);
-        text(s[1],x+15,y+25,17,'left',locked?'#89979d':'#d8fff5');
-        text(s[2],x+15,y+49,13,'left',locked?'#78878e':'#b9dfd9');
-        if(locked){
-          text('風の泉習得後に解放',x+265,y+72,11,'right','#aab6bb');
-        }else if(lv>=max){
-          text(max>1?`Lv.${lv} 最大`:'習得済み',x+265,y+72,12,'right','#8fc8bd');
-        }else{
-          const cost=yunoSkillCost(key,lv);
-          text(lv>0?`Lv.${lv} → ${lv+1}　SP${cost}`:`習得 SP${cost}`,x+265,y+72,11,'right','#ffe7a5');
-        }
+        const key=s[0],col=i%4,row=Math.floor(i/4),x=35+col*225,y=245+row*105,lv=progress.yunoSkills[key]||0,max=yunoSkillMax(key);
+        outlineRect(x,y,210,88,key==='windFlow'?'#24454a':'#183a43',key==='windFlow'?'#83c6b7':'#59aaa6',2);
+        text(s[1]+(key==='windFlow'?'（P）':''),x+12,y+25,15,'left','#d8fff5');
+        text(s[2],x+12,y+49,11,'left','#b9dfd9');
+        if(lv>=max)text(max>1?`Lv.${lv} 最大`:'習得済み',x+195,y+72,11,'right','#8fc8bd');
+        else{const cost=yunoSkillCost(key,lv);text(lv?`次 Lv.${lv+1} SP${cost}`:`習得 SP${cost}`,x+195,y+72,10,'right','#ffe7a5');}
       });
     }else if(menuCharacter==='suzu' && suzuEnabled){
       text(`スズマル SP：${progress.suzuSP||0}`,70,215,18,'left','#ffe5c8');
@@ -3717,7 +3744,7 @@ function menuTap(x,y){
   if(menuPage==='skill' && menuCharacter==='gyou' && gyouJoinConfirmed && y>=238 && y<=430){
     const col=Math.floor((x-35)/225),row=Math.floor((y-238)/103);
     if(col>=0&&col<4&&row>=0&&row<2){
-      const keys=['fortify','cover','taunt','manaGuard','healGuard','doubleThrust','counter'];
+      const keys=['fortify','cover','taunt','manaGuard','healGuard','doubleThrust','counter','earthBreath'];
       const k=keys[row*4+col];
       if(!k)return;
       const lv=progress.gyouSkills[k]||0,max=gyouSkillMax(k);
@@ -3731,18 +3758,16 @@ function menuTap(x,y){
   }
 
   if(menuPage==='skill' && menuCharacter==='yuno' && yunoJoined && y>=245 && y<=455){
-    const col=Math.floor((x-55)/300),row=Math.floor((y-245)/105);
-    if(col>=0&&col<3&&row>=0&&row<2){
-      const keys=['heal','regen','wind','haste','mpRegen','mpRegenAll'];
-      const k=keys[row*3+col],lv=progress.yunoSkills[k]||0,max=yunoSkillMax(k);
-      if(k==='mpRegenAll' && (progress.yunoSkills.mpRegen||0)<1){
-        flashText='まず「風の泉」を習得してください';flashTimer=1.8;return;
-      }
-      if(lv>=max){flashText='この風術は最大強化です';flashTimer=1.4;return;}
+    const col=Math.floor((x-35)/225),row=Math.floor((y-245)/105);
+    if(col>=0&&col<4&&row>=0&&row<2){
+      const keys=['heal','regen','wind','haste','mpRegenAll','archery','windFlow'];
+      const k=keys[row*4+col];if(!k)return;
+      const lv=progress.yunoSkills[k]||0,max=yunoSkillMax(k);
+      if(lv>=max){flashText='このスキルは最大強化です';flashTimer=1.4;return;}
       const cost=yunoSkillCost(k,lv);
       if((progress.yunoSP||0)<cost){flashText=`ユーノのSPが足りない（必要 ${cost}）`;flashTimer=1.6;return;}
       progress.yunoSP-=cost;progress.yunoSkills[k]=lv+1;saveProgress();saveGame();
-      flashText=lv===0?'ユーノが新しい風術を習得！':`${k==='heal'?'風の癒し':k==='regen'?'そよぎの輪':k==='wind'?'風刃嵐':k==='mpRegen'?'風の泉':k==='mpRegenAll'?'風巡りの泉':'風術'}をLv.${lv+1}に強化！`;
+      flashText=k==='windFlow'?(lv?'「風巡の呼吸」をLv.2に強化！':'パッシブ「風巡の呼吸」を習得！'):k==='archery'?(lv?'「風纏三連射」に強化！':'「二連射」を習得！'):(lv===0?'ユーノが新しい風術を習得！':'風術を強化！');
       flashTimer=1.8;return;
     }
   }
@@ -3789,6 +3814,13 @@ function menuTap(x,y){
       progress.suzuSP-=cost;progress.suzuSkills.fightingFlame=lv+1;progress.suzuSpentSP=(progress.suzuSpentSP||0)+cost;
       saveProgress();saveGame();flashText=lv===0?'パッシブ「闘炎」を習得！':'「闘炎」をLv.2に強化！';flashTimer=2;return;
     }
+  }
+
+  if(menuPage==='skill' && menuCharacter==='hero' && x>=690&&x<=915&&y>=455&&y<=520){
+    const lv=progress.heroMagicFlow||0;if(lv>=2){flashText='水魔の高まりは最大強化です';flashTimer=1.4;return;}
+    const cost=lv===0?1:2;if(progress.sp<cost){flashText=`SPが足りない（必要 ${cost}）`;flashTimer=1.6;return;}
+    progress.sp-=cost;progress.heroMagicFlow=lv+1;saveProgress();saveGame();
+    flashText=lv?'「水魔の高まり」をLv.2に強化！':'パッシブ「水魔の高まり」を習得！';flashTimer=1.8;return;
   }
 
   // Hero ice-blade evolution: click the next unlocked node in the horizontal route.
@@ -5260,7 +5292,7 @@ canvas.addEventListener('pointerdown',e=>{
           else if(x<320)yunoAction('regen');
           else if(x<465)yunoAction('windAll');
           else if(x<610){openPartyTarget('yuno','haste','疾風');return;}
-          else if(x<755){openPartyTarget('yuno','mpRegen','風の泉');return;}
+          else if(x<755){openPartyTarget('yuno','archery','二連射');return;}
           else yunoAction('mpRegenAll');
         }else if(isSuzumaruTurn()){
           if(y>=440 && x>=300 && x<575){suzuAction('counter');}

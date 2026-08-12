@@ -1453,7 +1453,8 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.93',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.94',480,121,18,'center','#eef8ff');
+  text('♪ 8bit BGM　Mキー：ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
   if(cleared)labels.push(progress.postDragonDefeated?'ドラゴンに挑戦（再戦）':'ドラゴンに挑戦');
@@ -4425,7 +4426,71 @@ function chaseFieldMob(mon,px,py,dt,range=260,speed=52){
   const dx=px-mon.x,dy=py-mon.y,d=Math.hypot(dx,dy);
   if(d>38&&d<range){mon.x+=dx/d*speed*dt;mon.y+=dy/d*speed*dt;}
 }
+
+// ---- 8bit BGM ------------------------------------------------------------
+let bgmCtx=null,bgmMaster=null,bgmTimer=null,bgmStep=0,bgmTrack='',bgmEnabled=true;
+const BGM={
+  village:{tempo:220,lead:[64,67,69,67,64,62,60,62,64,67,72,69,67,64,62,60],bass:[48,null,48,null,53,null,55,null]},
+  field:{tempo:185,lead:[67,69,71,74,71,69,67,null,64,67,69,71,69,67,64,null],bass:[43,null,50,null,48,null,50,null]},
+  battle:{tempo:125,lead:[64,64,67,69,71,69,67,64,67,67,71,72,74,72,71,67],bass:[40,40,43,45,47,45,43,40]},
+  boss:{tempo:105,lead:[52,55,59,60,59,55,52,50,52,55,60,62,60,59,55,52],bass:[40,40,38,38,36,36,35,35]},
+  dragon:{tempo:92,lead:[57,60,64,63,60,57,55,52,57,60,65,64,60,57,55,52],bass:[33,33,36,36,35,35,31,31]},
+  ending:{tempo:260,lead:[60,64,67,72,71,67,64,60,62,65,69,74,72,69,65,62],bass:[48,null,52,null,53,null,55,null]}
+};
+function bgmInit(){
+  if(bgmCtx)return;
+  try{
+    bgmCtx=new (window.AudioContext||window.webkitAudioContext)();
+    bgmMaster=bgmCtx.createGain();bgmMaster.gain.value=.055;bgmMaster.connect(bgmCtx.destination);
+  }catch(e){bgmEnabled=false;}
+}
+function bgmTone(note,dur,type='square',vol=1){
+  if(!bgmCtx||note==null)return;
+  const t=bgmCtx.currentTime,o=bgmCtx.createOscillator(),v=bgmCtx.createGain();
+  o.type=type;o.frequency.value=440*Math.pow(2,(note-69)/12);
+  v.gain.setValueAtTime(.0001,t);v.gain.exponentialRampToValueAtTime(Math.max(.0002,.11*vol),t+.008);
+  v.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(v);v.connect(bgmMaster);o.start(t);o.stop(t+dur+.02);
+}
+function bgmWanted(){
+  if(scene==='battle'){
+    if(battle&&battle.type==='postDragon')return 'dragon';
+    if(battle&&(battle.type==='pirateCaptain'||battle.type==='viceCaptain'))return 'boss';
+    return 'battle';
+  }
+  if(scene==='ending'||scene==='endingFinal')return 'ending';
+  if(scene==='title')return 'village';
+  if(scene&&(/Village|village|takezo|sarubibi|brifo|shop|finalPrep/i.test(scene)))return 'village';
+  return 'field';
+}
+function bgmStart(name){
+  if(!bgmEnabled)return;
+  bgmInit();if(!bgmCtx)return;
+  if(bgmCtx.state==='suspended')bgmCtx.resume();
+  if(bgmTrack===name&&bgmTimer)return;
+  if(bgmTimer)clearInterval(bgmTimer);
+  bgmTrack=name;bgmStep=0;
+  const tr=BGM[name]||BGM.field;
+  const tick=()=>{
+    const n=bgmStep++;
+    bgmTone(tr.lead[n%tr.lead.length],tr.tempo/1000*.72,'square',.72);
+    if(n%2===0)bgmTone(tr.bass[Math.floor(n/2)%tr.bass.length],tr.tempo/1000*1.55,'triangle',.48);
+  };
+  tick();bgmTimer=setInterval(tick,tr.tempo);
+}
+function bgmSync(){const wanted=bgmWanted();if(wanted!==bgmTrack)bgmStart(wanted);}
+function bgmToggle(){
+  bgmEnabled=!bgmEnabled;
+  if(!bgmEnabled){if(bgmTimer)clearInterval(bgmTimer);bgmTimer=null;bgmTrack='';}
+  else bgmStart(bgmWanted());
+  flashText=`BGM ${bgmEnabled?'ON':'OFF'}`;flashTimer=1.2;
+}
+['pointerdown','keydown','touchstart'].forEach(ev=>window.addEventListener(ev,()=>{
+  if(bgmEnabled){bgmInit();if(bgmCtx&&bgmCtx.state==='suspended')bgmCtx.resume();bgmSync();}
+},{once:true,passive:true}));
+
 function update(dt){
+  if(bgmCtx&&bgmEnabled)bgmSync();
   if(scene==='dragonSummit' || scene==='dragonConfirm'){
     startPostDragonBattle();
     return;
@@ -5152,6 +5217,7 @@ function frame(now){
 requestAnimationFrame(frame);
 
 addEventListener('keydown',e=>{
+  if(e.key==='m'||e.key==='M'){bgmToggle();return;}
   keys[e.key]=true;
   if(scene==='title'){
     if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'){titleSelection=0;e.preventDefault();return;}

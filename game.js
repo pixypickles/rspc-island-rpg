@@ -33,6 +33,7 @@ let progress = JSON.parse(localStorage.getItem('risupekuProgress') || 'null') ||
 if(progress.gold===undefined) progress.gold=90;
 if(!progress.items) progress.items={potion:0};
 if(progress.items.highPotion===undefined)progress.items.highPotion=0;
+if(progress.heroIceWave===undefined)progress.heroIceWave=false;
 
 
 
@@ -61,6 +62,8 @@ function heroIceHits(){
 if(progress.heroIceSkill===undefined){
   progress.heroIceSkill=progress.learned?.iceSlash?1:0;
 }
+if(!progress.learned)progress.learned={waterHeal:true,icePebble:true,iceSlash:false};
+progress.learned.iceSlash=(progress.heroIceSkill||0)>=1;
 
 function partyLevel(){ return progress.level; }
 
@@ -1799,16 +1802,22 @@ function drawBattle(){
       }else if(isSuzumaruTurn()){
         text('スズマルのスキル',480,372,14,'center','#ffe5c8');
         outlineRect(55,385,245,54,'#ffd9cf','#d86145',2);text(`${suzuSingleSkillName()} MP5`,177,406,16,'center','#6b231d');text('単体・高威力',177,425,11,'center','#934a3e');
-        outlineRect(315,385,245,54,'#ffe2cf','#d78251',2);text(`${suzuAllSkillName()} MP8`,437,406,16,'center','#5c3023');text('敵全体',437,425,11,'center','#7d5748');
+        const suzuAllLearned=(progress.suzuSkills?.all||0)>=1;
+        outlineRect(315,385,245,54,suzuAllLearned?'#ffe2cf':'#626d78',suzuAllLearned?'#d78251':'#8d969e',2);
+        text(suzuAllLearned?`${suzuAllSkillName()} MP8`:'火走り（未習得）',437,406,suzuAllLearned?19:15,'center',suzuAllLearned?'#4b2118':'#ffffff',800);
+        text(suzuAllLearned?'敵全体':'SPで習得',437,428,13,'center',suzuAllLearned?'#684436':'#f2f2f2',700);
         outlineRect(575,385,180,54,'#fff0d0','#d2a24d',2);text(`回復薬 x${progress.items.potion}`,665,412,14,'center','#5f4623');
         outlineRect(770,385,140,54,'#dff4fb','#71bad7',2);text('もどる',840,412,15,'center','#17324a');
       }else{
         outlineRect(40,378,170,48,'#dff4fb','#71bad7',2);text('水のいやし',125,402,14,'center','#17324a');
         outlineRect(220,378,170,48,'#dff4fb','#71bad7',2);text('氷のつぶて',305,402,14,'center','#17324a');
-        outlineRect(400,378,170,48,'#dff4fb','#71bad7',2);
-        const iceCost=(progress.heroIceSkill||1)>=3?11:(progress.heroIceSkill||1)>=2?9:7;
-        text(`${heroIceSkillName()} MP${iceCost}`,485,402,12,'center','#17324a');
-        outlineRect(580,378,170,48,'#d9f4ff','#62afd1',2);text('氷晶波 MP8',665,402,14,'center','#17324a');
+        const iceLearned=(progress.heroIceSkill||0)>=1 && !!progress.learned.iceSlash;
+        outlineRect(400,378,170,48,iceLearned?'#dff4fb':'#626d78',iceLearned?'#71bad7':'#8d969e',2);
+        const iceCost=(progress.heroIceSkill||0)>=3?11:(progress.heroIceSkill||0)>=2?9:7;
+        text(iceLearned?`${heroIceSkillName()} MP${iceCost}`:'氷結斬り（未習得）',485,402,iceLearned?16:14,'center',iceLearned?'#102b40':'#ffffff',800);
+        const waveLearned=!!progress.heroIceWave;
+        outlineRect(580,378,170,48,waveLearned?'#d9f4ff':'#626d78',waveLearned?'#62afd1':'#8d969e',2);
+        text(waveLearned?'氷晶波 MP8':'氷晶波（未習得）',665,402,waveLearned?17:14,'center',waveLearned?'#102b40':'#ffffff',800);
         outlineRect(760,378,160,48,'#fff0d0','#d2a24d',2);text(`回復薬 x${progress.items.potion}`,840,402,13,'center','#5f4623');
         if(yunoJoined && progress.heroYunoComboUnlocked && battle.monsterId>=400){
           outlineRect(40,438,250,44,'#d8f2ed','#59aaa6',2);text('合体：蒼風大癒 MP12+12',165,460,12,'center','#174c4b');
@@ -1840,6 +1849,10 @@ function battleAttack(mode='attack'){
   }
   let dmg=0;
   if(mode==='iceWave'){
+    if(!progress.heroIceWave){
+      battleMessage='氷晶波は未習得！ スキル画面でSP2を使って習得できます。';
+      flashText='氷晶波は未習得です';flashTimer=1.7;return;
+    }
     if(battle.heroMP<8){battleMessage='MPが足りない！';return;}
     battle.heroMP-=8;
     dmg=8+Math.floor(progress.atk/3);
@@ -1854,7 +1867,10 @@ function battleAttack(mode='attack'){
     return;
   }
   if(mode==='iceSlash'){
-    if(!progress.learned.iceSlash){battleMessage='まだ覚えていない！';return;}
+    if((progress.heroIceSkill||0)<1 || !progress.learned.iceSlash){
+      battleMessage='氷結斬りは未習得！ スキル画面でSP1を使って習得できます。';
+      flashText='氷結斬りは未習得です';flashTimer=1.7;return;
+    }
     const il=Math.max(1,progress.heroIceSkill||1);
     const cost=il>=3?11:il>=2?9:7;
     if(battle.heroMP<cost){battleMessage='MPが足りない！';return;}
@@ -1953,6 +1969,10 @@ function suzuAction(mode='attack'){
   if(!battle || battle.turn!=='player' || battleActor!=='suzu')return;
   let dmg=0;
   if(mode==='fireRun'){
+    if((progress.suzuSkills?.all||0)<1){
+      battleMessage='火走りは未習得！ スキル画面でSP1を使って習得できます。';
+      flashText='火走りは未習得です';flashTimer=1.7;return;
+    }
     if(battle.suzuMP<8){battleMessage='MPが足りない！';return;}
     battle.suzuMP-=8;
     {
@@ -3067,8 +3087,11 @@ function drawMenu(){
       members.push({key:'yuno',name:'ユーノ',draw:drawYuno,stats:yunoStats(),sp:progress.yunoSP||0,desc:'風 / 弓　補助・遠距離型',border:'#55aaa8'});
     }
     if(gyouJoinConfirmed){
-      members.push({key:'gyou',name:'ジュウ',draw:drawGyou,stats:gyouStats(),sp:progress.gyouSP||0,desc:'土 / 戦闘型は調整中',border:'#8e8b62'});
+      members.push({key:'gyou',name:'ジュウ',draw:drawGyou,stats:gyouStats(),sp:progress.gyouSP||0,desc:'土 / 守備・槍型',border:'#8e8b62'});
     }
+    if(!(suzumaruActive||suzumaruJoined))members.push({key:'lockedSuzu',name:'???（未加入）',locked:true,border:'#536273'});
+    if(!yunoJoined)members.push({key:'lockedYuno',name:'???（未加入）',locked:true,border:'#536273'});
+    if(!gyouJoinConfirmed)members.push({key:'lockedGyou',name:'???（未加入）',locked:true,border:'#536273'});
 
     const n=members.length;
     const gap=14, left=35, totalW=890;
@@ -3076,16 +3099,20 @@ function drawMenu(){
     members.forEach((m,i)=>{
       const x=left+i*(pw+gap);
       outlineRect(x,140,pw,315,'#182b48',m.border,2);
-      {
+      if(m.locked){
+        text('？',x+pw/2,230,48,'center','#718296',800);
+        text(m.name,x+pw/2,292,n>=4?15:18,'center','#a9b4c0',800);
+        text('まだ仲間になっていません',x+pw/2,350,n>=4?10:13,'center','#718296');
+      }else{
         const base=n>=4?1.0:n>=3?1.18:1.5;
         m.draw(x+pw/2,225,m.key==='hero'?base*.86:base);
+        text(m.name,x+18,292,21,'left','#ffffff',800);
+        text(`Lv.${progress.level}`,x+pw-18,292,15,'right','#d9edf7');
+        text(`HP ${m.stats.maxHP}　MP ${m.stats.maxMP}`,x+18,327,15,'left','#ffffff');
+        text(`攻 ${m.stats.atk}　防 ${m.stats.def}`,x+18,357,15,'left','#ffffff');
+        text(`SP ${m.sp}`,x+18,387,16,'left','#ffe7a5');
+        text(m.desc,x+18,420,n>=4?10:n>=3?12:14,'left','#bcd7e5');
       }
-      text(m.name,x+18,292,21,'left','#ffffff',800);
-      text(`Lv.${progress.level}`,x+pw-18,292,15,'right','#d9edf7');
-      text(`HP ${m.stats.maxHP}　MP ${m.stats.maxMP}`,x+18,327,15,'left','#ffffff');
-      text(`攻 ${m.stats.atk}　防 ${m.stats.def}`,x+18,357,15,'left','#ffffff');
-      text(`SP ${m.sp}`,x+18,387,16,'left','#ffe7a5');
-      text(m.desc,x+18,420,n>=4?10:n>=3?12:14,'left','#bcd7e5');
     });
     text('レベルはパーティ共通。戦闘終了後はHP・MPが全回復します。',480,492,15,'center','#bad9e7');
   }else if(menuPage==='skill'){
@@ -3097,11 +3124,11 @@ function drawMenu(){
     outlineRect(tx[0],140,tw,42,menuCharacter==='hero'?'#dff4fb':'#31455f','#78b9d7',2);
     text(heroName,tx[0]+tw/2,161,15,'center',menuCharacter==='hero'?'#17324a':'#d9e6ef');
     outlineRect(tx[1],140,tw,42,menuCharacter==='suzu'?'#ffe1d7':'#31455f',suzuEnabled?'#c76e58':'#536273',2);
-    text(suzuEnabled?'スズマル':'スズマル（未加入）',tx[1]+tw/2,161,14,'center',suzuEnabled?(menuCharacter==='suzu'?'#65291f':'#e9d8d3'):'#758596');
+    text(suzuEnabled?'スズマル':'???（未加入）',tx[1]+tw/2,161,14,'center',suzuEnabled?(menuCharacter==='suzu'?'#65291f':'#e9d8d3'):'#758596');
     outlineRect(tx[2],140,tw,42,menuCharacter==='yuno'?'#d8f2ed':'#31455f',yunoEnabled?'#59aaa6':'#536273',2);
-    text(yunoEnabled?'ユーノ':'ユーノ（未加入）',tx[2]+tw/2,161,14,'center',yunoEnabled?(menuCharacter==='yuno'?'#174c4b':'#d6ece8'):'#758596');
+    text(yunoEnabled?'ユーノ':'???（未加入）',tx[2]+tw/2,161,14,'center',yunoEnabled?(menuCharacter==='yuno'?'#174c4b':'#d6ece8'):'#758596');
     outlineRect(tx[3],140,tw,42,menuCharacter==='gyou'?'#ece8ce':'#31455f',gyouEnabled?'#999064':'#536273',2);
-    text(gyouEnabled?'ジュウ':'ジュウ（未加入）',tx[3]+tw/2,161,14,'center',gyouEnabled?(menuCharacter==='gyou'?'#494427':'#e5e0c8'):'#758596');
+    text(gyouEnabled?'ジュウ':'???（未加入）',tx[3]+tw/2,161,14,'center',gyouEnabled?(menuCharacter==='gyou'?'#494427':'#e5e0c8'):'#758596');
 
     if(menuCharacter==='gyou' && gyouEnabled){
       text(`ジュウ SP：${progress.gyouSP||0}`,45,212,17,'left','#f4efcf');
@@ -3154,30 +3181,34 @@ function drawMenu(){
       text(suzuAllSkillName(),530,270,20,'left','#703525');
       {
         const al=progress.suzuSkills?.all||0;
-        const nxt=al<1?'火走りを強化':al===1?'次：炎走陣':al===2?'次：烈火走陣':'全体系・最大強化';
+        const nxt=al<1?'習得：火走り SP1':al===1?'次：炎走陣 SP2':al===2?'次：烈火走陣 SP3':'全体系・最大強化';
         text(nxt,530,300,15,'left','#8d5847');
       }
       text(`現在：Lv.${progress.suzuSkills?.all||0}`,855,285,15,'right','#703525');
 
       text('スズマルは全体系も伸ばせますが、単体系の伸び幅が大きい設計です。',480,375,16,'center','#ffd5c6');
-      text('現在の主力：火炎斬り / 火走り',480,420,17,'center','#ffffff');
+      text((progress.suzuSkills?.all||0)>=1?'現在の主力：火炎斬り / 火走り':'初期技：火炎斬り　火走りはSPで習得',480,420,17,'center','#ffffff');
     }else{
       text(`スキルポイント：${progress.sp}`,65,215,22,'left','#ffe8a8');
 
       outlineRect(65,250,390,82,progress.learned.iceSlash?'#536777':'#e7f5fb','#78b9d7',2);
       text(heroIceSkillName(),90,277,21,'left','#18334a');
-      text((progress.heroIceSkill||0)>=2
-        ?`MP7 / ${heroIceHits()}ヒットする氷属性の連続斬り`
-        :'MP7 / 氷をまとった小剣で強く斬る',90,307,15,'left','#3d5d73');
+      {
+        const il=progress.heroIceSkill||0;
+        const mp=il>=3?11:il>=2?9:7;
+        text(il>=2?`MP${mp} / ${heroIceHits()}ヒットする氷属性の連続斬り`
+          :il>=1?'MP7 / 氷をまとった小剣で強く斬る'
+          :'未習得 / SP1で習得',90,307,15,'left','#3d5d73');
+      }
       {
         const il=progress.heroIceSkill||0;
         const next=il===0?'習得 SP1':il===1?'→ 氷結二段斬り SP2':il===2?'→ 氷結三連斬り SP3':'最大強化';
         text(next,420,292,15,'right','#b66f31');
       }
 
-      outlineRect(505,250,390,82,'#dceffc','#6aaacb',2);
+      outlineRect(505,250,390,82,progress.heroIceWave?'#c8e2ed':'#dceffc','#6aaacb',2);
       text('氷晶波',530,277,21,'left','#18334a');
-      text('MP8 / 敵全体へ氷属性攻撃',530,307,15,'left','#3d5d73');
+      text(progress.heroIceWave?'MP8 / 敵全体へ氷属性攻撃':'未習得 / 敵全体へ氷属性攻撃　習得 SP2',530,307,14,'left','#3d5d73');
 
       text('主人公は回復・単体・全体を扱える万能型。',480,405,16,'center','#c8e1ec');
     }
@@ -3272,6 +3303,13 @@ function menuTap(x,y){
     flashTimer=2.1;
     return;
   }
+  if(menuPage==='skill' && menuCharacter==='hero' && y>=245 && y<=335 && x>=505 && x<=895){
+    if(progress.heroIceWave){flashText='氷晶波は習得済みです';flashTimer=1.5;return;}
+    if(progress.sp<2){flashText='SPが足りない（必要 2）';flashTimer=1.7;return;}
+    progress.sp-=2;progress.heroIceWave=true;saveProgress();saveGame();
+    flashText='「氷晶波」を習得した！';flashTimer=2.0;return;
+  }
+
 }
 
 

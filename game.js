@@ -38,6 +38,7 @@ if(progress.heroPebbleRandom===undefined)progress.heroPebbleRandom=0;
 if(progress.heroPebbleAll===undefined)progress.heroPebbleAll=progress.heroIceWave?1:0;
 if(progress.heroHealSkill===undefined)progress.heroHealSkill=1;
 if(progress.heroManaSkill===undefined)progress.heroManaSkill=progress.gameCleared?1:0;
+progress.heroManaSkill=Math.max(0,Math.min(2,progress.heroManaSkill||0));
 if(!progress.shopBought)progress.shopBought={};
 if(progress.shopBought.summitBow===undefined)progress.shopBought.summitBow=false;
 if(progress.shopBought.summitSpear===undefined)progress.shopBought.summitSpear=false;
@@ -139,11 +140,13 @@ if(progress.yunoSkills.mpRegen===undefined)progress.yunoSkills.mpRegen=progress.
 if(progress.yunoSkills.mpRegenAll===undefined)progress.yunoSkills.mpRegenAll=progress.yunoSkills.evadeAll||0;
 if(progress.gyouSP===undefined)progress.gyouSP=totalSPForLevel(progress.level);
 if(!progress.gyouSkills)progress.gyouSkills={fortify:0,cover:0,taunt:0,manaGuard:0,healGuard:0,doubleThrust:0,counter:0};
+progress.gyouSkills.taunt=Math.min(2,progress.gyouSkills.taunt||0);
+progress.gyouSkills.doubleThrust=Math.min(2,progress.gyouSkills.doubleThrust||0);
 
 function yunoSkillCost(key,lv){
   const table={
-    heal:[2,2,3], regen:[2,2,3], wind:[2,2,3],
-    haste:[3], mpRegen:[2,2], mpRegenAll:[3]
+    heal:[2,1,2], regen:[2,1,2], wind:[2,1,2],
+    haste:[3], mpRegen:[2,1], mpRegenAll:[2]
   };
   const arr=table[key]||[3];
   return arr[Math.min(lv,arr.length-1)];
@@ -151,8 +154,13 @@ function yunoSkillCost(key,lv){
 function yunoSkillMax(key){
   return ({heal:3,regen:3,wind:3,haste:1,mpRegen:2,mpRegenAll:1})[key]||1;
 }
-function gyouSkillCost(key){
-  return ({fortify:2,cover:2,taunt:2,manaGuard:3,healGuard:3,doubleThrust:3,counter:3})[key]||3;
+function gyouSkillMax(key){
+  return (key==='taunt'||key==='doubleThrust')?2:1;
+}
+function gyouSkillCost(key,lv=0){
+  if(key==='taunt')return lv===0?2:2;
+  if(key==='doubleThrust')return lv===0?3:2;
+  return ({fortify:2,cover:2,manaGuard:3,healGuard:3,counter:3})[key]||3;
 }
 
 
@@ -2032,9 +2040,9 @@ function battleAttack(mode='attack',target='hero'){
   if(mode==='manaHeal'){
     if(!(progress.heroManaSkill||0)){battleMessage='水脈の雫は未習得！';return;}
     const cost=heroSkillMPCost(6);if(battle.heroMP<cost){battleMessage='MPが足りない！';return;}
-    battle.heroMP-=cost;const k=partyMPKey(target),mx=partyMaxMP(target),amount=18;
+    battle.heroMP-=cost;const k=partyMPKey(target),mx=partyMaxMP(target),ml=progress.heroManaSkill||1,amount=ml>=2?32:18;
     const before=battle[k]||0;battle[k]=Math.min(mx,before+amount);const actual=battle[k]-before;
-    battleMessage=`${heroName}の「水脈の雫」！ ${partyTargetName(target)}のMPが${actual}回復！`;setBattleFx('heal',360,255);
+    battleMessage=`${heroName}の「${ml>=2?'水脈の恵み':'水脈の雫'}」！ ${partyTargetName(target)}のMPが${actual}回復！`;setBattleFx('heal',360,255);
     if(isPartyBattle())advancePartyTurn();else{battle.turn='enemy';battleCooldown=.8;battleMenu='main';}
     return;
   }
@@ -2319,10 +2327,20 @@ function gyouAction(mode,target='hero'){
   battle.gyouMP-=cost;
   if(mode==='fortify'){battle.gyouDefTurns=3;battleMessage='ジュウの「岩守り」！ 防御力が大きく上がった！';}
   else if(mode==='cover'){battle.gyouCover=target;battleMessage=`ジュウの「かばう」！ ${partyTargetName(target)}への攻撃を引き受ける！`;}
-  else if(mode==='taunt'){battle.gyouTauntTurns=3;battleMessage='ジュウの「挑発」！ 敵の注意を一身に集めた！';}
+  else if(mode==='taunt'){
+    const lv=progress.gyouSkills.taunt||1;
+    battle.gyouTauntTurns=lv>=2?5:3;
+    battleMessage=`ジュウの「挑発${lv>=2?' Lv.2':''}」！ ${battle.gyouTauntTurns}ターン、敵の注意を一身に集めた！`;
+  }
   else if(mode==='manaGuard'){battle.gyouManaGuard=true;battleMessage='ジュウの「土脈吸収」！ ダメージを受けるとMPが回復する！';}
   else if(mode==='healGuard'){const heal=18+Math.floor(gyouStats().def/2);battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+heal);battle.gyouDefTurns=2;battleMessage=`ジュウの「守りの呼吸」！ HP${heal}回復＋防御！`;setBattleFx('heal',455,255);}
-  else if(mode==='doubleThrust'){const gs=gyouStats(),d1=Math.floor(gs.atk*.72)+5+Math.floor(Math.random()*4),d2=Math.floor(gs.atk*.72)+5+Math.floor(Math.random()*4);damageEnemy(d1);if(!enemiesDefeated())damageEnemy(d2);battleMessage=`ジュウの「二段突き」！ ${d1}＋${d2}ダメージ！`;setBattleFx('slash');if(enemiesDefeated()){battle.turn='win';battleCooldown=1;return;}}
+  else if(mode==='doubleThrust'){
+    const gs=gyouStats(),lv=progress.gyouSkills.doubleThrust||1,mul=lv>=2?.92:.72,bonus=lv>=2?9:5;
+    const d1=Math.floor(gs.atk*mul)+bonus+Math.floor(Math.random()*4),d2=Math.floor(gs.atk*mul)+bonus+Math.floor(Math.random()*4);
+    damageEnemy(d1);if(!enemiesDefeated())damageEnemy(d2);
+    battleMessage=`ジュウの「二段突き${lv>=2?'・剛':''}」！ ${d1}＋${d2}ダメージ！`;
+    setBattleFx('slash');if(enemiesDefeated()){battle.turn='win';battleCooldown=1;return;}
+  }
   else if(mode==='counter'){battle.gyouCounter=true;battleMessage='ジュウの「迎撃の構え」！ 攻撃を受ければ槍で反撃する！';}
   else if(mode==='grandGuard'){battle.gyouGrandGuard=true;battle.gyouDefTurns=1;battleMessage='ジュウの奥義「大守護」！ このターン、仲間全員への攻撃を引き受ける！';}
   battleChoiceText.gyou=mode;advancePartyTurn();
@@ -3432,11 +3450,11 @@ function drawMenu(){
         ['counter','迎撃の構え','攻撃を受けて反撃']
       ];
       gsks.forEach((s,i)=>{
-        const key=s[0],col=i%4,row=Math.floor(i/4),x=35+col*225,y=238+row*103,lv=progress.gyouSkills[key]||0,cost=gyouSkillCost(key);
+        const key=s[0],col=i%4,row=Math.floor(i/4),x=35+col*225,y=238+row*103,lv=progress.gyouSkills[key]||0,max=gyouSkillMax(key),cost=gyouSkillCost(key,lv);
         outlineRect(x,y,210,86,'#3c3b2d','#999064',2);
-        text(s[1],x+12,y+25,16,'left','#f4efcf');
+        text(s[1]+(lv>1?` Lv.${lv}`:''),x+12,y+25,16,'left','#f4efcf');
         text(s[2],x+12,y+49,12,'left','#d7d1ae');
-        text(lv?'習得済み':`習得 SP${cost}`,x+196,y+73,11,'right',lv?'#b9d29e':'#ffe4a0');
+        text(lv>=max?(max>1?`Lv.${lv} 最大`:'習得済み'):(lv?`次 Lv.${lv+1} SP${cost}`:`習得 SP${cost}`),x+196,y+73,11,'right',lv>=max?'#b9d29e':'#ffe4a0');
       });
       const ult=progress.gyouGrandGuard;
       outlineRect(260,450,440,44,ult?'#6f6b4d':'#2e3340',ult?'#d7c86e':'#697181',2);
@@ -3499,7 +3517,7 @@ function drawMenu(){
       const iceNodes=[
         ['氷結斬り','MP7 / 単体1回',1],
         ['氷結二段斬り','MP9 / 単体2回',1],
-        ['氷結三連斬り','MP11 / 単体3回',1]
+        ['氷結三連斬り','MP11 / 単体3回',2]
       ];
       text('氷剣ルート',45,239,15,'left','#bfe7f6',800);
       iceNodes.forEach((n,i)=>{
@@ -3516,9 +3534,9 @@ function drawMenu(){
       const pebNodes=[
         [45,356,'氷つぶて乱射II','ランダム2発',1,pr>=1,pr===0],
         [245,356,'氷つぶて乱射III','ランダム3発',1,pr>=2,pr===1],
-        [445,356,'氷つぶて乱射IV','ランダム4発',1,pr>=3,pr===2],
+        [445,356,'氷つぶて乱射IV','ランダム4発',2,pr>=3,pr===2],
         [45,425,'氷晶波','敵全体',1,pa>=1,pa===0],
-        [245,425,'氷晶大波','全体攻撃強化',1,pa>=2,pa===1]
+        [245,425,'氷晶大波','全体攻撃強化',2,pa>=2,pa===1]
       ];
       pebNodes.forEach(n=>{
         const [x,y,name,desc,cost,owned,next]=n;
@@ -3534,12 +3552,12 @@ function drawMenu(){
       const healName=hh>=3?'大水癒':hh>=2?'水の大いやし':'水のいやし';
       text(healName,705,278,18,'left','#17324a',800);
       text(hh>=3?'HP全回復 / MP12':hh>=2?'HP120回復 / MP8':'HP50回復 / MP5',705,302,12,'left','#3d5d73');
-      text(hh>=3?'Lv.3 最大':hh===2?'次 Lv.3　SP1':'次 Lv.2　SP1',900,329,11,'right','#3d6f8a',800);
+      text(hh>=3?'Lv.3 最大':hh===2?'次 Lv.3　SP2':'次 Lv.2　SP1',900,329,11,'right','#3d6f8a',800);
 
       outlineRect(690,360,225,92,hm?'#c8e2ed':'#e7f5fb',hm?'#6aaacb':'#78b9d7',2);
-      text('水脈の雫',705,386,18,'left','#17324a',800);
-      text('味方1人 MP18回復 / MP6',705,410,12,'left','#3d5d73');
-      text(hm?'習得済み':'必要 SP1',900,438,11,'right',hm?'#356b7b':'#3d6f8a',800);
+      text(hm>=2?'水脈の恵み':'水脈の雫',705,386,18,'left','#17324a',800);
+      text(hm>=2?'味方1人 MP32回復 / MP6':'味方1人 MP18回復 / MP6',705,410,12,'left','#3d5d73');
+      text(hm>=2?'Lv.2 最大':hm===1?'次 Lv.2　SP2':'必要 SP1',900,438,11,'right',hm?'#356b7b':'#3d6f8a',800);
       text('主人公は技数が多いため、各ルートの必要SPは軽め。',480,510,13,'center','#c8e1ec');
     }
   }
@@ -3568,12 +3586,13 @@ function menuTap(x,y){
       const keys=['fortify','cover','taunt','manaGuard','healGuard','doubleThrust','counter'];
       const k=keys[row*4+col];
       if(!k)return;
-      if(progress.gyouSkills[k]){flashText='習得済みです';flashTimer=1.4;return;}
-      const cost=gyouSkillCost(k);
+      const lv=progress.gyouSkills[k]||0,max=gyouSkillMax(k);
+      if(lv>=max){flashText=max>1?'この技は最大強化です':'習得済みです';flashTimer=1.4;return;}
+      const cost=gyouSkillCost(k,lv);
       if((progress.gyouSP||0)<cost){flashText=`ジュウのSPが足りない（必要 ${cost}）`;flashTimer=1.6;return;}
-      progress.gyouSP-=cost;progress.gyouSkills[k]=1;
+      progress.gyouSP-=cost;progress.gyouSkills[k]=lv+1;
       saveProgress();saveGame();
-      flashText='ジュウが新しい守護技を習得！';flashTimer=1.8;return;
+      flashText=lv===0?'ジュウが新しい守護技を習得！':`${k==='taunt'?'挑発':'二段突き'}をLv.2に強化！`;flashTimer=1.8;return;
     }
   }
 
@@ -3638,7 +3657,7 @@ function menuTap(x,y){
       if(index<lv){flashText='この技は習得済みです';flashTimer=1.4;return;}
       if(index>lv){flashText='ひとつ前の技を先に習得してください';flashTimer=1.6;return;}
       if(lv>=3){flashText='氷剣ルートは最大強化です';flashTimer=1.6;return;}
-      const cost=1;
+      const cost=lv===2?2:1;
       if(progress.sp<cost){flashText=`SPが足りない（必要 ${cost}）`;flashTimer=1.7;return;}
       progress.sp-=cost;progress.heroIceSkill=lv+1;progress.learned.iceSlash=true;
       saveProgress();saveGame();flashText=`「${heroIceSkillName()}」を習得！`;flashTimer=2.0;return;
@@ -3646,15 +3665,18 @@ function menuTap(x,y){
   }
   if(menuPage==='skill' && menuCharacter==='hero'){
     if(x>=690&&x<=915&&y>=360&&y<=452){
-      if(progress.heroManaSkill){flashText='水脈の雫は習得済みです';flashTimer=1.4;return;}
-      if(progress.sp<1){flashText='SPが足りない（必要 1）';flashTimer=1.5;return;}
-      progress.sp--;progress.heroManaSkill=1;saveProgress();saveGame();flashText='「水脈の雫」を習得！';flashTimer=1.8;return;
+      const ml=progress.heroManaSkill||0;
+      if(ml>=2){flashText='水脈の雫は最大強化です';flashTimer=1.4;return;}
+      const cost=ml===0?1:2;
+      if(progress.sp<cost){flashText=`SPが足りない（必要 ${cost}）`;flashTimer=1.5;return;}
+      progress.sp-=cost;progress.heroManaSkill=ml+1;saveProgress();saveGame();
+      flashText=ml===0?'「水脈の雫」を習得！':'「水脈の恵み」に強化！';flashTimer=1.8;return;
     }
     if(x>=690&&x<=915&&y>=252&&y<=344){
       const lv=progress.heroHealSkill||1;
       if(lv>=3){flashText='回復ルートは最大強化です';flashTimer=1.5;return;}
-      const cost=1;
-      if(progress.sp<cost){flashText='SPが足りない（必要 1）';flashTimer=1.6;return;}
+      const cost=lv===2?2:1;
+      if(progress.sp<cost){flashText=`SPが足りない（必要 ${cost}）`;flashTimer=1.6;return;}
       progress.sp-=cost;progress.heroHealSkill=lv+1;saveProgress();saveGame();
       flashText=lv===1?'「水の大いやし」に強化！':'「大水癒」に強化！';flashTimer=1.9;return;
     }
@@ -3669,11 +3691,11 @@ function menuTap(x,y){
     if(y>=356&&y<=414){
       if(x>=45&&x<=225){tryPebbleNode('random',0,1,'氷つぶて乱射II');return;}
       if(x>=245&&x<=425){tryPebbleNode('random',1,1,'氷つぶて乱射III');return;}
-      if(x>=445&&x<=625){tryPebbleNode('random',2,1,'氷つぶて乱射IV');return;}
+      if(x>=445&&x<=625){tryPebbleNode('random',2,2,'氷つぶて乱射IV');return;}
     }
     if(y>=425&&y<=483){
       if(x>=45&&x<=225){tryPebbleNode('all',0,1,'氷晶波');return;}
-      if(x>=245&&x<=425){tryPebbleNode('all',1,1,'氷晶大波');return;}
+      if(x>=245&&x<=425){tryPebbleNode('all',1,2,'氷晶大波');return;}
     }
   }
 

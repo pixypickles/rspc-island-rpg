@@ -220,7 +220,9 @@ let caveCrystalTaken=false;
 let caveMobs=[
   {id:201,name:'ヤキトカゲ',kind:'emberLizard',x:520,y:700,spawnX:520,spawnY:700,alive:true,hp:32,maxHP:32,respawn:0},
   {id:202,name:'トウガラネズミ',kind:'pepperMouse',x:910,y:520,spawnX:910,spawnY:520,alive:true,hp:36,maxHP:36,respawn:0},
-  {id:203,name:'イワモグラ',kind:'rockMole',x:1270,y:420,spawnX:1270,spawnY:420,alive:true,hp:42,maxHP:42,respawn:0}
+  {id:203,name:'イワモグラ',kind:'rockMole',x:1270,y:420,spawnX:1270,spawnY:420,alive:true,hp:42,maxHP:42,respawn:0},
+  {id:204,name:'ヤキトカゲ',kind:'emberLizard',x:760,y:310,spawnX:760,spawnY:310,alive:true,hp:34,maxHP:34,respawn:0},
+  {id:205,name:'トウガラネズミ',kind:'pepperMouse',x:1420,y:690,spawnX:1420,spawnY:690,alive:true,hp:38,maxHP:38,respawn:0}
 ];
 let suzumaruActive=false;
 let suzumaruJoined=false;
@@ -233,13 +235,16 @@ let route3Hero={x:210,y:760,speed:220};
 let route3Mobs=[
   {id:301,name:'ダイコンフェレット',kind:'radishFerret',x:620,y:590,spawnX:620,spawnY:590,alive:true,hp:46,maxHP:46,respawn:0},
   {id:302,name:'ソラマメテン',kind:'beanMarten',x:1120,y:420,spawnX:1120,spawnY:420,alive:true,hp:50,maxHP:50,respawn:0},
-  {id:303,name:'モモイタチ',kind:'peachWeasel',x:1600,y:300,spawnX:1600,spawnY:300,alive:true,hp:54,maxHP:54,respawn:0}
+  {id:303,name:'モモイタチ',kind:'peachWeasel',x:1600,y:300,spawnX:1600,spawnY:300,alive:true,hp:54,maxHP:54,respawn:0},
+  {id:304,name:'ダイコンフェレット',kind:'radishFerret',x:880,y:790,spawnX:880,spawnY:790,alive:true,hp:48,maxHP:48,respawn:0},
+  {id:305,name:'ソラマメテン',kind:'beanMarten',x:1450,y:650,spawnX:1450,spawnY:650,alive:true,hp:52,maxHP:52,respawn:0}
 ];
 let sarubibiQuestStarted=false;
 let yunoJoined=false;
 let gyouJoined=false;
 let gyouJoinConfirmed=false;
 let nightTrailStep=0;
+let tsukipopoBattleCleared=false;
 let nightHero={x:170,y:760,speed:205};
 
 let sarubibiHero={x:330,y:390,speed:210};
@@ -252,8 +257,11 @@ let coastSurveyHero={x:160,y:430,speed:205};
 let bananaSharkAlive=true;
 let volcanoSurveyHero={x:160,y:470,speed:205};
 let volcanoSurveyMobs=[
-  {id:470,x:650,y:420,alive:true,name:'サツマイモイノシシ',kind:'sweetBoar',hp:78,maxHP:78},
-  {id:471,x:1080,y:345,alive:true,name:'ドリアングマ',kind:'durianBear',hp:92,maxHP:92}
+  {id:470,x:500,y:430,alive:true,name:'サツマイモイノシシ',kind:'sweetBoar',hp:78,maxHP:78},
+  {id:471,x:720,y:365,alive:true,name:'ドリアングマ',kind:'durianBear',hp:92,maxHP:92},
+  {id:473,x:900,y:455,alive:true,name:'サツマイモイノシシ',kind:'sweetBoar',hp:82,maxHP:82},
+  {id:474,x:1080,y:340,alive:true,name:'ドリアングマ',kind:'durianBear',hp:96,maxHP:96},
+  {id:475,x:1210,y:455,alive:true,name:'サツマイモイノシシ',kind:'sweetBoar',hp:86,maxHP:86}
 ];
 
 let takezoPrepStage=0; // 0 plan, 1 coast survey, 2 volcano survey, 3 construction review
@@ -262,6 +270,7 @@ let secondWaveHero={x:160,y:450,speed:205};
 
 let finalBear={id:472,x:1050,y:330,alive:true,name:'大ドリアングマ',kind:'durianBear',hp:165,maxHP:165};
 let finalBearHero={x:150,y:430,speed:205};
+let finalBearWave=0;
 
 
 let dragonTrailHero={x:130,y:455,speed:210};
@@ -278,7 +287,9 @@ let takezoIntroDone=false;
 let takezoMobs=[
   {id:401,x:720,y:610,spawnX:720,spawnY:610,alive:true,name:'海賊ネコ斥候',kind:'pirateCat',hp:58,maxHP:58},
   {id:402,x:1030,y:500,spawnX:1030,spawnY:500,alive:true,name:'海賊イヌ斥候',kind:'pirateDog',hp:62,maxHP:62},
-  {id:403,x:1320,y:390,spawnX:1320,spawnY:390,alive:true,name:'海賊タヌキ斥候',kind:'pirateTanuki',hp:66,maxHP:66}
+  {id:403,x:1220,y:390,spawnX:1220,spawnY:390,alive:true,name:'海賊タヌキ斥候',kind:'pirateTanuki',hp:66,maxHP:66},
+  {id:404,x:820,y:350,spawnX:820,spawnY:350,alive:true,name:'海賊ネコ斥候',kind:'pirateCat',hp:60,maxHP:60},
+  {id:405,x:1080,y:445,spawnX:1080,spawnY:445,alive:true,name:'海賊イヌ斥候',kind:'pirateDog',hp:64,maxHP:64}
 ];
 
 
@@ -286,7 +297,9 @@ function resetTakezoSquads(){
   const defs=[
     {id:401,x:650,y:430,spawnX:650,spawnY:430,alive:true,name:'海賊ネコ斥候',kind:'pirateCat',hp:58,maxHP:58},
     {id:402,x:900,y:390,spawnX:900,spawnY:390,alive:true,name:'海賊イヌ斥候',kind:'pirateDog',hp:62,maxHP:62},
-    {id:403,x:1150,y:345,spawnX:1150,spawnY:345,alive:true,name:'海賊タヌキ斥候',kind:'pirateTanuki',hp:66,maxHP:66}
+    {id:403,x:1150,y:345,spawnX:1150,spawnY:345,alive:true,name:'海賊タヌキ斥候',kind:'pirateTanuki',hp:66,maxHP:66},
+    {id:404,x:780,y:350,spawnX:780,spawnY:350,alive:true,name:'海賊ネコ斥候',kind:'pirateCat',hp:60,maxHP:60},
+    {id:405,x:1030,y:445,spawnX:1030,spawnY:445,alive:true,name:'海賊イヌ斥候',kind:'pirateDog',hp:64,maxHP:64}
   ];
   takezoMobs=defs.map(d=>({...d}));
   takezoHero.x=430;takezoHero.y=455;
@@ -295,7 +308,9 @@ function repairTakezoSquads(){
   const defs=[
     {id:401,x:650,y:430,spawnX:650,spawnY:430,alive:true,name:'海賊ネコ斥候',kind:'pirateCat',hp:58,maxHP:58},
     {id:402,x:900,y:390,spawnX:900,spawnY:390,alive:true,name:'海賊イヌ斥候',kind:'pirateDog',hp:62,maxHP:62},
-    {id:403,x:1150,y:345,spawnX:1150,spawnY:345,alive:true,name:'海賊タヌキ斥候',kind:'pirateTanuki',hp:66,maxHP:66}
+    {id:403,x:1150,y:345,spawnX:1150,spawnY:345,alive:true,name:'海賊タヌキ斥候',kind:'pirateTanuki',hp:66,maxHP:66},
+    {id:404,x:780,y:350,spawnX:780,spawnY:350,alive:true,name:'海賊ネコ斥候',kind:'pirateCat',hp:60,maxHP:60},
+    {id:405,x:1030,y:445,spawnX:1030,spawnY:445,alive:true,name:'海賊イヌ斥候',kind:'pirateDog',hp:64,maxHP:64}
   ];
   for(const d of defs){
     let m=takezoMobs.find(x=>x.id===d.id);
@@ -947,7 +962,9 @@ const road2 = { width:2200, height:1550 };
 const monsters = [
   {id:1,name:'リンゴリス',kind:'appleSquirrel',x:720,y:570,spawnX:720,spawnY:570,alive:true,hp:24,maxHP:24,respawn:0},
   {id:2,name:'モモモモンガ',kind:'peachGlider',x:1210,y:890,spawnX:1210,spawnY:890,alive:true,hp:30,maxHP:30,respawn:0},
-  {id:3,name:'カボチャガニ',kind:'pumpkinCrab',x:1710,y:1190,spawnX:1710,spawnY:1190,alive:true,hp:38,maxHP:38,respawn:0}
+  {id:3,name:'カボチャガニ',kind:'pumpkinCrab',x:1710,y:1190,spawnX:1710,spawnY:1190,alive:true,hp:38,maxHP:38,respawn:0},
+  {id:4,name:'リンゴリス',kind:'appleSquirrel',x:1030,y:1180,spawnX:1030,spawnY:1180,alive:true,hp:24,maxHP:24,respawn:0},
+  {id:5,name:'モモモモンガ',kind:'peachGlider',x:1550,y:720,spawnX:1550,spawnY:720,alive:true,hp:30,maxHP:30,respawn:0}
 ];
 
 function battleTop(){
@@ -985,6 +1002,8 @@ function saveGame(){
     takezoPrepStage,
     secondWaveStage,
     bananaSharkAlive,
+    finalBearWave,
+    tsukipopoBattleCleared,
     coastSurveyHero:{x:coastSurveyHero.x,y:coastSurveyHero.y},
     volcanoSurveyHero:{x:volcanoSurveyHero.x,y:volcanoSurveyHero.y},
     volcanoSurveyMobs:volcanoSurveyMobs.map(m=>({id:m.id,alive:m.alive,x:m.x,y:m.y})),
@@ -1646,26 +1665,24 @@ function startFinalBearBattle(){
     enemyName:'大ドリアングマA',enemyKind:finalBear.kind,
     monsterId:finalBear.id,turn:'player',defending:false,
     enemies:[
-      {name:'大ドリアングマA',kind:'durianBear',hp:130,maxHP:130},
-      {name:'大ドリアングマB',kind:'durianBear',hp:125,maxHP:125},
-      {name:'大ドリアングマC',kind:'durianBear',hp:135,maxHP:135},
-      {name:'大ドリアングマD',kind:'durianBear',hp:120,maxHP:120},
-      {name:'大ドリアングマE',kind:'durianBear',hp:140,maxHP:140}
+      {name:`大ドリアングマ${finalBearWave*3+1}`,kind:'durianBear',hp:145,maxHP:145},
+      {name:`大ドリアングマ${finalBearWave*3+2}`,kind:'durianBear',hp:140,maxHP:140},
+      {name:`大ドリアングマ${finalBearWave*3+3}`,kind:'durianBear',hp:150,maxHP:150}
     ]
   };
   damagePopups=[];battleMenu='main';battleActor='hero';
   battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
-  battleMessage='大ドリアングマ5体が斜面を占拠している！';
+  battleMessage=`大ドリアングマ3体が襲来！ 第${finalBearWave+1}波！`;
   scene='battle';touchUI.classList.add('hidden');
 }
 
 function startPirateCaptainBattle(){
   const over=Math.max(0,(progress.level||1)-10);
-  const hp=520+Math.min(360,over*28);
+  const hp=570+Math.min(400,over*31);
   battle={heroHP:progress.maxHP,heroMP:progress.maxMP,enemyHP:hp,enemyMaxHP:hp,
     enemyName:'副船長',enemyKind:'viceCaptain',monsterId:900,turn:'player',defending:false,bossPhase:1,bossTurn:0,
     enemies:[
-      {name:'副船長',kind:'viceCaptain',hp:Math.floor(hp*.58),maxHP:Math.floor(hp*.58)},
+      {name:'副船長',kind:'viceCaptain',hp:Math.floor(hp*.62),maxHP:Math.floor(hp*.62)},
       {name:'海賊船長',kind:'pirateCaptain',hp:hp,maxHP:hp,potions:2}
     ]};
   const ss=suzumaruStats(),ys=yunoStats(),gs=gyouStats();
@@ -2420,7 +2437,7 @@ function pirateCaptainTurn(){
   if(cap.hp>0 && cap.hp<=cap.maxHP*.5 && battle.bossPhase===1){battle.bossPhase=2;battleMessage='海賊船長「まだ終わらん！」';}
   // 船長は自分専用の回復薬を最大2回使用。副船長には使わない。
   if(cap.hp>0 && cap.potions>0 && cap.hp<=cap.maxHP*.42){
-    const heal=Math.min(115,cap.maxHP-cap.hp);cap.hp+=heal;cap.potions--;syncPrimaryEnemy();
+    const heal=Math.min(125,cap.maxHP-cap.hp);cap.hp+=heal;cap.potions--;syncPrimaryEnemy();
     battleMessage=`海賊船長は自分に高級回復薬を使った！ HP ${heal}回復！（残り${cap.potions}）`;
     addDamagePopup(`+${heal}`,785,170,'#9ff0c5');battle.turn='enemyResult';battleCooldown=1.3;return;
   }
@@ -2428,7 +2445,7 @@ function pirateCaptainTurn(){
   // 副船長は生存中、2ターンに1回割り込んで大斧を振るう。
   if(vice.hp>0 && (battle.bossTurn%2===0 || cap.hp<=0))attacker='vice';
   const isVice=attacker==='vice';
-  const base=(isVice?31:(battle.bossPhase===2?22:16))+Math.floor(Math.random()*7);
+  const base=(isVice?34:(battle.bossPhase===2?25:18))+Math.floor(Math.random()*7);
   let targets=[];
   if(battle.gyouGrandGuard)targets=['gyou'];
   else if(!isVice && battle.bossTurn%3===0)targets=['hero','suzu','yuno','gyou'];
@@ -2578,16 +2595,22 @@ function finishBattle(){
     flashTimer=3.0;return;
   }
 
+  if(battle && battle.monsterId===480){
+    tsukipopoBattleCleared=true;
+    progress.gold+=24;const leveled=gainExp(34);saveProgress();
+    battle=null;scene='sarubibiResolve';dialogIndex=0;touchUI.classList.add('hidden');saveGame();return;
+  }
+
   if(battle && battle.monsterId===460){
     bananaSharkAlive=false;
     const expGain=55,goldGain=35;
     progress.gold+=goldGain;const leveled=gainExp(expGain);saveProgress();
     battle=null;scene='bananaSharkAfter';dialogIndex=0;touchUI.classList.add('hidden');saveGame();return;
   }
-  if(battle && (battle.monsterId===470||battle.monsterId===471)){
+  if(battle && battle.monsterId>=470 && battle.monsterId<=475 && battle.monsterId!==472){
     const mon=volcanoSurveyMobs.find(m=>m.id===battle.monsterId);
     if(mon)mon.alive=false;
-    const expGain=battle.monsterId===471?48:38,goldGain=battle.monsterId===471?30:22;
+    const isBear=(battle.enemyKind==='durianBear');const expGain=isBear?48:38,goldGain=isBear?30:22;
     progress.gold+=goldGain;const leveled=gainExp(expGain);saveProgress();
     battle=null;scene='volcanoSurveyField';touchUI.classList.remove('hidden');
     flashText=leveled?`レベルアップ！ Lv.${progress.level}`:`${mon?mon.name:'魔物'}を倒した！`;
@@ -2595,8 +2618,14 @@ function finishBattle(){
   }
 
   if(battle && battle.monsterId===472){
-    finalBear.alive=false;
-    progress.gold+=55;const leveled=gainExp(80);saveProgress();
+    progress.gold+=42;const leveled=gainExp(58);saveProgress();
+    finalBearWave++;
+    if(finalBearWave<3){
+      battle=null;scene='finalBearField';touchUI.classList.remove('hidden');
+      finalBearHero.x=Math.max(150,finalBear.x-230);
+      flashText=`第${finalBearWave}波を撃破！ 次の3体が現れた！`;flashTimer=2.2;saveGame();return;
+    }
+    finalBear.alive=false;finalBearWave=0;
     battle=null;scene='volcanoBearAfter';dialogIndex=0;touchUI.classList.add('hidden');saveGame();return;
   }
 
@@ -3271,6 +3300,24 @@ function enemiesDefeated(){
 
 
 
+function startTsukipopoBattle(){
+  const ss=suzumaruStats(),ys=yunoStats();
+  yunoJoined=true; // this fight happens while Yuno is already accompanying the party
+  const enemies=[
+    {name:'ツキポポムシA',kind:'beanMarten',hp:58,maxHP:58},
+    {name:'ツキポポムシB',kind:'beanMarten',hp:58,maxHP:58}
+  ];
+  battle={heroHP:progress.maxHP,heroMP:progress.maxMP,
+    suzuHP:ss.maxHP,suzuMaxHP:ss.maxHP,suzuMP:ss.maxMP,suzuMaxMP:ss.maxMP,
+    yunoHP:ys.maxHP,yunoMaxHP:ys.maxHP,yunoMP:ys.maxMP,yunoMaxMP:ys.maxMP,
+    enemies,enemyHP:58,enemyMaxHP:58,monsterId:480,enemyName:enemies[0].name,enemyKind:enemies[0].kind,
+    turn:'player',defending:false};
+  damagePopups=[];battleMenu='main';battleActor='hero';
+  battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
+  battleMessage='ツキポポの蜜に寄ってきた魔物が襲いかかってきた！';
+  scene='battle';touchUI.classList.add('hidden');
+}
+
 function startBananaSharkBattle(){
   const ss=suzumaruStats(),ys=yunoStats();
   battle={
@@ -3278,12 +3325,17 @@ function startBananaSharkBattle(){
     suzuHP:ss.maxHP,suzuMaxHP:ss.maxHP,suzuMP:ss.maxMP,suzuMaxMP:ss.maxMP,
     yunoHP:ys.maxHP,yunoMaxHP:ys.maxHP,yunoMP:ys.maxMP,yunoMaxMP:ys.maxMP,
     regenTurns:0,hasteTarget:null,evadeTarget:null,evadeAllTurns:0,
-    enemyHP:135,enemyMaxHP:135,monsterId:460,enemyName:'バナナザメ',enemyKind:'bananaShark',
+    enemyHP:135,enemyMaxHP:135,monsterId:460,enemyName:'バナナザメA',enemyKind:'bananaShark',
+    enemies:[
+      {name:'バナナザメA',kind:'bananaShark',hp:135,maxHP:135},
+      {name:'バナナザメB',kind:'bananaShark',hp:125,maxHP:125},
+      {name:'バナナザメC',kind:'bananaShark',hp:130,maxHP:130}
+    ],
     turn:'player',defending:false
   };
   damagePopups=[];battleMenu='main';battleActor='hero';
   battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
-  battleMessage='強そうなバナナザメが襲いかかってきた！';
+  battleMessage='バナナザメ3体が群れで襲いかかってきた！';
   scene='battle';touchUI.classList.add('hidden');
 }
 function startVolcanoSurveyBattle(mon){
@@ -4272,6 +4324,11 @@ function drawEnd(){
   text('A / Enter でタイトルへ',480,430,20,'center','#9fc8df');
   if(progress.gameCleared)text('タイトルに「ドラゴンに挑戦」が追加されました',480,472,16,'center','#e7c47d');
 }
+function chaseFieldMob(mon,px,py,dt,range=260,speed=52){
+  if(!mon||!mon.alive)return;
+  const dx=px-mon.x,dy=py-mon.y,d=Math.hypot(dx,dy);
+  if(d>38&&d<range){mon.x+=dx/d*speed*dt;mon.y+=dy/d*speed*dt;}
+}
 function update(dt){
   if(scene==='dragonTrail'){
     for(const m of dragonTrailMobs){if(!m.alive&&m.respawn>0){m.respawn-=dt;if(m.respawn<=0){m.alive=true;m.hp=m.maxHP;m.x=m.spawnX;m.y=m.spawnY;}}}
@@ -4334,6 +4391,7 @@ function update(dt){
     hero.x=Math.max(50,Math.min(road2.width-60,hero.x));
     hero.y=Math.max(140,Math.min(road2.height-130,hero.y));
 
+    for(const mon of monsters)chaseFieldMob(mon,hero.x,hero.y,dt,280,55);
     for(const mon of monsters){
       if(mon.alive && Math.hypot(hero.x-mon.x,hero.y-mon.y)<58){
         startBattle(mon);break;
@@ -4361,6 +4419,7 @@ function update(dt){
     const l=Math.hypot(dx,dy);
     if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);volcanoSurveyHero.x+=dx*volcanoSurveyHero.speed*dt;volcanoSurveyHero.y+=dy*volcanoSurveyHero.speed*dt;}
     volcanoSurveyHero.x=Math.max(90,Math.min(1320,volcanoSurveyHero.x));volcanoSurveyHero.y=Math.max(300,Math.min(500,volcanoSurveyHero.y));
+    for(const mon of volcanoSurveyMobs)chaseFieldMob(mon,volcanoSurveyHero.x,volcanoSurveyHero.y,dt,290,58);
     for(const mon of volcanoSurveyMobs){
       if(mon.alive&&Math.hypot(volcanoSurveyHero.x-mon.x,volcanoSurveyHero.y-mon.y)<62){startVolcanoSurveyBattle(mon);break;}
     }
@@ -4396,6 +4455,7 @@ function update(dt){
     const l=Math.hypot(dx,dy);
     if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);takezoHero.x+=dx*takezoHero.speed*dt;takezoHero.y+=dy*takezoHero.speed*dt;}
     takezoHero.x=Math.max(90,Math.min(1430,takezoHero.x));takezoHero.y=Math.max(260,Math.min(510,takezoHero.y));
+    for(const mon of takezoMobs)chaseFieldMob(mon,takezoHero.x,takezoHero.y,dt,300,62);
     for(const mon of takezoMobs){
       if(mon.alive && Math.hypot(takezoHero.x-mon.x,takezoHero.y-mon.y)<58){startTakezoBattle(mon);break;}
     }
@@ -4416,6 +4476,7 @@ function update(dt){
     if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);route3Hero.x+=dx*route3Hero.speed*dt;route3Hero.y+=dy*route3Hero.speed*dt;}
     route3Hero.x=Math.max(70,Math.min(1850,route3Hero.x));
     route3Hero.y=Math.max(170,Math.min(960,route3Hero.y));
+    for(const mon of route3Mobs)chaseFieldMob(mon,route3Hero.x,route3Hero.y,dt,285,58);
     for(const mon of route3Mobs){
       if(mon.alive&&Math.hypot(route3Hero.x-mon.x,route3Hero.y-mon.y)<55){startRoute3Battle(mon);break;}
     }
@@ -4487,6 +4548,7 @@ function update(dt){
     if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);caveHero.x+=dx*caveHero.speed*dt;caveHero.y+=dy*caveHero.speed*dt;}
     caveHero.x=Math.max(120,Math.min(1660,caveHero.x));
     caveHero.y=Math.max(150,Math.min(850,caveHero.y));
+    for(const mon of caveMobs)chaseFieldMob(mon,caveHero.x,caveHero.y,dt,250,48);
     for(const mon of caveMobs){
       if(mon.alive && Math.hypot(caveHero.x-mon.x,caveHero.y-mon.y)<55){startCaveMobBattle(mon);break;}
     }
@@ -4614,7 +4676,7 @@ function pressAction(){
   if(scene==='tsukipopoReveal'){
     dialogIndex++;
     if(dialogIndex>=tsukipopoRevealDialog.length){
-      scene='sarubibiResolve';dialogIndex=0;
+      dialogIndex=0;startTsukipopoBattle();
     }
     return;
   }

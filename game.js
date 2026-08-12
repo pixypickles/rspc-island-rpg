@@ -1512,7 +1512,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.04',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.05',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -4575,8 +4575,13 @@ function drawPostGameCircus(){
  ctx.fillStyle='#8c5438';ctx.beginPath();ctx.moveTo(565,330);ctx.lineTo(875,330);ctx.lineTo(820,420);ctx.lineTo(620,420);ctx.closePath();ctx.fill();
  for(let x=600;x<840;x+=44)rect(x,285,22,45,x%88===0?'#e24d55':'#f0d27d');
  text('ちぇすたぴサーカス団',720,365,18,'center','#fff3c8',900);
- drawDash(470,360,1.0);drawHeroFox(postGameHero.x,postGameHero.y,.95);
+ drawDashmiu(470,360,1.0);
+ drawHeroFox(570,395,.95);
+ drawSuzumaru(525,408,.88);
+ drawYuno(485,412,.86);
+ drawGyou(445,415,.86);
  text(scene==='postGameCircusTalk'?'Aで会話を進める':'ダッシュミウに話しかける',480,hudTop()+24,17,'center','#ffffff',900);
+ text('ダッシュミウ',470,330,14,'center','#17324a',900);
 }
 function drawPostGameRaid(){
  const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#8aa1aa');gr.addColorStop(1,'#665b50');ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
@@ -4760,7 +4765,10 @@ function bgmToggle(){
 },{once:true,passive:true}));
 
 function update(dt){
-  if(scene==='postGameCircusTalk')touchUI.classList.remove('hidden');
+  if(scene==='postGameCircusTalk'){
+    touchUI.classList.remove('hidden');
+    if(dialogIndex<0 || dialogIndex>=postGameCircusDialog.length)dialogIndex=0;
+  }
   if(scene==='postGameCircus'){
     scene='postGameCircusTalk';dialogIndex=0;touchUI.classList.remove('hidden');
     return;
@@ -5426,17 +5434,18 @@ function pressAction(){
   if(scene==='postGameCircus'){scene='postGameCircusTalk';dialogIndex=0;touchUI.classList.add('hidden');return;}
   if(scene==='postGameCircusTalk'){
     touchUI.classList.remove('hidden');
-    dialogIndex++;
-    if(dialogIndex>=postGameCircusDialog.length){
-      postGameRaidWave=0;
-      suzumaruActive=true;suzumaruJoined=true;yunoJoined=true;gyouJoinConfirmed=true;gyouJoined=true;syncStoryParty();
-      scene='postGameRaid';dialogIndex=0;
-      touchUI.classList.remove('hidden');
-      saveGame();
-      flashText='ちぇすたぴサーカス団の船で海賊拠点へ！';
-      flashTimer=1.2;
-      startPostGameRaidWave();
+    if(dialogIndex < postGameCircusDialog.length-1){
+      dialogIndex++;
+      return;
     }
+    postGameRaidWave=0;
+    suzumaruActive=true;suzumaruJoined=true;yunoJoined=true;gyouJoinConfirmed=true;gyouJoined=true;syncStoryParty();
+    scene='postGameRaid';dialogIndex=0;
+    touchUI.classList.remove('hidden');
+    saveGame();
+    flashText='ちぇすたぴサーカス団の船で海賊拠点へ！';
+    flashTimer=1.2;
+    startPostGameRaidWave();
     return;
   }
   if(scene==='postGameRaidClear'){dialogIndex++;if(dialogIndex>=postGameRaidClearDialog.length){scene='postGameIsland';postGameHero.x=480;postGameHero.y=150;dialogIndex=0;touchUI.classList.remove('hidden');saveGame();}return;}

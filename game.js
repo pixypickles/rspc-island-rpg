@@ -288,6 +288,12 @@ let finalBearWave=0;
 
 
 let dragonTrailHero={x:130,y:455,speed:210};
+let postGameHero={x:480,y:400,speed:210},postGameArea='brifo',postGameVolcanoHero={x:180,y:455,speed:210};
+let postGameVolcanoMobs=[
+{id:970,name:'溶岩オオヤマネコ',kind:'emberLizard',x:430,y:430,spawnX:430,spawnY:430,alive:true,hp:380,maxHP:380,respawn:0},
+{id:971,name:'火口イワモグラ',kind:'rockMole',x:690,y:350,spawnX:690,spawnY:350,alive:true,hp:320,maxHP:320,respawn:0},
+{id:972,name:'黒曜ドリアングマ',kind:'durianBear',x:980,y:405,spawnX:980,spawnY:405,alive:true,hp:380,maxHP:380,respawn:0},
+{id:973,name:'噴煙オオヤマネコ',kind:'emberLizard',x:1280,y:315,spawnX:1280,spawnY:315,alive:true,hp:345,maxHP:345,respawn:0}];
 let dragonTrailShopOpen=false;
 let dragonTrailShopSelection=0;
 let dragonTrailMobs=[
@@ -847,6 +853,7 @@ function dragonTrailEncounterGroup(first){
   return enemies;
 }
 
+function startPostGameVolcanoBattle(mon){const pool=postGameVolcanoMobs.filter(m=>m.alive),count=2+Math.floor(Math.random()*2),chosen=[mon,...pool.filter(m=>m!==mon).sort(()=>Math.random()-.5).slice(0,count-1)];startBattleGroup(chosen.map(m=>({id:m.id,name:m.name,kind:m.kind,hp:m.hp,maxHP:m.maxHP})),mon.id);}
 function startDragonTrailBattle(mon){
   suzumaruActive=true;suzumaruJoined=true;yunoJoined=true;gyouJoinConfirmed=true;gyouJoined=true;
   syncStoryParty();
@@ -998,7 +1005,10 @@ function saveGame(){
   }
 
   const data={
-    version:21,
+    version:22,
+    postGameArea,
+    postGameHero:{x:postGameHero.x,y:postGameHero.y},
+    postGameVolcanoHero:{x:postGameVolcanoHero.x,y:postGameVolcanoHero.y},
     scene,
     lastFieldScene,
     heroName,
@@ -1093,7 +1103,9 @@ function loadGame(){
     restoreList(route3Mobs,d.route3Mobs);restoreList(takezoMobs,d.takezoMobs);restoreList(volcanoSurveyMobs,d.volcanoSurveyMobs);repairTakezoSquads();
 
     lastFieldScene=d.lastFieldScene||'world';
+    if(d.postGameArea)postGameArea=d.postGameArea;apply(postGameHero,d.postGameHero);apply(postGameVolcanoHero,d.postGameVolcanoHero);
     let target=d.scene||lastFieldScene;
+    if(progress.gameCleared){suzumaruActive=true;suzumaruJoined=true;yunoJoined=true;gyouJoinConfirmed=true;gyouJoined=true;syncStoryParty();target='postGameIsland';}
 
     // If the save is clearly before Gyou's joining chapter, remove any stale
     // joined state left by v0.43/v0.44 migration logic.
@@ -1453,7 +1465,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.98',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.99',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -2711,6 +2723,7 @@ function finishBattle(){
     battle=null;scene='volcanoBearAfter';dialogIndex=0;touchUI.classList.add('hidden');saveGame();return;
   }
 
+  if(battle && battle.monsterId>=970 && battle.monsterId<=973){const ids=battle.enemies?battle.enemies.map(e=>e.id):[battle.monsterId];ids.forEach(id=>{const m=postGameVolcanoMobs.find(x=>x.id===id);if(m){m.alive=false;m.respawn=10;}});const count=battle.enemies?battle.enemies.length:1,expGain=150+(count-1)*45,goldGain=90+(count-1)*30;progress.gold+=goldGain;const leveled=gainExp(expGain);saveProgress();battle=null;scene='postGameVolcano';touchUI.classList.remove('hidden');flashText=leveled?`レベルアップ！ Lv.${progress.level}　SP+1`:`経験値 ${expGain} / ${goldGain}G 獲得！`;flashTimer=2.4;saveGame();return;}
   if(battle && battle.monsterId>=960 && battle.monsterId<=963){
     const mon=dragonTrailMobs.find(m=>m.id===battle.monsterId);
     if(mon){mon.alive=false;mon.respawn=10;}
@@ -4391,6 +4404,9 @@ function drawPostDragonClear(){
   text('A / Enter でクリア後メニューへ',480,350,19,'center','#b9cad8');
 }
 
+function drawPostGameIsland(){const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#a9e3ef');gr.addColorStop(1,'#9bd58b');ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);rect(0,245,W,295,'#80bd72');ctx.fillStyle='#d8c38f';ctx.fillRect(0,365,W,115);const gs=[[90,280,'ぶりふぉ村'],[300,280,'さるびえ村'],[510,280,'さるびび村'],[720,280,'たけぞ村']];gs.forEach(([x,y,n])=>{outlineRect(x,y,150,75,'#e9e2c6','#587064',3);text(n,x+75,y+27,18,'center','#29434b',900);text('入口',x+75,y+55,14,'center','#536c70');});outlineRect(785,165,150,65,'#65534a','#d29b67',3);text('火山入口',860,197,18,'center','#fff1d3',900);drawHeroFox(postGameHero.x,postGameHero.y,1);drawSuzumaru(postGameHero.x-46,postGameHero.y+15,.92);drawYuno(postGameHero.x-88,postGameHero.y+19,.9);drawGyou(postGameHero.x-128,postGameHero.y+22,.9);const ht=hudTop();ctx.fillStyle='rgba(13,39,54,.88)';ctx.fillRect(18,ht,560,48);text(`平和になった りすぺく島　Lv.${progress.level}　${progress.gold}G`,35,ht+24,17);}
+function drawPostGameVillage(){const names={brifo:'ぶりふぉ村',sarubie:'さるびえ村',sarubibi:'さるびび村',takezo:'たけぞ村'};ctx.fillStyle='#b9dfc1';ctx.fillRect(0,0,W,H);rect(0,245,W,295,'#7eb272');for(let x=150;x<800;x+=210){outlineRect(x,280,130,105,'#efe4c8','#725e4c',3);}outlineRect(35,405,150,60,'#e8f4f2','#557a79',3);text('島へ出る',110,435,18,'center','#284b50',900);drawHeroFox(postGameHero.x,postGameHero.y,1);drawSuzumaru(postGameHero.x-46,postGameHero.y+15,.92);drawYuno(postGameHero.x-88,postGameHero.y+19,.9);drawGyou(postGameHero.x-128,postGameHero.y+22,.9);text(`${names[postGameArea]}　平和な日常`,35,hudTop()+24,18);}
+function drawPostGameVolcano(){camera.x=Math.max(0,Math.min(520,postGameVolcanoHero.x-W*.42));ctx.save();ctx.translate(-camera.x,0);ctx.fillStyle='#735f55';ctx.fillRect(0,0,1480,H);rect(0,260,1480,280,'#4d4b48');ctx.strokeStyle='#c58b61';ctx.lineWidth=16;ctx.beginPath();ctx.moveTo(70,465);ctx.bezierCurveTo(430,420,850,350,1430,270);ctx.stroke();outlineRect(35,405,125,55,'#e7ddc8','#8d6e55',3);text('島へ出る',97,433,16,'center','#4e3b31',900);postGameVolcanoMobs.forEach(m=>drawSurveyMonster(m));drawHeroFox(postGameVolcanoHero.x,postGameVolcanoHero.y,.92);drawSuzumaru(postGameVolcanoHero.x-48,postGameVolcanoHero.y+15,.96);drawYuno(postGameVolcanoHero.x-92,postGameVolcanoHero.y+18,.94);drawGyou(postGameVolcanoHero.x-135,postGameVolcanoHero.y+22,.92);ctx.restore();text('火山　ドラゴン挑戦と同系統の強敵が出現',35,hudTop()+24,17);}
 function drawDragonTrail(){
   camera.x=Math.max(0,Math.min(700,dragonTrailHero.x-W*.42));
   ctx.save();ctx.translate(-camera.x,0);
@@ -4567,6 +4583,9 @@ function update(dt){
     startPostDragonBattle();
     return;
   }
+  if(scene==='postGameIsland'){let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameHero.x+=dx*postGameHero.speed*dt;postGameHero.y+=dy*postGameHero.speed*dt;}postGameHero.x=Math.max(45,Math.min(920,postGameHero.x));postGameHero.y=Math.max(240,Math.min(500,postGameHero.y));const es=[['brifo',165,320],['sarubie',375,320],['sarubibi',585,320],['takezo',795,320]];for(const [a,x,y] of es)if(Math.hypot(postGameHero.x-x,postGameHero.y-y)<58){postGameArea=a;postGameHero.x=220;postGameHero.y=430;scene='postGameVillage';saveGame();return;}if(Math.hypot(postGameHero.x-860,postGameHero.y-197)<70){postGameVolcanoHero.x=180;postGameVolcanoHero.y=455;scene='postGameVolcano';saveGame();return;}return;}
+  if(scene==='postGameVillage'){let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameHero.x+=dx*postGameHero.speed*dt;postGameHero.y+=dy*postGameHero.speed*dt;}postGameHero.x=Math.max(45,Math.min(920,postGameHero.x));postGameHero.y=Math.max(250,Math.min(500,postGameHero.y));if(postGameHero.x<175&&postGameHero.y>385){postGameHero.x=480;postGameHero.y=400;scene='postGameIsland';saveGame();}return;}
+  if(scene==='postGameVolcano'){for(const m of postGameVolcanoMobs){if(!m.alive&&m.respawn>0){m.respawn-=dt;if(m.respawn<=0){m.alive=true;m.hp=m.maxHP;m.x=m.spawnX;m.y=m.spawnY;}}}let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameVolcanoHero.x+=dx*postGameVolcanoHero.speed*dt;postGameVolcanoHero.y+=dy*postGameVolcanoHero.speed*dt;}postGameVolcanoHero.x=Math.max(55,Math.min(1430,postGameVolcanoHero.x));postGameVolcanoHero.y=Math.max(245,Math.min(495,postGameVolcanoHero.y));if(postGameVolcanoHero.x<165&&postGameVolcanoHero.y>385){postGameHero.x=850;postGameHero.y=250;scene='postGameIsland';saveGame();return;}for(const m of postGameVolcanoMobs){chaseFieldMob(m,postGameVolcanoHero.x,postGameVolcanoHero.y,dt,280,58);if(m.alive&&Math.hypot(postGameVolcanoHero.x-m.x,(postGameVolcanoHero.y-m.y)*1.25)<38){startPostGameVolcanoBattle(m);return;}}return;}
   if(scene==='dragonTrail'){
     for(const m of dragonTrailMobs){if(!m.alive&&m.respawn>0){m.respawn-=dt;if(m.respawn<=0){m.alive=true;m.hp=m.maxHP;m.x=m.spawnX;m.y=m.spawnY;}}}
     let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;
@@ -5202,7 +5221,7 @@ function pressAction(){
     scene='finalLaunch';dialogIndex=0;saveGame();return;
   }
 
-  if(scene==='world' || scene==='road2' || scene==='route3' || scene==='cave' || scene==='takezoTravel' || scene==='takezoRoute' || scene==='coastSurveyField' || scene==='volcanoSurveyField' || scene==='finalBearField' || scene==='dragonTrail'){
+  if(scene==='world' || scene==='road2' || scene==='route3' || scene==='cave' || scene==='takezoTravel' || scene==='takezoRoute' || scene==='coastSurveyField' || scene==='volcanoSurveyField' || scene==='finalBearField' || scene==='dragonTrail' || scene==='postGameIsland' || scene==='postGameVillage' || scene==='postGameVolcano'){
     openFieldMenu(scene);
     return;
   }
@@ -5268,6 +5287,9 @@ function frame(now){
   else if(scene==='pirateCaptainIntro')drawPirateCaptainIntro();
   else if(scene==='pirateCaptainAfter')drawPirateCaptainAfter();
   else if(scene==='ending')drawEnding();
+  else if(scene==='postGameIsland')drawPostGameIsland();
+  else if(scene==='postGameVillage')drawPostGameVillage();
+  else if(scene==='postGameVolcano')drawPostGameVolcano();
   else if(scene==='dragonTrail')drawDragonTrail();
   else if(scene==='dragonTrailShop')drawDragonTrailShop();
   else if(scene==='dragonCall')drawDragonCall();

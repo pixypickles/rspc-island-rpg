@@ -75,6 +75,7 @@ function heroIceSkillName(){
   return '氷結斬り';
 }
 if(progress.klausDefeated===undefined)progress.klausDefeated=false;
+if(progress.postGamePirateRaidCleared)progress.klausDefeated=true;
 if(progress.nineTailQuestUnlocked===undefined)progress.nineTailQuestUnlocked=false;
 if(progress.nineTailGear===undefined)progress.nineTailGear=false;
 if(progress.sealedCaveUnlocked===undefined)progress.sealedCaveUnlocked=false;
@@ -1599,7 +1600,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.08',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.09',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -4921,6 +4922,14 @@ function bgmToggle(){
 },{once:true,passive:true}));
 
 function update(dt){
+  if(scene==='postGameElderTalk' &&
+     (progress.klausDefeated||progress.postGamePirateRaidCleared) &&
+     !progress.nineTailGear &&
+     (progress.heroPebbleRandom||0)>=3 &&
+     (progress.heroIceSkill||0)>=3){
+    scene='nineTailElderTalk';dialogIndex=0;
+    touchUI.classList.remove('hidden');
+  }
   if(scene==='nineTailElderTalk'||scene==='nineTailHouse'){
     touchUI.classList.remove('hidden');
     if(scene==='nineTailElderTalk'&&(dialogIndex<0||dialogIndex>=nineTailElderCheckDialog.length))dialogIndex=0;
@@ -5599,7 +5608,7 @@ function pressAction(){
   }
 
   if(scene==='postGameVillage'&&postGameArea==='brifo'&&Math.hypot(postGameHero.x-700,postGameHero.y-385)<100){
-    if(progress.klausDefeated && !progress.nineTailGear && (progress.heroPebbleRandom||0)>=3 && (progress.heroIceSkill||0)>=3){
+    if((progress.klausDefeated||progress.postGamePirateRaidCleared) && !progress.nineTailGear && (progress.heroPebbleRandom||0)>=3 && (progress.heroIceSkill||0)>=3){
       scene='nineTailElderTalk';dialogIndex=0;touchUI.classList.add('hidden');return;
     }
     scene='postGameElderTalk';dialogIndex=0;touchUI.classList.add('hidden');return;

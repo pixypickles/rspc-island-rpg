@@ -1453,7 +1453,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.92',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.93',480,121,18,'center','#eef8ff');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
   if(cleared)labels.push(progress.postDragonDefeated?'ドラゴンに挑戦（再戦）':'ドラゴンに挑戦');
@@ -1692,11 +1692,11 @@ function startFinalBearBattle(){
 
 function startPirateCaptainBattle(){
   const over=Math.max(0,(progress.level||1)-10);
-  const hp=570+Math.min(400,over*31);
+  const hp=650+Math.min(440,over*35);
   battle={heroHP:progress.maxHP,heroMP:progress.maxMP,enemyHP:hp,enemyMaxHP:hp,
     enemyName:'副船長',enemyKind:'viceCaptain',monsterId:900,turn:'player',defending:false,bossPhase:1,bossTurn:0,
     enemies:[
-      {name:'副船長',kind:'viceCaptain',hp:Math.floor(hp*.62),maxHP:Math.floor(hp*.62)},
+      {name:'副船長',kind:'viceCaptain',hp:Math.floor(hp*.68),maxHP:Math.floor(hp*.68)},
       {name:'海賊船長',kind:'pirateCaptain',hp:hp,maxHP:hp,potions:2}
     ]};
   const ss=suzumaruStats(),ys=yunoStats(),gs=gyouStats();
@@ -2141,7 +2141,7 @@ function battleAttack(mode='attack',target='hero'){
     const waveCost=heroSkillMPCost(waveLv>=2?11:8);
     if(battle.heroMP<waveCost){battleMessage='MPが足りない！';return;}
     battle.heroMP-=waveCost;
-    dmg=heroMagicFlowPower(heroIcePower((waveLv>=2?16:8)+Math.floor(heroEquipAtk()*(waveLv>=2?.48:.33))));
+    dmg=heroMagicFlowPower(heroIcePower((waveLv>=2?22:12)+Math.floor(heroEquipAtk()*(waveLv>=2?.58:.40))));
     const allDmg=damageAllEnemies(dmg);
     const summary=Array.isArray(allDmg)?allDmg.map(v=>typeof v==='object'?`${v.name} ${v.damage}`:v).join(' / '):'';
     const waveName=waveLv>=2?'氷晶大波':'氷晶波';
@@ -2181,7 +2181,7 @@ function battleAttack(mode='attack',target='hero'){
     const skillName=hits===7?'氷つぶて乱射IV':hits===5?'氷つぶて乱射III':hits===3?'氷つぶて乱射II':'氷のつぶて';
     let parts=[],total=0,targetCounts={};
     for(let i=0;i<hits;i++){
-      const hit=heroMagicFlowPower(heroIcePower(Math.max(1,Math.floor((heroEquipAtk()+5+Math.floor(Math.random()*6))*(hits===1?1:.70)))));
+      const hit=heroMagicFlowPower(heroIcePower(Math.max(1,Math.floor((heroEquipAtk()+5+Math.floor(Math.random()*6))*(hits===1?1:.60)))));
       // Each shot independently selects one currently living enemy.
       // With one enemy, every shot therefore lands on that enemy.
       let targetIndex=0,targetName=battle.enemyName||'敵';
@@ -2499,7 +2499,7 @@ function pirateCaptainTurn(){
   if(cap.hp>0 && cap.hp<=cap.maxHP*.5 && battle.bossPhase===1){battle.bossPhase=2;battleMessage='海賊船長「まだ終わらん！」';}
   // 船長は自分専用の回復薬を最大2回使用。副船長には使わない。
   if(cap.hp>0 && cap.potions>0 && cap.hp<=cap.maxHP*.42){
-    const heal=Math.min(125,cap.maxHP-cap.hp);cap.hp+=heal;cap.potions--;syncPrimaryEnemy();
+    const heal=Math.min(140,cap.maxHP-cap.hp);cap.hp+=heal;cap.potions--;syncPrimaryEnemy();
     battleMessage=`海賊船長は自分に高級回復薬を使った！ HP ${heal}回復！（残り${cap.potions}）`;
     addDamagePopup(`+${heal}`,785,170,'#9ff0c5');battle.turn='enemyResult';battleCooldown=1.3;return;
   }
@@ -2507,7 +2507,7 @@ function pirateCaptainTurn(){
   // 副船長は生存中、2ターンに1回割り込んで大斧を振るう。
   if(vice.hp>0 && (battle.bossTurn%2===0 || cap.hp<=0))attacker='vice';
   const isVice=attacker==='vice';
-  const base=(isVice?34:(battle.bossPhase===2?25:18))+Math.floor(Math.random()*7);
+  const base=(isVice?39:(battle.bossPhase===2?30:22))+Math.floor(Math.random()*8);
   let targets=[];
   if(battle.gyouGrandGuard)targets=['gyou'];
   else if(!isVice && battle.bossTurn%3===0)targets=['hero','suzu','yuno','gyou'];
@@ -3698,9 +3698,9 @@ function drawMenu(){
       text('氷のつぶて派生（初期技から2方向）',45,343,14,'left','#bfe7f6',800);
       const pr=progress.heroPebbleRandom||0, pa=progress.heroPebbleAll||0;
       const pebNodes=[
-        [45,356,'氷つぶて乱射II','ランダム2発',1,pr>=1,pr===0],
-        [245,356,'氷つぶて乱射III','ランダム3発',1,pr>=2,pr===1],
-        [445,356,'氷つぶて乱射IV','ランダム4発',2,pr>=3,pr===2],
+        [45,356,'氷つぶて乱射II','ランダム3発',1,pr>=1,pr===0],
+        [245,356,'氷つぶて乱射III','ランダム5発',1,pr>=2,pr===1],
+        [445,356,'氷つぶて乱射IV','ランダム7発',2,pr>=3,pr===2],
         [45,425,'氷晶波','敵全体',1,pa>=1,pa===0],
         [245,425,'氷晶大波','全体攻撃強化',2,pa>=2,pa===1]
       ];

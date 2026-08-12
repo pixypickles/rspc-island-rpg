@@ -93,10 +93,10 @@ function partyLevel(){ return progress.level; }
 function heroStats(){
   const nine=!!progress.nineTailGear;
   return {
-    maxHP:progress.maxHP+(nine?100:0),
+    maxHP:progress.maxHP+(nine?50:0),
     maxMP:progress.maxMP+(nine?50:0),
-    atk:progress.atk+(nine?100:0),
-    def:progress.def+(nine?50:0)
+    atk:progress.atk+(nine?200:0),
+    def:progress.def
   };
 }
 function heroIceHits(){
@@ -109,7 +109,14 @@ function heroPebbleHitCount(){
   const base=pr>=3?7:pr>=2?5:pr>=1?3:1;
   return base+(progress.nineTailGear?2:0);
 }
-function nineTailIceMultiplier(){const resist=(battle&&battle.enemyKind==='whiteDragon')?.5:1;return (progress.nineTailGear?1.5:1)*resist;}
+function nineTailIceMultiplier(){return progress.nineTailGear?3:1;}
+function nineTailDamageCut(v){return progress.nineTailGear?Math.max(1,Math.ceil(v*.5)):v;}
+function sealedSkillResist(v,skill){
+  if(!battle)return v;
+  if(skill==='iceSlash'&&battle.enemyKind==='blackDragon')return Math.max(1,Math.floor(v*.5));
+  if(skill==='iceShot'&&battle.enemyKind==='whiteDragon')return Math.max(1,Math.floor(v*.5));
+  return v;
+}
 
 
 function suzumaruStats(){
@@ -877,8 +884,8 @@ const nineTailPostDialog=[
 ];
 const nineTailHouseDialog=[
  ['elder','この九尾の妖刀と、九尾の衣、お主なら使いこなせるじゃろう。'],
- ['narrator','九尾の妖刀を手に入れた！ 攻撃+100。氷結斬りの攻撃回数が3倍になる。'],
- ['narrator','九尾の衣を手に入れた！ HP+100、MP+50、防御+50。氷魔法+50%、氷撃+2発。'],
+ ['narrator','九尾の妖刀を手に入れた！ 攻撃+200。氷結斬りの攻撃回数3倍、さらに1撃ごとに固定99ダメージ。'],
+ ['narrator','九尾の衣を手に入れた！ HP+50、MP+50、被ダメージ50%カット。氷魔法3倍、氷撃+2発、回復魔法+100。'],
  ['elder','火山の麓の立ち入り禁止区域へ行くがよい。絶対零度の封印が解ける時が来たのじゃ。']
 ];
 const postGameCircusDialog=[
@@ -1619,7 +1626,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.14',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.15',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -2271,10 +2278,13 @@ function gyouPassiveHP(){
   return lv>=2?10:lv>=1?6:0;
 }
 function heroEquipAtk(){
-  return progress.atk+(progress.shopBought?.heroManaBlade?10:0);
+  return heroStats().atk+(progress.shopBought?.heroManaBlade?10:0);
 }
 function heroIcePower(v){
   return progress.shopBought?.heroManaBlade?Math.floor(v*1.30):v;
+}
+function heroIceMagicPower(v){
+  return Math.floor(heroIcePower(v)*nineTailIceMultiplier());
 }
 function heroSkillMPCost(base){
   return progress.shopBought?.heroManaBlade?Math.max(1,Math.ceil(base/2)):base;
@@ -2286,12 +2296,12 @@ function battleAttack(mode='attack',target='hero'){
     const hl=progress.heroHealSkill||1;
     const cost=heroSkillMPCost(hl>=3?12:hl>=2?8:5);
     const hpKey=partyHPKey(target),maxHP=partyMaxHP(target);
-    const amount=hl>=2?120:50;
+    const amount=(hl>=2?120:50)+(progress.nineTailGear?100:0);
     const hname=hl>=3?'大水癒':hl>=2?'水の大いやし':'水のいやし';
     if(battle.heroMP>=cost){
       battle.heroMP-=cost;
       if(hl>=3){
-        const allHeal=130;
+        const allHeal=130+(progress.nineTailGear?100:0);
         battle.heroHP=Math.min(heroStats().maxHP,battle.heroHP+allHeal);
         if(!battle.soloHero){
           if(battle.suzuHP!==undefined)battle.suzuHP=Math.min(battle.suzuMaxHP,battle.suzuHP+allHeal);
@@ -2329,7 +2339,7 @@ function battleAttack(mode='attack',target='hero'){
     const waveCost=heroSkillMPCost(waveLv>=2?11:8);
     if(battle.heroMP<waveCost){battleMessage='MPが足りない！';return;}
     battle.heroMP-=waveCost;
-    dmg=heroMagicFlowPower(heroIcePower((waveLv>=2?22:12)+Math.floor(heroEquipAtk()*(waveLv>=2?.58:.40))));
+    dmg=heroMagicFlowPower(heroIceMagicPower((waveLv>=2?22:12)+Math.floor(heroEquipAtk()*(waveLv>=2?.58:.40))));
     const allDmg=damageAllEnemies(dmg);
     const summary=Array.isArray(allDmg)?allDmg.map(v=>typeof v==='object'?`${v.name} ${v.damage}`:v).join(' / '):'';
     const waveName=waveLv>=2?'氷晶大波':'氷晶波';
@@ -2353,7 +2363,9 @@ function battleAttack(mode='attack',target='hero'){
     const hits=heroIceHits();
     let total=0,parts=[];
     for(let i=0;i<hits;i++){
-      const hit=heroIcePower(Math.max(1,heroEquipAtk()+(il>=3?11:il>=2?9:15)+Math.floor(Math.random()*7)));
+      let hit=heroIcePower(Math.max(1,heroEquipAtk()+(il>=3?11:il>=2?9:15)+Math.floor(Math.random()*7)));
+      if(progress.nineTailGear)hit+=99;
+      hit=sealedSkillResist(hit,'iceSlash');
       total+=hit;parts.push(hit);
     }
     dmg=total;
@@ -2362,14 +2374,15 @@ function battleAttack(mode='attack',target='hero'){
     addDamagePopup(`${hits} HIT ${dmg}`,700,155,'#bdefff');
     if(battle.monsterId===99||battle.monsterId>=200)battleChoiceText.hero=skillName;
   }else if(mode==='ice'){
-    const pr=progress.heroPebbleRandom||0,hits=pr>=3?7:pr>=2?5:pr>=1?3:1;
+    const pr=progress.heroPebbleRandom||0,hits=heroPebbleHitCount();
     const cost=heroSkillMPCost(hits>=7?10:hits>=5?8:hits>=3?6:4);
     if(battle.heroMP<cost){battleMessage='MPが足りない！';return;}
     battle.heroMP-=cost;
-    const skillName=hits===7?'氷つぶて乱射IV':hits===5?'氷つぶて乱射III':hits===3?'氷つぶて乱射II':'氷のつぶて';
+    const skillName=pr>=3?'氷つぶて乱射IV':pr>=2?'氷つぶて乱射III':pr>=1?'氷つぶて乱射II':'氷のつぶて';
     let parts=[],total=0,targetCounts={};
     for(let i=0;i<hits;i++){
-      const hit=heroMagicFlowPower(heroIcePower(Math.max(1,Math.floor((heroEquipAtk()+5+Math.floor(Math.random()*6))*(hits===1?1:.60)))));
+      let hit=heroMagicFlowPower(heroIceMagicPower(Math.max(1,Math.floor((heroEquipAtk()+5+Math.floor(Math.random()*6))*(hits===1?1:.60)))));
+      hit=sealedSkillResist(hit,'iceShot');
       // Each shot independently selects one currently living enemy.
       // With one enemy, every shot therefore lands on that enemy.
       let targetIndex=0,targetName=battle.enemyName||'敵';
@@ -2423,7 +2436,7 @@ function useHighPotion(target){
     ensureGyouBattle();battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+heal);
     battleMessage=`ジュウは高級回復薬を使った！ HPが${heal}回復！`;battleChoiceText.gyou='高級回復薬';
   }else{
-    battle.heroHP=Math.min(progress.maxHP,battle.heroHP+heal);
+    battle.heroHP=Math.min(heroStats().maxHP,battle.heroHP+heal);
     battleMessage=`${heroName}は高級回復薬を使った！ HPが${heal}回復！`;battleChoiceText.hero='高級回復薬';
   }
   setBattleFx('heal',360,255);
@@ -2442,7 +2455,7 @@ function usePotion(target){
     battleMessage+='　→ 敵の番';
     beginEnemyTurn();
   }else{
-    battle.heroHP=Math.min(progress.maxHP,battle.heroHP+25);
+    battle.heroHP=Math.min(heroStats().maxHP,battle.heroHP+25);
     battleMessage=`${heroName}は回復薬を使った！ HPが25回復！`;
     setBattleFx('heal',185,255);
     if(battle.monsterId===99||battle.monsterId>=200)battleChoiceText.hero='回復薬';
@@ -2787,6 +2800,21 @@ function postGameRaidBossTurn(){
  battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};battle.turn='enemyResult';battleCooldown=1.15;
 }
 function enemyTurn(){
+  if(battle&&battle.monsterId===1199){
+    battle.bossTurn=(battle.bossTurn||0)+1;
+    const flame=(battle.bossTurn%2===0);
+    const rawPerHit=flame?30:20;
+    let perHit=nineTailDamageCut(rawPerHit);
+    if(battle.defending)perHit=Math.max(1,Math.ceil(perHit*.5));
+    const hits=9,total=perHit*hits;
+    battle.heroHP=Math.max(1,battle.heroHP-total);
+    battle.defending=false;
+    battleMessage=`ヤマタノオロチの${flame?'「九頭灼炎」':'「九頭連牙」'}！ ${perHit}×${hits} = ${total}ダメージ！`;
+    addDamagePopup(`9 HIT -${total}`,250,205,flame?'#ff9b72':'#ff796e');
+    setBattleFx('hitHero',185,255);
+    battleActor='hero';battle.turn='enemyResult';battleCooldown=1.2;battleMenu='main';
+    return;
+  }
   if(battle&&battle.monsterId===990){postGameRaidBossTurn();return;}
   if(battle&&battle.monsterId===950){
     battle.bossTurn=(battle.bossTurn||0)+1;
@@ -2846,7 +2874,11 @@ function enemyTurn(){
       if(battle.gyouCounter){const cd=Math.max(5,Math.floor(gs.atk*.8));damageEnemy(cd);attackLines.push(`迎撃 ${cd}`);}
     }else if(target==='yuno'){dmg=Math.max(1,baseDmg-Math.floor(ys.def/4));battle.yunoHP=Math.max(1,battle.yunoHP-dmg);totalYuno+=dmg;attackLines.push(`${foe.name} → ユーノ ${dmg}`);}
     else if(target==='suzu'){dmg=Math.max(1,baseDmg-Math.floor(ss.def/4));battle.suzuHP=Math.max(1,battle.suzuHP-dmg);totalSuzu+=dmg;attackLines.push(`${foe.name} → スズマル ${dmg}`);if(battle.suzuCounter){const cd=suzuFirePower(Math.max(7,Math.floor(ss.atk*.9)+6));damageEnemy(cd);attackLines.push(`炎返し ${cd}`);setBattleFx('fire');}}
-    else{dmg=Math.max(1,(battle.defending?Math.floor(baseDmg/2):baseDmg)-Math.floor(progress.def/4));battle.heroHP=Math.max(1,battle.heroHP-dmg);totalHero+=dmg;attackLines.push(`${foe.name} → ${heroName} ${dmg}`);}
+    else{
+      dmg=Math.max(1,(battle.defending?Math.floor(baseDmg/2):baseDmg)-Math.floor(progress.def/4));
+      dmg=nineTailDamageCut(dmg);
+      battle.heroHP=Math.max(1,battle.heroHP-dmg);totalHero+=dmg;attackLines.push(`${foe.name} → ${heroName} ${dmg}`);
+    }
   });
   battle.defending=false;
   if(totalHero>0){addDamagePopup(`-${totalHero}`,185,215,'#ff796e');setBattleFx('hitHero',185,255);}
@@ -4735,7 +4767,7 @@ function startSealedDragonBattle(m){
  damagePopups=[];battleMenu='main';battleActor='hero';battleMessage=`${m.name}が現れた！`;scene='battle';touchUI.classList.remove('hidden');
 }
 function startOrochiBattle(){
- const hs=heroStats(),hp=12000;
+ const hs=heroStats(),hp=30000;
  battle={heroHP:hs.maxHP,heroMP:hs.maxMP,enemyHP:hp,enemyMaxHP:hp,enemyName:'ヤマタノオロチ',enemyKind:'yamataOrochi',monsterId:1199,turn:'player',defending:false,soloHero:true};
  damagePopups=[];battleMenu='main';battleActor='hero';battleMessage='異界の裏ボス、ヤマタノオロチが九つの首をもたげた！';scene='battle';touchUI.classList.remove('hidden');
 }

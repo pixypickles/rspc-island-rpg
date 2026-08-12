@@ -46,6 +46,10 @@ if(progress.shopBought.heroManaBlade===undefined)progress.shopBought.heroManaBla
 if(progress.shopBought.suzuGloves===undefined)progress.shopBought.suzuGloves=false;
 if(progress.shopBought.yunoBracelet===undefined)progress.shopBought.yunoBracelet=false;
 if(progress.shopBought.gyouShield===undefined)progress.shopBought.gyouShield=false;
+if(progress.shopBought.summitBow && !progress.summitBowYunoFix){
+  progress.atk=Math.max(1,(progress.atk||1)-6);
+  progress.summitBowYunoFix=true;
+}
 
 
 
@@ -107,7 +111,7 @@ function yunoStats(){
   return {
     maxHP:42+(lv-1)*5,
     maxMP:30+(lv-1)*4,
-    atk:9+(lv-1)*2,
+    atk:9+(lv-1)*2+(progress.shopBought?.summitBow?6:0),
     def:5+(lv-1)
   };
 }
@@ -798,6 +802,22 @@ const dragonSummitDialog=[
 ];
 
 
+function dragonTrailEncounterGroup(first){
+  const pool=[
+    {name:'溶岩オオヤマネコ',kind:'emberLizard',hp:210,maxHP:210},
+    {name:'火口イワモグラ',kind:'rockMole',hp:240,maxHP:240},
+    {name:'黒曜ドリアングマ',kind:'durianBear',hp:285,maxHP:285},
+    {name:'噴煙オオヤマネコ',kind:'emberLizard',hp:260,maxHP:260}
+  ];
+  const count=2+Math.floor(Math.random()*2);
+  const enemies=[{name:first.name,kind:first.kind,hp:first.hp,maxHP:first.maxHP}];
+  while(enemies.length<count){
+    const t=pool[Math.floor(Math.random()*pool.length)];
+    enemies.push({...t});
+  }
+  return enemies;
+}
+
 function startDragonTrailBattle(mon){
   suzumaruActive=true;suzumaruJoined=true;yunoJoined=true;gyouJoinConfirmed=true;gyouJoined=true;
   syncStoryParty();
@@ -807,10 +827,11 @@ function startDragonTrailBattle(mon){
     yunoHP:ys.maxHP,yunoMaxHP:ys.maxHP,yunoMP:ys.maxMP,yunoMaxMP:ys.maxMP,
     gyouHP:gs.maxHP,gyouMaxHP:gs.maxHP,gyouMP:gs.maxMP,gyouMaxMP:gs.maxMP,
     enemyHP:mon.hp,enemyMaxHP:mon.maxHP,enemyName:mon.name,enemyKind:mon.kind,
-    monsterId:mon.id,turn:'player',defending:false};
+    monsterId:mon.id,turn:'player',defending:false,
+    enemies:dragonTrailEncounterGroup(mon)};
   damagePopups=[];battleMenu='main';battleActor='hero';
   battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
-  battleMessage=`${mon.name}が頂上への道を塞いだ！`;scene='battle';touchUI.classList.add('hidden');
+  battleMessage=`${battle.enemies.length}体の魔物が頂上への道を塞いだ！`;scene='battle';touchUI.classList.add('hidden');
 }
 
 function buyDragonTrailShop(){
@@ -829,8 +850,7 @@ function buyDragonTrailShop(){
     progress.gold-=75;progress.items.highPotion=(progress.items.highPotion||0)+1;
     flashText=`高級回復薬を購入！ 所持 ${progress.items.highPotion}`;flashTimer=1.7;
   }else if(i===1){
-    if(!buyUnique('summitBow',260,'烈風の強弓を購入！ パーティ攻撃補助 +6'))return;
-    progress.atk+=6;
+    if(!buyUnique('summitBow',260,'烈風の強弓を購入！ ユーノの攻撃 +6'))return;
   }else if(i===2){
     if(!buyUnique('summitSpear',300,'黒曜の剛槍を購入！ ジュウの攻撃・防御が上昇'))return;
   }else if(i===3){
@@ -4197,13 +4217,13 @@ function drawDragonTrail(){
 function drawDragonTrailShop(){
   ctx.fillStyle='#172333';ctx.fillRect(0,0,W,H);
   text('火山頂上への売店',52,42,27,'left','#fff0c5',900);
-  outlineRect(680,16,230,48,'#263a50','#e5bd68',2);
-  text('所持金',695,32,13,'left','#ffe9ad',800);
-  text(`${progress.gold} G`,890,48,21,'right','#fff6d7',900);
+  outlineRect(805,205,130,82,'#263a50','#e5bd68',2);
+  text('所持金',870,229,14,'center','#ffe9ad',800);
+  text(`${progress.gold} G`,870,258,22,'center','#fff6d7',900);
 
   const rows=[
     ['高級回復薬','HP70回復 / 75G',false],
-    ['烈風の強弓','ダッシュミウ用　仲間全体の攻撃補助+6 / 260G',!!progress.shopBought.summitBow],
+    ['烈風の強弓','ユーノ専用　攻撃+6 / 260G',!!progress.shopBought.summitBow],
     ['黒曜の剛槍','ジュウ用　攻撃+12・防御+5 / 300G',!!progress.shopBought.summitSpear],
     ['水晶の小剣','主人公専用　スキル消費MP半減 / 360G',!!progress.shopBought.heroManaBlade],
     ['炎獣のグローブ','スズマル専用　毎ターン攻撃が少し上昇 / 340G',!!progress.shopBought.suzuGloves],
@@ -4213,10 +4233,10 @@ function drawDragonTrailShop(){
   ];
   rows.forEach((r,i)=>{
     const y=72+i*50,sel=dragonTrailShopSelection===i;
-    outlineRect(70,y,820,43,sel?'#fff3d6':(i===7?'#344a64':'#e4edf2'),sel?'#e0a954':(i===7?'#718aa0':'#7793a6'),2);
-    text(`${sel?'▶ ':''}${r[0]}`,92,y+16,15,'left',i===7&&!sel?'#e5eef4':'#17324a',900);
-    text(r[1],310,y+16,12,'left',i===7&&!sel?'#b8c9d5':'#425f70');
-    if(r[2])text('購入済み',866,y+16,12,'right','#7a6955',800);
+    outlineRect(55,y,735,43,sel?'#fff3d6':(i===7?'#344a64':'#e4edf2'),sel?'#e0a954':(i===7?'#718aa0':'#7793a6'),2);
+    text(`${sel?'▶ ':''}${r[0]}`,75,y+16,15,'left',i===7&&!sel?'#e5eef4':'#17324a',900);
+    text(r[1],285,y+16,12,'left',i===7&&!sel?'#b8c9d5':'#425f70');
+    if(r[2])text('購入済み',770,y+16,12,'right','#7a6955',800);
   });
   text('↑↓ / タップ：選択　A / Enter：決定',480,493,14,'center','#d6e6ef');
 }

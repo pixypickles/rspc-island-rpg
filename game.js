@@ -768,7 +768,7 @@ const finalBalloonDialog=[
   ['narrator','一瞬だけ、5人にいつもの空気が戻る。'],
   ['hero','見えた。船長だ。'],
   ['narrator','霧の切れ間。ぶりふぉ村攻略のため海岸近くに置かれた前線本陣。その巨大な海賊旗の下で、二人の影が空を見上げた。'],
-  ['captain','……島の連中が、空から来るとはな。'],
+  ['pirateCaptainDialog','……島の連中が、空から来るとはな。'],
   ['vice','船長、俺が叩き落とします。'],
   ['yuno','気づかれた！'],
   ['hero','行こう。ここで終わらせる！'],
@@ -778,21 +778,21 @@ const finalBalloonDialog=[
 
 const pirateCaptainIntroDialog=[
 ['narrator','5人は気球から海岸近くの前線本陣へ飛び降りた。ジュウが土の盾で着地の衝撃を受け止める。沖には船長の旗艦が待機している。'],
-['captain','村を守るために、わざわざ俺のところまで来たか。'],
+['pirateCaptainDialog','村を守るために、わざわざ俺のところまで来たか。'],
 ['suzu','そっちが島まで来たんだろ。帰ってくれるなら追いかけないぞ。'],
 ['yuno','長引けば食料も弾薬も尽きる。だから一気に攻めたかったんだね。'],
-['captain','……よく見ている。だが、ここまで来て手ぶらでは帰れん。'],
+['pirateCaptainDialog','……よく見ている。だが、ここまで来て手ぶらでは帰れん。'],
 ['gyou','こっちも村は渡さない。'],
 ['dash','だったら、ここで決着をつけよう。'],
 ['hero','あなたを倒して、この戦いを終わらせる！'],
 ['vice','船長に近づけると思うな。俺の斧でまとめて潰す！'],
-['captain','いいだろう。島の切り札――副船長と俺でまとめて相手をしてやる！']
+['pirateCaptainDialog','いいだろう。島の切り札――副船長と俺でまとめて相手をしてやる！']
 ];
 const pirateCaptainAfterDialog=[
 ['narrator','副船長の大斧が転がり、続いて船長の武器も地面へ落ちた。'],
-['captain','……ここまで、か。'],
+['pirateCaptainDialog','……ここまで、か。'],
 ['yuno','本隊も分断されてる。これ以上続けても勝てないよ。'],
-['captain','全員に撤退を伝えろ。動ける船から海へ出す。'],
+['pirateCaptainDialog','全員に撤退を伝えろ。動ける船から海へ出す。'],
 ['suzu','最初からそうしてくれれば楽だったんだけどな。'],
 ['gyou','終わった……のか。'],
 ['dash','まだ村に戻るまでが決戦だよ。'],
@@ -904,14 +904,14 @@ function startPostDragonBattle(){
 }
 const gyouTrainingDialog=[
   ['narrator','準備を進めていると、たけぞ村の老村長がジュウを呼び止めた。'],
-  ['elder','ジュウ。守るというのは、ただ硬くなることではない。'],
+  ['takezoElder','ジュウ。守るというのは、ただ硬くなることではない。'],
   ['gyou','村長……。'],
-  ['elder','仲間が倒れるはずだった一撃を、自分が引き受ける。その覚悟まで含めて守りだ。'],
+  ['takezoElder','仲間が倒れるはずだった一撃を、自分が引き受ける。その覚悟まで含めて守りだ。'],
   ['narrator','村長はジュウと何度も打ち合い、複数方向から飛んでくる土の礫を一人で受け止める特訓を行った。'],
   ['gyou','……もう一度お願いします！'],
-  ['elder','よし。今度は四人全員を守るつもりで構えろ！'],
+  ['takezoElder','よし。今度は四人全員を守るつもりで構えろ！'],
   ['narrator','激しい特訓の末、ジュウは奥義「大守護」を身につけた！'],
-  ['elder','使えばお前一人に攻撃が集中する。無茶はするな。だが――必要な時には迷うな。'],
+  ['takezoElder','使えばお前一人に攻撃が集中する。無茶はするな。だが――必要な時には迷うな。'],
   ['gyou','はい！']
 ];
 
@@ -1453,7 +1453,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.90',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.91',480,121,18,'center','#eef8ff');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
   if(cleared)labels.push(progress.postDragonDefeated?'ドラゴンに挑戦（再戦）':'ドラゴンに挑戦');
@@ -1465,7 +1465,7 @@ function drawTitle(){
   });
 }
 function speakerName(who){
-  return ({narrator:'語り',dash:'ダッシュミウ',pirate:'海賊',elder:'ぶりふぉ村長',hero:heroName,suzu:'スズマル',yuno:'ユーノ',gyou:'ジュウ',captain:'防衛隊長',lover:'防衛隊長の恋人',smith:'さるびえ村の鍛冶職人',dragonVoice:'？？？'})[who]||who;
+  return ({narrator:'語り',dash:'ダッシュミウ',pirate:'海賊',elder:'ぶりふぉ村長',takezoElder:'たけぞ村長',hero:heroName,suzu:'スズマル',yuno:'ユーノ',gyou:'ジュウ',captain:'防衛隊長',pirateCaptainDialog:'船長',lover:'防衛隊長の恋人',smith:'さるびえ村の鍛冶職人',dragonVoice:'？？？'})[who]||who;
 }
 function drawDialog(who,line){
   ctx.fillStyle='rgba(7,17,36,.92)';ctx.fillRect(46,380,868,132);
@@ -4426,8 +4426,9 @@ function chaseFieldMob(mon,px,py,dt,range=260,speed=52){
   if(d>38&&d<range){mon.x+=dx/d*speed*dt;mon.y+=dy/d*speed*dt;}
 }
 function update(dt){
-  if(scene==='dragonSummit'){
-    scene='dragonConfirm';dialogIndex=0;touchUI.classList.remove('hidden');
+  if(scene==='dragonSummit' || scene==='dragonConfirm'){
+    startPostDragonBattle();
+    return;
   }
   if(scene==='dragonTrail'){
     for(const m of dragonTrailMobs){if(!m.alive&&m.respawn>0){m.respawn-=dt;if(m.respawn<=0){m.alive=true;m.hp=m.maxHP;m.x=m.spawnX;m.y=m.spawnY;}}}
@@ -4439,9 +4440,8 @@ function update(dt){
       if(m.alive&&Math.hypot(dx,dy)<34){startDragonTrailBattle(m);return;}
     }
     if(dragonTrailHero.x>1575){
-      scene='dragonConfirm';dialogIndex=0;
-      touchUI.classList.remove('hidden');
-      saveGame();return;
+      startPostDragonBattle();
+      return;
     }
   } else if(scene==='finalBearField'){
     let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;
@@ -4992,10 +4992,6 @@ function pressAction(){
     }
     return;
   }
-  if(scene==='dragonSummit'){
-    scene='dragonConfirm';dialogIndex=0;touchUI.classList.remove('hidden');saveGame();return;
-  }
-  if(scene==='dragonConfirm'){startPostDragonBattle();return;}
   if(scene==='postDragonClear'){scene='end';dialogIndex=0;return;}
   if(scene==='sarubibiArrival'){
     dialogIndex++;
@@ -5017,9 +5013,6 @@ function pressAction(){
     }
     flashText='武器屋・道具屋・防衛隊詰所を調べよう';flashTimer=1.6;
     return;
-  }
-  if(scene==='dragonConfirm' && (e.key==='Escape'||e.key==='x'||e.key==='X')){
-    scene='dragonTrail';dragonTrailHero.x=1510;dragonTrailHero.y=285;touchUI.classList.remove('hidden');return;
   }
   if(scene==='dragonTrailShop'){
     if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'){dragonTrailShopSelection=(dragonTrailShopSelection+7)%8;e.preventDefault();return;}
@@ -5189,13 +5182,6 @@ addEventListener('keydown',e=>{
 });
 addEventListener('keyup',e=>{keys[e.key]=false;});
 canvas.addEventListener('pointerdown',e=>{
-  if(scene==='dragonConfirm'){
-    const r=canvas.getBoundingClientRect();
-    const x=(e.clientX-r.left)/r.width*W;
-    const y=(e.clientY-r.top)/r.height*H;
-    if(x>=280&&x<=680&&y>=285&&y<=390){startPostDragonBattle();return;}
-    return;
-  }
   if(scene==='dragonTrailShop'){
     const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H;
     if(y>=68&&y<474){

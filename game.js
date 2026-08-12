@@ -306,6 +306,14 @@ let finalBearWave=0;
 
 let dragonTrailHero={x:130,y:455,speed:210};
 let postGameHero={x:480,y:400,speed:210},postGameArea='brifo',postGameVolcanoHero={x:180,y:455,speed:210};
+let sealedCaveHero={x:220,y:455,speed:185};
+let sealedCaveMobs=[
+  {id:1101,name:'ブラックドラゴン',kind:'blackDragon',x:360,y:300,spawnX:360,spawnY:300,hp:1800,maxHP:1800,alive:true,respawn:0},
+  {id:1102,name:'ホワイトドラゴン',kind:'whiteDragon',x:520,y:410,spawnX:520,spawnY:410,hp:1800,maxHP:1800,alive:true,respawn:0},
+  {id:1103,name:'ブラックドラゴン',kind:'blackDragon',x:690,y:280,spawnX:690,spawnY:280,hp:2100,maxHP:2100,alive:true,respawn:0},
+  {id:1104,name:'ホワイトドラゴン',kind:'whiteDragon',x:830,y:410,spawnX:830,spawnY:410,hp:2100,maxHP:2100,alive:true,respawn:0}
+];
+
 let postGameElderTalked=false,postGameRaidUnlocked=false,postGameRaidWave=0;
 let postGameVolcanoMobs=[
 {id:970,name:'溶岩オオヤマネコ',kind:'emberLizard',x:430,y:430,spawnX:430,spawnY:430,alive:true,hp:380,maxHP:380,respawn:0},
@@ -1101,6 +1109,7 @@ function saveGame(){
     postGameArea,postGameElderTalked,postGameRaidUnlocked,postGameRaidWave,
     postGameHero:{x:postGameHero.x,y:postGameHero.y},
     postGameVolcanoHero:{x:postGameVolcanoHero.x,y:postGameVolcanoHero.y},
+    sealedCaveHero:{x:sealedCaveHero.x,y:sealedCaveHero.y},
     scene,
     lastFieldScene,
     heroName,
@@ -1195,7 +1204,7 @@ function loadGame(){
     restoreList(route3Mobs,d.route3Mobs);restoreList(takezoMobs,d.takezoMobs);restoreList(volcanoSurveyMobs,d.volcanoSurveyMobs);repairTakezoSquads();
 
     lastFieldScene=d.lastFieldScene||'world';
-    if(d.postGameArea)postGameArea=d.postGameArea;if(d.postGameElderTalked!==undefined)postGameElderTalked=d.postGameElderTalked;if(d.postGameRaidUnlocked!==undefined)postGameRaidUnlocked=d.postGameRaidUnlocked;if(d.postGameRaidWave!==undefined)postGameRaidWave=d.postGameRaidWave;apply(postGameHero,d.postGameHero);apply(postGameVolcanoHero,d.postGameVolcanoHero);
+    if(d.postGameArea)postGameArea=d.postGameArea;if(d.postGameElderTalked!==undefined)postGameElderTalked=d.postGameElderTalked;if(d.postGameRaidUnlocked!==undefined)postGameRaidUnlocked=d.postGameRaidUnlocked;if(d.postGameRaidWave!==undefined)postGameRaidWave=d.postGameRaidWave;apply(postGameHero,d.postGameHero);apply(postGameVolcanoHero,d.postGameVolcanoHero);apply(sealedCaveHero,d.sealedCaveHero);
     let target=d.scene||lastFieldScene;
     if(progress.gameCleared){suzumaruActive=true;suzumaruJoined=true;yunoJoined=true;gyouJoinConfirmed=true;gyouJoined=true;syncStoryParty();target='postGameIsland';}
 
@@ -1610,7 +1619,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.12',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.13',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];

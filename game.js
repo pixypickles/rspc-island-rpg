@@ -735,7 +735,7 @@ const dragonIntroDialog=[
 ['yuno','こちらの戦いを見ていたらしいね。危険だけど、敵意だけを向けている感じでもなかった。'],
 ['gyou','行くなら万全の準備をしてからだ。今度は島を守る戦いじゃない。俺たち自身の挑戦になる。'],
 ['hero','うん。準備ができたら、火山の頂上へ行こう。'],
-['narrator','クリア後モード「火山の古竜」が解放された！ 五人は火山の頂上へ向かった――。']
+['narrator','五人は声に応え、火山の頂上へ向かった――。']
 ];
 
 function startPostDragonBattle(){
@@ -1293,13 +1293,15 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.56',480,121,18,'center','#eef8ff');
-  const canContinue=hasSaveGame();
-  const ys=[326,382,438];
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.58',480,121,18,'center','#eef8ff');
+  const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
+  if(cleared)labels.push(progress.postDragonDefeated?'ドラゴンに挑戦（再戦）':'ドラゴンに挑戦');
+  const gap=50,startY=cleared?300:326;
   labels.forEach((lab,i)=>{
-    outlineRect(280,ys[i],400,44,titleSelection===i?'#e8f7fb':'rgba(15,35,60,.78)',i===2&&!canContinue?'#566879':'#73b9d6',2);
-    text(lab,480,ys[i]+22,i===2&&!canContinue?16:19,'center',i===2&&!canContinue?'#8193a2':(titleSelection===i?'#17324a':'#e8f4fa'));
+    const yy=startY+i*gap;
+    outlineRect(280,yy,400,42,titleSelection===i?'#e8f7fb':'rgba(15,35,60,.78)',i===2&&!canContinue?'#566879':(i===3?'#d8893b':'#73b9d6'),2);
+    text(lab,480,yy+21,i===2&&!canContinue?16:18,'center',i===2&&!canContinue?'#8193a2':(titleSelection===i?'#17324a':'#e8f4fa'));
   });
 }
 function speakerName(who){
@@ -1330,7 +1332,7 @@ function drawCutscene(){
     rect(265,100,8,108,'#f1e1b5');
     ctx.fillStyle='#7b2f72';ctx.beginPath();ctx.moveTo(273,108);ctx.lineTo(380,162);ctx.lineTo(273,186);ctx.closePath();ctx.fill();
     for(let x=212;x<=380;x+=28){ctx.fillStyle=(x/28)%2?'#f0c94f':'#52b9d0';ctx.beginPath();ctx.moveTo(x,194);ctx.lineTo(x+10,208);ctx.lineTo(x+20,194);ctx.fill();}
-    outlineRect(224,218,148,31,'#fff3c9','#9d4b45',2);text('サーカス団',298,234,18,'center','#9b3044',900);
+    outlineRect(224,218,148,31,'#fff3c9','#9d4b45',2);text('ちぇすたぴサーカス団',298,234,14,'center','#9b3044',900);
     ellipse(211,213,8,8,'#f0c94f');ellipse(386,213,8,8,'#f0c94f');
     rect(690,235,145,50,'#4e3025');rect(730,153,7,88,'#d0d5df');ctx.fillStyle='#e87a2f';ctx.beginPath();ctx.moveTo(737,158);ctx.lineTo(811,195);ctx.lineTo(737,213);ctx.closePath();ctx.fill();
   }else if(i<=8){
@@ -1338,7 +1340,7 @@ function drawCutscene(){
     rect(0,340,W,200,'#21483f');
     rect(100,262,300,84,'#f5e7c8');for(let x=100;x<400;x+=42)rect(x,262,21,84,'#d84c4c');
     ctx.strokeStyle='#e7b84e';ctx.lineWidth=5;ctx.strokeRect(102,264,296,80);
-    outlineRect(160,283,180,35,'#fff3c9','#9d4b45',2);text('サーカス団',250,301,20,'center','#9b3044',900);
+    outlineRect(160,283,180,35,'#fff3c9','#9d4b45',2);text('ちぇすたぴサーカス団',250,301,15,'center','#9b3044',900);
     for(let x=120;x<390;x+=34){ctx.fillStyle=(x%68)?'#52b9d0':'#f0c94f';ctx.beginPath();ctx.moveTo(x,255);ctx.lineTo(x+11,269);ctx.lineTo(x+22,255);ctx.fill();}
     text('ちぇすたぴ号',250,330,14,'center','#653c38');
     drawPirate(610,354,1.35,0);drawPirate(687,369,1.18,1);drawPirate(760,350,1.28,2);if(i>=5)drawDashmiu(220,361,1.32);
@@ -3734,10 +3736,8 @@ function drawEnd(){
   drawHeroFox(245,250,1.05);drawSuzumaru(355,255,1.14);drawDashmiu(465,262,1.03);drawYuno(575,255,1.12);drawGyou(685,255,1.14);
   text('THE END',480,82,44,'center','#f1e2ad');
   text('りすぺく島に平和が戻った',480,350,26,'center','#d8efff');
-  if(progress.gameCleared){
-    outlineRect(255,392,450,52,'#ffe2b8','#d8893b',2);text(progress.postDragonDefeated?'火山の古竜（再戦）':'クリア後：火山の古竜',480,418,19,'center','#60371f');
-    text('A / Enter：古竜へ　　画面下：タイトルへ',480,468,16,'center','#9fc8df');
-  }else text('A / Enter でタイトルへ',480,455,20,'center','#9fc8df');
+  text('A / Enter でタイトルへ',480,430,20,'center','#9fc8df');
+  if(progress.gameCleared)text('タイトルに「ドラゴンに挑戦」が追加されました',480,472,16,'center','#e7c47d');
 }
 function update(dt){
   if(scene==='finalBearField'){
@@ -4016,6 +4016,9 @@ function startFromInitialState(){
 function pressAction(){
   if(!nameOverlay.classList.contains('hidden'))return;
   if(scene==='title'){
+    if(titleSelection===3 && progress.gameCleared){
+      scene='dragonIntro';dialogIndex=0;touchUI.classList.add('hidden');return;
+    }
     if(titleSelection===2){
       if(hasSaveGame()){if(loadGame())return;}
       flashText='つづきから遊べるデータがありません';flashTimer=1.8;return;
@@ -4336,8 +4339,9 @@ function pressAction(){
     battleAttack('attack');return;
   }
   if(scene==='end'){
-    if(progress.gameCleared){scene='dragonIntro';dialogIndex=0;touchUI.classList.add('hidden');}
-    else {scene='title';dash.x=1960;dash.y=180;hero.x=360;hero.y=300;villageEventStarted=false;monsters.forEach(m=>{m.alive=true;m.respawn=0;m.x=m.spawnX;m.y=m.spawnY;});}
+    scene='title';titleSelection=progress.gameCleared?3:0;touchUI.classList.add('hidden');
+    dash.x=1960;dash.y=180;hero.x=360;hero.y=300;villageEventStarted=false;
+    monsters.forEach(m=>{m.alive=true;m.respawn=0;m.x=m.spawnX;m.y=m.spawnY;});
   }
 }
 
@@ -4464,9 +4468,16 @@ canvas.addEventListener('pointerdown',e=>{
   if(scene==='title'){
     const r=canvas.getBoundingClientRect();
     const y=(e.clientY-r.top)/r.height*H;
-    if(y>=316&&y<372){titleSelection=0;pressAction();return;}
-    if(y>=372&&y<428){titleSelection=1;pressAction();return;}
-    if(y>=428&&y<=492){titleSelection=2;pressAction();return;}
+    if(progress.gameCleared){
+      if(y>=290&&y<345){titleSelection=0;pressAction();return;}
+      if(y>=345&&y<395){titleSelection=1;pressAction();return;}
+      if(y>=395&&y<445){titleSelection=2;pressAction();return;}
+      if(y>=445&&y<=500){titleSelection=3;pressAction();return;}
+    }else{
+      if(y>=316&&y<372){titleSelection=0;pressAction();return;}
+      if(y>=372&&y<428){titleSelection=1;pressAction();return;}
+      if(y>=428&&y<=492){titleSelection=2;pressAction();return;}
+    }
     return;
   }
   if(scene==='sarubibiShop'){

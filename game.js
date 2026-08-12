@@ -55,8 +55,9 @@ if(progress.shopBought.summitBow && !progress.summitBowYunoFix){
 
 function suzuSingleSkillName(){
   const lv=progress.suzuSkills?.single||0;
-  if(lv>=3)return '豪炎爆斬';
-  if(lv>=2)return '爆炎斬り';
+  if(lv>=4)return '極炎二連斬';
+  if(lv>=3)return '豪炎二連斬';
+  if(lv>=2)return '火炎二連斬';
   return '火炎斬り';
 }
 function suzuAllSkillName(){
@@ -132,8 +133,9 @@ if(progress.suzuSP===undefined){
 if(progress.suzuSpentSP===undefined){
   {
   const s=progress.suzuSkills?.single||0,a=progress.suzuSkills?.all||0;
-  const spent=n=>n<=0?0:n===1?1:n===2?3:6;
-  progress.suzuSpentSP=spent(s)+spent(a);
+  const spent=n=>n<=0?0:n===1?1:n===2?3:n===3?6:10;
+  const fl=progress.suzuSkills?.fightingFlame||0;
+  progress.suzuSpentSP=spent(s)+spent(a)+(fl>=2?5:fl>=1?2:0);
 }
   progress.suzuSP=Math.max(0,totalSPForLevel(progress.level)-progress.suzuSpentSP);
 }
@@ -175,9 +177,12 @@ if(!progress.suzuSkills) progress.suzuSkills={
   counter:0   // 剣技カウンター
 };
 if(progress.suzuSkills.counter===undefined)progress.suzuSkills.counter=0;
+if(progress.suzuSkills.fightingFlame===undefined)progress.suzuSkills.fightingFlame=0;
+progress.suzuSkills.fightingFlame=Math.max(0,Math.min(2,progress.suzuSkills.fightingFlame||0));
 saveProgress();
 if(!progress.shopBought) progress.shopBought={fireBlade:false};
 if(progress.shopBought.windKnife===undefined) progress.shopBought.windKnife=false;
+if(progress.shopBought.windSword===undefined) progress.shopBought.windSword=false;
 saveProgress();
 
 function saveProgress(){
@@ -323,6 +328,7 @@ function repairTakezoSquads(){
 repairTakezoSquads();
 
 let sarubibiShopType='weapon';
+let sarubibiWeaponSelection=0;
 
 
 
@@ -1821,6 +1827,7 @@ function advancePartyTurn(){
   if(battleActor==='hero' && suzumaruActive){
     battleActor='suzu';
     if(progress.shopBought?.suzuGloves)battle.suzuGloveStacks=(battle.suzuGloveStacks||0)+1;
+    if((progress.suzuSkills?.fightingFlame||0)>0)battle.suzuFightingFlameStacks=Math.min(5,(battle.suzuFightingFlameStacks||0)+1);
     return;
   }
   if(battleActor==='suzu' && yunoJoined && battle.monsterId>=400){
@@ -2232,6 +2239,13 @@ function beginEnemyTurn(){
   battleCooldown=.55;
   battleMenu='main';
 }
+function suzuFightingFlameBonus(baseAtk){
+  const lv=progress.suzuSkills?.fightingFlame||0;
+  if(lv<=0||!battle)return 0;
+  const stacks=Math.min(5,battle.suzuFightingFlameStacks||0);
+  const rate=lv>=2?.05:.03;
+  return Math.floor(baseAtk*rate*stacks);
+}
 function suzuSkillMPCost(base){
   return progress.shopBought?.suzuGloves?Math.max(1,Math.ceil(base*.75)):base;
 }
@@ -2241,6 +2255,7 @@ function suzuFirePower(v){
 function suzuAction(mode='attack'){
   const ss={...suzumaruStats()};
   if(progress.shopBought?.suzuGloves)ss.atk+=(battle.suzuGloveStacks||0)*2;
+  ss.atk+=suzuFightingFlameBonus(suzumaruStats().atk);
   if(!battle || battle.turn!=='player' || battleActor!=='suzu')return;
   let dmg=0;
   if(mode==='counter'){
@@ -2276,19 +2291,30 @@ function suzuAction(mode='attack'){
     battle.suzuMP-=fireCost;
     {
       const sl=progress.suzuSkills.single||0;
-      const bonus=sl>=3?68:sl>=2?28:12;
-      dmg=suzuFirePower(ss.atk+bonus+Math.floor(Math.random()*7));
+      const skillName=suzuSingleSkillName();
+      if(sl>=2){
+        const ratio=sl>=4?1.18:sl>=3?1.02:.86;
+        const bonus=sl>=4?26:sl>=3?18:10;
+        const d1=suzuFirePower(Math.floor(ss.atk*ratio)+bonus+Math.floor(Math.random()*7));
+        const d2=suzuFirePower(Math.floor(ss.atk*ratio)+bonus+Math.floor(Math.random()*7));
+        damageEnemy(d1);if(!enemiesDefeated())damageEnemy(d2);
+        battleMessage=`スズマルの「${skillName}」！ ${d1}＋${d2}ダメージ！`;
+        setBattleFx('fire');addDamagePopup(skillName,700,155,'#ffb093');battleChoiceText.suzu=skillName;
+        dmg=0;
+      }else{
+        dmg=suzuFirePower(Math.floor(ss.atk*1.12)+14+Math.floor(Math.random()*7));
+        battleMessage=`スズマルの「${skillName}」！ ${dmg}ダメージ！`;
+        setBattleFx('fire');addDamagePopup(skillName,700,155,'#ffb093');battleChoiceText.suzu=skillName;
+      }
     }
-    const skillName=suzuSingleSkillName();
-    battleMessage=`スズマルの「${skillName}」！ ${dmg}ダメージ！`;setBattleFx('fire');addDamagePopup(skillName,700,155,'#ffb093');battleChoiceText.suzu=skillName;
   }else{
     dmg=ss.atk+2+Math.floor(Math.random()*5);
     battleMessage=`スズマルのこうげき！ ${dmg}ダメージ！`;setBattleFx('slash');battleChoiceText.suzu='こうげき';
   }
-  damageEnemy(dmg);
+  if(dmg>0)damageEnemy(dmg);
   if(progress.finalFlameBlade && !enemiesDefeated()){
     const sl=progress.suzuSkills?.single||0;
-    const follow=suzuFirePower((sl>=3?18:7)+Math.floor(ss.atk*(sl>=3?.45:.28))+Math.floor(Math.random()*(sl>=3?9:5)));
+    const follow=suzuFirePower((sl>=4?23:sl>=3?18:7)+Math.floor(ss.atk*(sl>=4?.52:sl>=3?.45:.28))+Math.floor(Math.random()*(sl>=3?9:5)));
     damageEnemy(follow);
     battleMessage+=`　爆炎大剣の炎が追撃！ ${follow}ダメージ！`;
     setBattleFx('fire');addDamagePopup(`+炎 ${follow}`,700,185,'#ff9b70');
@@ -2946,14 +2972,20 @@ function drawSarubibiShop(){
   ctx.fillStyle='#123840';ctx.fillRect(0,0,W,H);
   text(sarubibiShopType==='weapon'?'さるびび武器屋':'さるびび道具屋',70,58,31,'left','#fff',800);
   text(`所持金：${progress.gold}G`,760,58,22,'center','#e5fff5');
-
   if(sarubibiShopType==='weapon'){
-    const bought=progress.shopBought.windKnife===true;
-    outlineRect(80,125,800,120,bought?'#576575':'#eefaf7','#64aaa8',2);
-    text('風切りの小剣',115,157,24,'left',bought?'#c7d0d6':'#173a3e');
-    text('主人公の攻撃力 +4',115,193,18,'left',bought?'#aab5bd':'#395f63');
-    text(bought?'購入済み':'85G',820,184,20,'right',bought?'#c7d0d6':'#2a7e78');
-    text('風を受け流す軽量な小剣。',115,224,15,'left',bought?'#aab5bd':'#526f72');
+    const items=[
+      {name:'風切りの小剣',desc:'主人公の攻撃力 +4',flavor:'風を受け流す軽量な小剣。',price:85,bought:progress.shopBought.windKnife},
+      {name:'風渡りの剣',desc:'主人公の攻撃力 +6',flavor:'風の村で鍛えた、扱いやすい片手剣。',price:135,bought:progress.shopBought.windSword}
+    ];
+    items.forEach((it,i)=>{
+      const y=105+i*130,sel=sarubibiWeaponSelection===i;
+      outlineRect(80,y,800,112,it.bought?'#576575':sel?'#fff6d8':'#eefaf7',sel?'#e6bd63':'#64aaa8',sel?4:2);
+      text(`${sel?'▶ ':''}${it.name}`,115,y+30,22,'left',it.bought?'#c7d0d6':'#173a3e');
+      text(it.desc,115,y+60,17,'left',it.bought?'#aab5bd':'#395f63');
+      text(it.bought?'購入済み':`${it.price}G`,820,y+52,19,'right',it.bought?'#c7d0d6':'#2a7e78');
+      text(it.flavor,115,y+88,14,'left',it.bought?'#aab5bd':'#526f72');
+    });
+    text('↑↓ / タップ：商品選択　A / Enter：購入',480,386,14,'center','#ccebe7');
   }else{
     outlineRect(80,125,800,120,'#eefaf7','#64aaa8',2);
     text('回復薬',115,157,24,'left','#173a3e');
@@ -2961,24 +2993,23 @@ function drawSarubibiShop(){
     text('20G',820,184,20,'right','#2a7e78');
     text(`所持数：${progress.items.potion}`,115,224,15,'left','#526f72');
   }
-
-  outlineRect(315,335,330,66,'#dff4f2','#61a7a5',2);text('購入する',480,368,22,'center','#173a3e');
-  outlineRect(315,420,330,58,'#304e58','#66888e',2);text('店を出る',480,449,20,'center','#e5f3f1');
+  outlineRect(315,410,330,52,'#dff4f2','#61a7a5',2);text('購入する',480,436,20,'center','#173a3e');
+  outlineRect(315,475,330,45,'#304e58','#66888e',2);text('店を出る',480,497,18,'center','#e5f3f1');
 }
-
 function sarubibiShopBuy(){
   if(sarubibiShopType==='weapon'){
-    if(progress.shopBought.windKnife){flashText='もう購入済みです';flashTimer=1.6;return;}
-    if(progress.gold<85){flashText='お金が足りません';flashTimer=1.6;return;}
-    progress.gold-=85;progress.atk+=4;progress.shopBought.windKnife=true;saveProgress();saveGame();
-    flashText='風切りの小剣を装備した！ 攻撃力+4';flashTimer=2.1;
+    const sword=sarubibiWeaponSelection===1;
+    const key=sword?'windSword':'windKnife',price=sword?135:85,atk=sword?6:4,name=sword?'風渡りの剣':'風切りの小剣';
+    if(progress.shopBought[key]){flashText='もう購入済みです';flashTimer=1.6;return;}
+    if(progress.gold<price){flashText='お金が足りません';flashTimer=1.6;return;}
+    progress.gold-=price;progress.atk+=atk;progress.shopBought[key]=true;saveProgress();saveGame();
+    flashText=`${name}を装備した！ 攻撃力+${atk}`;flashTimer=2.1;
   }else{
     if(progress.gold<20){flashText='お金が足りません';flashTimer=1.6;return;}
     progress.gold-=20;progress.items.potion+=1;saveProgress();saveGame();
     flashText=`回復薬を買った！ 所持数 ${progress.items.potion}`;flashTimer=1.8;
   }
 }
-
 function drawSarubibiArrival(){
   drawSarubibiVillageBG();
   drawHeroFox(275,355,1.25);
@@ -3584,7 +3615,7 @@ function drawMenu(){
       text(suzuSingleSkillName(),95,270,20,'left','#6b231d');
       {
         const sl=progress.suzuSkills?.single||0;
-        const nxt=sl<1?'火炎斬りを強化':sl===1?'次：爆炎斬り':sl===2?'次：豪炎爆斬':'単体系・最大強化';
+        const nxt=sl<1?'火炎斬りを強化':sl===1?'次：爆炎斬り':sl===2?'次：豪炎爆斬':sl===3?'次：極炎斬り SP4':'単体系・最大強化';
         text(nxt,95,300,15,'left','#8d4a3b');
       }
       text(`現在：Lv.${progress.suzuSkills?.single||0}`,420,285,15,'right','#6b231d');
@@ -3598,12 +3629,19 @@ function drawMenu(){
       }
       text(`現在：Lv.${progress.suzuSkills?.all||0}`,855,285,15,'right','#703525');
 
-      text('スズマルは全体系も伸ばせますが、単体系の伸び幅が大きい設計です。',480,375,16,'center','#ffd5c6');
-      outlineRect(285,345,390,70,(progress.suzuSkills?.counter||0)>=1?'#ffe0d6':'#3b4653',(progress.suzuSkills?.counter||0)>=1?'#c95f48':'#7c8790',2);
-      text('炎返し',310,370,19,'left',(progress.suzuSkills?.counter||0)>=1?'#6b231d':'#d9dde0',800);
-      text('攻撃を受けた時に剣で反撃',310,394,13,'left',(progress.suzuSkills?.counter||0)>=1?'#8d4a3b':'#aab0b5');
-      text((progress.suzuSkills?.counter||0)>=1?'習得済み':'必要 SP3',650,394,12,'right',(progress.suzuSkills?.counter||0)>=1?'#7d3a2d':'#ffe7a5',800);
-      text((progress.suzuSkills?.all||0)>=1?'現在の主力：火炎斬り / 火走り':'初期技：火炎斬り　火走りはSPで習得',480,455,15,'center','#ffffff');
+      text('火炎斬りはLv2から二連斬。Lv3・Lv4は回数を増やさず一撃ずつ強化。',480,350,14,'center','#ffd5c6');
+      outlineRect(70,365,390,70,(progress.suzuSkills?.counter||0)>=1?'#ffe0d6':'#3b4653',(progress.suzuSkills?.counter||0)>=1?'#c95f48':'#7c8790',2);
+      text('炎返し',95,390,19,'left',(progress.suzuSkills?.counter||0)>=1?'#6b231d':'#d9dde0',800);
+      text('攻撃を受けた時に剣で反撃',95,414,13,'left',(progress.suzuSkills?.counter||0)>=1?'#8d4a3b':'#aab0b5');
+      text((progress.suzuSkills?.counter||0)>=1?'習得済み':'必要 SP3',435,414,12,'right',(progress.suzuSkills?.counter||0)>=1?'#7d3a2d':'#ffe7a5',800);
+      {
+        const fl=progress.suzuSkills?.fightingFlame||0;
+        outlineRect(500,365,390,70,fl?'#ffe7d1':'#3b4653',fl?'#e08a4e':'#7c8790',2);
+        text('闘炎（パッシブ）',525,390,18,'left',fl?'#6b2d1e':'#d9dde0',800);
+        text(fl>=2?'毎ターン攻撃+5% / 最大5段階':fl===1?'毎ターン攻撃+3% / 最大5段階':'長期戦ほど攻撃力上昇',525,414,12,'left',fl?'#8d4a3b':'#aab0b5');
+        text(fl>=2?'Lv.2 最大':fl===1?'次 Lv.2 SP3':'習得 SP2',865,414,11,'right',fl?'#8a4931':'#ffe7a5',800);
+      }
+      text('闘炎は炎獣のグローブの毎ターン攻撃上昇と重複します。',480,470,14,'center','#ffffff');
     }else{
       text(`スキルポイント：${progress.sp}`,55,212,21,'left','#ffe8a8');
 
@@ -3713,7 +3751,7 @@ function menuTap(x,y){
     if(y>=245 && y<=327){
       if(x>=70 && x<=455){
         const lv=progress.suzuSkills.single||0;
-        if(lv>=3){flashText='単体系は最大強化です';flashTimer=1.6;return;}
+        if(lv>=4){flashText='単体系は最大強化です';flashTimer=1.6;return;}
         const cost=lv+1;
         if((progress.suzuSP||0)<cost){flashText=`SPが足りない（必要 ${cost}）`;flashTimer=1.6;return;}
         progress.suzuSP-=cost;
@@ -3736,11 +3774,21 @@ function menuTap(x,y){
     }
   }
 
-  if(menuPage==='skill' && menuCharacter==='suzu' && (suzumaruActive||suzumaruJoined) && y>=345 && y<=415 && x>=285 && x<=675){
-    if((progress.suzuSkills?.counter||0)>=1){flashText='炎返しは習得済みです';flashTimer=1.4;return;}
-    if((progress.suzuSP||0)<3){flashText='SPが足りない（必要 3）';flashTimer=1.6;return;}
-    progress.suzuSP-=3;progress.suzuSkills.counter=1;progress.suzuSpentSP=(progress.suzuSpentSP||0)+3;
-    saveProgress();saveGame();flashText='スズマルが「炎返し」を習得！';flashTimer=2;return;
+  if(menuPage==='skill' && menuCharacter==='suzu' && (suzumaruActive||suzumaruJoined) && y>=365 && y<=435){
+    if(x>=70&&x<=460){
+      if((progress.suzuSkills?.counter||0)>=1){flashText='炎返しは習得済みです';flashTimer=1.4;return;}
+      if((progress.suzuSP||0)<3){flashText='SPが足りない（必要 3）';flashTimer=1.6;return;}
+      progress.suzuSP-=3;progress.suzuSkills.counter=1;progress.suzuSpentSP=(progress.suzuSpentSP||0)+3;
+      saveProgress();saveGame();flashText='スズマルが「炎返し」を習得！';flashTimer=2;return;
+    }
+    if(x>=500&&x<=890){
+      const lv=progress.suzuSkills?.fightingFlame||0;
+      if(lv>=2){flashText='闘炎は最大強化です';flashTimer=1.4;return;}
+      const cost=lv===0?2:3;
+      if((progress.suzuSP||0)<cost){flashText=`SPが足りない（必要 ${cost}）`;flashTimer=1.6;return;}
+      progress.suzuSP-=cost;progress.suzuSkills.fightingFlame=lv+1;progress.suzuSpentSP=(progress.suzuSpentSP||0)+cost;
+      saveProgress();saveGame();flashText=lv===0?'パッシブ「闘炎」を習得！':'「闘炎」をLv.2に強化！';flashTimer=2;return;
+    }
   }
 
   // Hero ice-blade evolution: click the next unlocked node in the horizontal route.
@@ -5058,6 +5106,9 @@ addEventListener('keydown',e=>{
     if(e.key==='ArrowDown'||e.key==='s'||e.key==='S'){titleSelection=1;e.preventDefault();return;}
   }
   if(scene==='sarubibiShop'){
+    if(sarubibiShopType==='weapon' && (e.key==='ArrowUp'||e.key==='ArrowDown')){
+      e.preventDefault();sarubibiWeaponSelection=e.key==='ArrowUp'?Math.max(0,sarubibiWeaponSelection-1):Math.min(1,sarubibiWeaponSelection+1);return;
+    }
     if(e.key==='Enter'||e.key===' '||e.key==='z'||e.key==='Z'){e.preventDefault();sarubibiShopBuy();return;}
     if(e.key==='Escape'||e.key==='x'||e.key==='X'){scene='sarubibiTown';touchUI.classList.remove('hidden');return;}
   }
@@ -5130,8 +5181,12 @@ canvas.addEventListener('pointerdown',e=>{
     const r=canvas.getBoundingClientRect();
     const x=(e.clientX-r.left)/r.width*W;
     const y=(e.clientY-r.top)/r.height*H;
-    if(y>=325&&y<=410){sarubibiShopBuy();return;}
-    if(y>=410&&y<=495){scene='sarubibiTown';touchUI.classList.remove('hidden');return;}
+    if(sarubibiShopType==='weapon' && x>=80&&x<=880){
+      if(y>=105&&y<=217){sarubibiWeaponSelection=0;return;}
+      if(y>=235&&y<=347){sarubibiWeaponSelection=1;return;}
+    }
+    if(y>=400&&y<=468){sarubibiShopBuy();return;}
+    if(y>=468&&y<=530){scene='sarubibiTown';touchUI.classList.remove('hidden');return;}
   } else if(scene==='shop'){
     const r=canvas.getBoundingClientRect();
     const x=(e.clientX-r.left)/r.width*W;

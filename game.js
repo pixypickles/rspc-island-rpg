@@ -825,9 +825,7 @@ const postGameElderDialog=[
 const postGameElderDragonDialog=[
  ['elder','あの海賊ら、また隣の島で悪さしとるらしいぞ。'],
  ['elder','拠点を突き止めたらしいけど、お前さんたちドラゴンを倒したんじゃろ？'],
- ['elder','もう4人で潰してきたらどうじゃ？ 行くならサーカス団の船を出してもらったらええ。'],
- ['elder','のう、ダッシュミウよ？'],
- ['dash','もちろん！ ぴくるすたちが行くなら、ちぇすたぴサーカス団の船を出すよ。海賊の拠点まで送っていこう！']
+ ['elder','もう4人で潰してきたらどうじゃ？ 行くならサーカス団の船を出してもらったらええ。']
 ];
 const postGameCircusDialog=[
  ['dash','話は聞いたよ。ちぇすたぴサーカス団の船を出そう！'],
@@ -848,13 +846,14 @@ function startPostGameRaidWave(){
  startPostGameRaidBoss();
 }
 function startPostGameRaidBoss(){
- const lv=Math.max(20,progress.level||20),b=820+(lv-20)*28;
+ const lv=Math.max(20,progress.level||20),b=900+(lv-20)*32;
+ const klausHP=2600+(lv-20)*85;
  const es=[
-  {name:'副船長',kind:'viceCaptain',hp:Math.floor(b*.82),maxHP:Math.floor(b*.82)},
+  {name:'副船長',kind:'viceCaptain',hp:Math.floor(b*.88),maxHP:Math.floor(b*.88)},
   {name:'海賊船長',kind:'pirateCaptain',hp:b,maxHP:b,potions:2},
-  {name:'クラウス',kind:'pirate',hp:Math.floor(b*.72),maxHP:Math.floor(b*.72)}
+  {name:'クラウス',kind:'cyborgKlaus',hp:klausHP,maxHP:klausHP}
  ];
- startBattleGroup(es,990);battle.bossTurn=0;battleMessage='船長・副船長・クラウスが立ちはだかった！';
+ startBattleGroup(es,990);battle.bossTurn=0;battleMessage='船長・副船長・サイボーグのクラウスが立ちはだかった！';
 }
 const dragonCallDialog=[
 ['narrator','船長との死闘を終え、五人がようやくひと息ついた、その時だった。'],
@@ -1432,7 +1431,44 @@ function drawPirate(x,y,s=1,variant=0){
   ctx.restore();
 }
 
+
+function drawPirateCaptainEnemy(x,y,s=1){
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+  ellipse(0,31,24,7,'rgba(0,0,0,.20)');
+  // penguin captain
+  ellipse(0,-4,23,28,'#273847');ellipse(0,2,16,21,'#f3eadb');
+  ellipse(-8,-10,2.8,3.2,'#111827');ellipse(8,-10,2.8,3.2,'#111827');
+  ctx.fillStyle='#d49b42';ctx.beginPath();ctx.moveTo(-5,-2);ctx.lineTo(5,-2);ctx.lineTo(0,4);ctx.closePath();ctx.fill();
+  rect(-22,17,44,25,'#e97a2f');rect(-18,20,36,5,'#7a3b2c');rect(-15,42,11,13,'#273847');rect(4,42,11,13,'#273847');
+  rect(-25,-29,50,7,'#e97a2f');rect(-16,-38,32,10,'#5c3940');ctx.restore();
+}
+function drawViceCaptainEnemy(x,y,s=1){
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+  ellipse(0,31,27,7,'rgba(0,0,0,.20)');
+  // polar bear vice captain
+  ellipse(0,-5,25,25,'#f1eee3');ellipse(-17,-23,8,8,'#eee9dc');ellipse(17,-23,8,8,'#eee9dc');
+  ellipse(-8,-9,3,3.5,'#111827');ellipse(8,-9,3,3.5,'#111827');ellipse(0,0,8,6,'#cfc5b3');rect(-2,-1,4,3,'#222831');
+  rect(-24,17,48,27,'#e97a2f');rect(-20,20,40,6,'#723d2f');rect(-16,44,12,14,'#3b4249');rect(4,44,12,14,'#3b4249');
+  // thick headband and large axe
+  rect(-24,-31,48,7,'#e97a2f');rect(27,-2,6,55,'#6d4b35');ctx.fillStyle='#59616a';ctx.beginPath();ctx.moveTo(29,-5);ctx.lineTo(55,-15);ctx.lineTo(57,5);ctx.lineTo(31,12);ctx.closePath();ctx.fill();
+  ctx.restore();
+}
+function drawCyborgKlaus(x,y,s=1){
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);ellipse(0,34,27,7,'rgba(0,0,0,.23)');
+  ellipse(0,-7,23,24,'#a77a5e');
+  // metal half-face
+  ctx.fillStyle='#818d98';ctx.beginPath();ctx.moveTo(0,-31);ctx.arc(0,-7,23,-Math.PI/2,Math.PI/2);ctx.lineTo(0,17);ctx.closePath();ctx.fill();
+  ellipse(-8,-11,3,3,'#111827');ellipse(9,-11,4,4,'#ef3e32');rect(5,-12,8,2,'#ffb0a8');
+  rect(-24,16,48,30,'#515d68');rect(-18,20,36,6,'#e8782d');
+  rect(-17,46,12,15,'#343d46');rect(5,46,12,15,'#343d46');
+  // machine gun arm
+  rect(21,19,38,10,'#28323a');rect(53,21,26,6,'#171d22');rect(28,28,7,12,'#2a3238');
+  text('CYBORG',0,35,8,'center','#d5e0e8',900);ctx.restore();
+}
 function drawWildMonster(mon){
+  if(mon && mon.kind==='pirateCaptain'){drawPirateCaptainEnemy(mon.x,mon.y,1.25);return;}
+  if(mon && mon.kind==='viceCaptain'){drawViceCaptainEnemy(mon.x,mon.y,1.22);return;}
+  if(mon && mon.kind==='cyborgKlaus'){drawCyborgKlaus(mon.x,mon.y,1.25);return;}
   if(mon && ['bananaShark','sweetBoar','durianBear'].includes(mon.kind)){
     drawSurveyMonster(mon);return;
   }
@@ -1512,7 +1548,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.05',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.06',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -2797,8 +2833,9 @@ function finishBattle(){
     startPostGameRaidWave();return;
   }
   if(battle && battle.monsterId===990){
-    progress.postGamePirateRaidCleared=true;progress.gold+=1000;gainExp(900);saveProgress();
-    battle=null;scene='postGameRaidClear';dialogIndex=0;touchUI.classList.add('hidden');saveGame();return;
+    progress.postGamePirateRaidCleared=true;postGameRaidUnlocked=false;
+    progress.gold+=1000;gainExp(900);saveProgress();
+    battle=null;scene='postGameRaidClear';dialogIndex=0;touchUI.classList.remove('hidden');saveGame();return;
   }
   if(battle && battle.monsterId>=970 && battle.monsterId<=973){const ids=battle.enemies?battle.enemies.map(e=>e.id):[battle.monsterId];ids.forEach(id=>{const m=postGameVolcanoMobs.find(x=>x.id===id);if(m){m.alive=false;m.respawn=10;}});const count=battle.enemies?battle.enemies.length:1,expGain=150+(count-1)*45,goldGain=90+(count-1)*30;progress.gold+=goldGain;const leveled=gainExp(expGain);saveProgress();battle=null;scene='postGameVolcano';touchUI.classList.remove('hidden');flashText=leveled?`レベルアップ！ Lv.${progress.level}　SP+1`:`経験値 ${expGain} / ${goldGain}G 獲得！`;flashTimer=2.4;saveGame();return;}
   if(battle && battle.monsterId>=960 && battle.monsterId<=963){
@@ -4583,6 +4620,23 @@ function drawPostGameCircus(){
  text(scene==='postGameCircusTalk'?'Aで会話を進める':'ダッシュミウに話しかける',480,hudTop()+24,17,'center','#ffffff',900);
  text('ダッシュミウ',470,330,14,'center','#17324a',900);
 }
+
+function drawPostGameRaidShip(){
+  const sea=ctx.createLinearGradient(0,0,0,H);sea.addColorStop(0,'#9cdef0');sea.addColorStop(.58,'#73c3dc');sea.addColorStop(.59,'#2f7ea0');sea.addColorStop(1,'#1f607f');
+  ctx.fillStyle=sea;ctx.fillRect(0,0,W,H);
+  for(let x=0;x<W;x+=95){rect(x,360+(x%3)*12,58,4,'rgba(255,255,255,.5)');}
+  // same colorful circus ship motif, now at sea
+  ctx.fillStyle='#8c5438';ctx.beginPath();ctx.moveTo(185,300);ctx.lineTo(790,300);ctx.lineTo(715,420);ctx.lineTo(275,420);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#e7b84e';ctx.lineWidth=5;ctx.stroke();
+  rect(450,120,10,185,'#e9d49b');
+  ctx.fillStyle='#f5e7c8';ctx.beginPath();ctx.moveTo(460,130);ctx.lineTo(700,225);ctx.lineTo(460,260);ctx.closePath();ctx.fill();
+  for(let x=478;x<685;x+=42){ctx.fillStyle=(Math.floor((x-478)/42)%2===0)?'#d84c4c':'#f0c94f';ctx.beginPath();ctx.moveTo(x,146);ctx.lineTo(x+25,156);ctx.lineTo(x+25,244);ctx.lineTo(x,250);ctx.closePath();ctx.fill();}
+  outlineRect(310,325,350,40,'#fff3c9','#9d4b45',2);text('ちぇすたぴサーカス団',485,345,19,'center','#9b3044',900);
+  drawDashmiu(275,330,1.1);
+  drawHeroFox(555,337,.88);drawSuzumaru(515,350,.82);drawYuno(478,354,.80);drawGyou(442,356,.80);
+  text('海賊拠点へ向けて出航――',480,70,25,'center','#17324a',900);
+  text('Aで進む',480,475,16,'center','#eaf7fb',800);
+}
 function drawPostGameRaid(){
  const gr=ctx.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#8aa1aa');gr.addColorStop(1,'#665b50');ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);
  rect(0,335,W,205,'#756854');ctx.fillStyle='#3e4850';ctx.beginPath();ctx.moveTo(0,335);ctx.lineTo(200,225);ctx.lineTo(390,335);ctx.lineTo(620,190);ctx.lineTo(850,335);ctx.closePath();ctx.fill();
@@ -4765,6 +4819,7 @@ function bgmToggle(){
 },{once:true,passive:true}));
 
 function update(dt){
+  if(scene==='postGameRaidClear')touchUI.classList.remove('hidden');
   if(scene==='postGameCircusTalk'){
     touchUI.classList.remove('hidden');
     if(dialogIndex<0 || dialogIndex>=postGameCircusDialog.length)dialogIndex=0;
@@ -5440,15 +5495,23 @@ function pressAction(){
     }
     postGameRaidWave=0;
     suzumaruActive=true;suzumaruJoined=true;yunoJoined=true;gyouJoinConfirmed=true;gyouJoined=true;syncStoryParty();
-    scene='postGameRaid';dialogIndex=0;
+    scene='postGameRaidShip';dialogIndex=0;
     touchUI.classList.remove('hidden');
     saveGame();
-    flashText='ちぇすたぴサーカス団の船で海賊拠点へ！';
-    flashTimer=1.2;
-    startPostGameRaidWave();
     return;
   }
-  if(scene==='postGameRaidClear'){dialogIndex++;if(dialogIndex>=postGameRaidClearDialog.length){scene='postGameIsland';postGameHero.x=480;postGameHero.y=150;dialogIndex=0;touchUI.classList.remove('hidden');saveGame();}return;}
+  if(scene==='postGameRaidShip'){
+    scene='postGameRaid';dialogIndex=0;touchUI.classList.remove('hidden');
+    flashText='海賊拠点へ上陸！';flashTimer=1.0;saveGame();startPostGameRaidWave();return;
+  }
+  if(scene==='postGameRaidClear'){
+    dialogIndex++;
+    if(dialogIndex>=postGameRaidClearDialog.length){
+      postGameArea='brifo';postGameHero.x=300;postGameHero.y=420;
+      scene='postGameVillage';dialogIndex=0;touchUI.classList.remove('hidden');saveGame();
+    }
+    return;
+  }
   if(scene==='world' || scene==='road2' || scene==='route3' || scene==='cave' || scene==='takezoTravel' || scene==='takezoRoute' || scene==='coastSurveyField' || scene==='volcanoSurveyField' || scene==='finalBearField' || scene==='dragonTrail' || scene==='postGameIsland' || scene==='postGameVillage' || scene==='postGameVolcano'){
     openFieldMenu(scene);
     return;
@@ -5518,6 +5581,7 @@ function frame(now){
   else if(scene==='postGameElderTalk'){drawPostGameVillage();const a=progress.postDragonDefeated?postGameElderDragonDialog:postGameElderDialog,d=a[Math.min(dialogIndex,a.length-1)];drawDialog(d[0],d[1]);}
   else if(scene==='postGameCircus')drawPostGameCircus();
   else if(scene==='postGameCircusTalk'){drawPostGameCircus();const d=postGameCircusDialog[Math.min(dialogIndex,postGameCircusDialog.length-1)];drawDialog(d[0],d[1]);}
+  else if(scene==='postGameRaidShip')drawPostGameRaidShip();
   else if(scene==='postGameRaid')drawPostGameRaid();
   else if(scene==='postGameRaidClear')drawPostGameRaidClear();
   else if(scene==='postGameIsland')drawPostGameIsland();

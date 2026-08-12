@@ -150,7 +150,7 @@ if(progress.yunoSkills.windFlow===undefined)progress.yunoSkills.windFlow=0;
 progress.yunoSkills.windFlow=Math.max(0,Math.min(2,progress.yunoSkills.windFlow||0));
 if(progress.heroMagicFlow===undefined)progress.heroMagicFlow=0;
 progress.heroMagicFlow=Math.max(0,Math.min(2,progress.heroMagicFlow||0));
-if(progress.gyouSP===undefined)progress.gyouSP=totalSPForLevel(progress.level);
+if(progress.gyouSP===undefined)progress.gyouSP=0;
 if(!progress.gyouSkills)progress.gyouSkills={fortify:0,cover:0,taunt:0,manaGuard:0,healGuard:0,doubleThrust:0,counter:0};
 progress.gyouSkills.taunt=Math.min(2,progress.gyouSkills.taunt||0);
 progress.gyouSkills.doubleThrust=Math.min(2,progress.gyouSkills.doubleThrust||0);
@@ -1453,7 +1453,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.91',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.92',480,121,18,'center','#eef8ff');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
   if(cleared)labels.push(progress.postDragonDefeated?'ドラゴンに挑戦（再戦）':'ドラゴンに挑戦');
@@ -4887,7 +4887,10 @@ function pressAction(){
     if(dialogIndex>=gyouJoinDialog.length){
       gyouJoined=true;
       gyouJoinConfirmed=true;
-      progress.gyouSP=Math.max(progress.gyouSP||0,totalSPForLevel(progress.level));
+      if(!progress.gyouJoinSPGranted){
+        progress.gyouSP=totalSPForLevel(progress.level);
+        progress.gyouJoinSPGranted=true;
+      }
       scene='finalPrep';dialogIndex=0;saveProgress();saveGame();
     }
     return;
@@ -5309,7 +5312,7 @@ canvas.addEventListener('pointerdown',e=>{
           else if(x<320)yunoAction('regen');
           else if(x<465)yunoAction('windAll');
           else if(x<610){openPartyTarget('yuno','haste','疾風');return;}
-          else if(x<755){openPartyTarget('yuno','archery','二連射');return;}
+          else if(x<755){yunoAction('archery');return;}
           else yunoAction('mpRegenAll');
         }else if(isSuzumaruTurn()){
           if(y>=440 && x>=300 && x<575){suzuAction('counter');}

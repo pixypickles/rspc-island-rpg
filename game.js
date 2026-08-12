@@ -3229,28 +3229,46 @@ function drawMenu(){
       text('スズマルは全体系も伸ばせますが、単体系の伸び幅が大きい設計です。',480,375,16,'center','#ffd5c6');
       text((progress.suzuSkills?.all||0)>=1?'現在の主力：火炎斬り / 火走り':'初期技：火炎斬り　火走りはSPで習得',480,420,17,'center','#ffffff');
     }else{
-      text(`スキルポイント：${progress.sp}`,65,215,22,'left','#ffe8a8');
+      text(`スキルポイント：${progress.sp}`,55,212,21,'left','#ffe8a8');
 
-      outlineRect(65,250,390,82,progress.learned.iceSlash?'#536777':'#e7f5fb','#78b9d7',2);
-      text(heroIceSkillName(),90,277,21,'left','#18334a');
-      {
-        const il=progress.heroIceSkill||0;
-        const mp=il>=3?11:il>=2?9:7;
-        text(il>=2?`MP${mp} / ${heroIceHits()}ヒットする氷属性の連続斬り`
-          :il>=1?'MP7 / 氷をまとった小剣で強く斬る'
-          :'未習得 / SP1で習得',90,307,15,'left','#3d5d73');
-      }
-      {
-        const il=progress.heroIceSkill||0;
-        const next=il===0?'習得 SP1':il===1?'→ 氷結二段斬り SP2':il===2?'→ 氷結三連斬り SP3':'最大強化';
-        text(next,420,292,15,'right','#b66f31');
-      }
+      // 主人公スキルツリー：スキルごとに横へ成長。
+      const il=progress.heroIceSkill||0;
+      const nodeW=245,nodeH=72,gap=28,startX=55;
+      const iceNodes=[
+        ['氷結斬り','MP7 / 単体1回',1],
+        ['氷結二段斬り','MP9 / 単体2回',2],
+        ['氷結三連斬り','MP11 / 単体3回',3]
+      ];
+      text('氷剣ルート',55,244,15,'left','#bfe7f6',800);
+      iceNodes.forEach((n,i)=>{
+        const x=startX+i*(nodeW+gap),need=i+1,owned=il>=need,next=il===i;
+        outlineRect(x,258,nodeW,nodeH,owned?'#b9d9e8':next?'#e7f5fb':'#29394e',owned?'#6aaacb':next?'#78b9d7':'#536273',2);
+        text(n[0],x+14,282,17,'left',owned?'#17324a':next?'#18334a':'#8192a0',800);
+        text(n[1],x+14,304,12,'left',owned?'#35566d':next?'#3d5d73':'#697b89');
+        text(owned?'習得済み':next?`必要 SP${n[2]}`:'前の技を習得',x+nodeW-12,319,11,'right',owned?'#356b7b':next?'#3d6f8a':'#74838d',800);
+        if(i<2){
+          ctx.strokeStyle=owned?'#83bfd6':'#536273';ctx.lineWidth=3;
+          ctx.beginPath();ctx.moveTo(x+nodeW+4,294);ctx.lineTo(x+nodeW+gap-5,294);ctx.stroke();
+          ctx.fillStyle=owned?'#83bfd6':'#536273';
+          ctx.beginPath();ctx.moveTo(x+nodeW+gap-5,294);ctx.lineTo(x+nodeW+gap-13,289);ctx.lineTo(x+nodeW+gap-13,299);ctx.fill();
+        }
+      });
 
-      outlineRect(505,250,390,82,progress.heroIceWave?'#c8e2ed':'#dceffc','#6aaacb',2);
-      text('氷晶波',530,277,21,'left','#18334a');
-      text(progress.heroIceWave?'MP8 / 敵全体へ氷属性攻撃':'未習得 / 敵全体へ氷属性攻撃　習得 SP2',530,307,14,'left','#3d5d73');
+      text('全体氷魔法ルート',55,366,15,'left','#bfe7f6',800);
+      const waveOwned=!!progress.heroIceWave;
+      outlineRect(55,380,nodeW,nodeH,waveOwned?'#c8e2ed':'#e7f5fb',waveOwned?'#6aaacb':'#78b9d7',2);
+      text('氷晶波',69,404,17,'left','#18334a',800);
+      text('MP8 / 敵全体へ氷属性攻撃',69,426,12,'left','#3d5d73');
+      text(waveOwned?'習得済み':'必要 SP2',55+nodeW-12,441,11,'right',waveOwned?'#356b7b':'#3d6f8a',800);
 
-      text('主人公は回復・単体・全体を扱える万能型。',480,405,16,'center','#c8e1ec');
+      // 右側には「次に必要なSP」をまとめて表示。
+      outlineRect(345,380,555,72,'#182b48','#536f86',2);
+      const iceNext=il===0?'氷結斬り：SP1':il===1?'氷結二段斬り：SP2':il===2?'氷結三連斬り：SP3':'氷剣ルート：最大';
+      text('次の強化',365,403,15,'left','#d8edf7',800);
+      text(iceNext,365,428,15,'left','#ffffff');
+      text(waveOwned?'氷晶波：習得済み':'氷晶波：SP2',650,428,15,'left','#ffffff');
+
+      text('主人公は回復・単体・全体を扱える万能型。',480,490,15,'center','#c8e1ec');
     }
   }
 }
@@ -3331,25 +3349,23 @@ function menuTap(x,y){
     }
   }
 
-  // Hero ice-blade evolution: learn -> two-hit -> three-hit.
-  if(menuPage==='skill' && menuCharacter==='hero' && y>=245 && y<=332 && x>=65 && x<=455){
-    const lv=progress.heroIceSkill||0;
-    const cost=lv===0?1:lv===1?2:lv===2?3:999;
-    if(lv>=3){
-      flashText='氷結斬り系は最大強化です';flashTimer=1.7;return;
+  // Hero ice-blade evolution: click the next unlocked node in the horizontal route.
+  if(menuPage==='skill' && menuCharacter==='hero' && y>=258 && y<=330){
+    const nodeW=245,gap=28,startX=55;
+    const index=Math.floor((x-startX)/(nodeW+gap));
+    const within=index>=0&&index<3 && x>=startX+index*(nodeW+gap) && x<=startX+index*(nodeW+gap)+nodeW;
+    if(within){
+      const lv=progress.heroIceSkill||0;
+      if(index<lv){flashText='この技は習得済みです';flashTimer=1.4;return;}
+      if(index>lv){flashText='ひとつ前の技を先に習得してください';flashTimer=1.6;return;}
+      if(lv>=3){flashText='氷剣ルートは最大強化です';flashTimer=1.6;return;}
+      const cost=lv+1;
+      if(progress.sp<cost){flashText=`SPが足りない（必要 ${cost}）`;flashTimer=1.7;return;}
+      progress.sp-=cost;progress.heroIceSkill=lv+1;progress.learned.iceSlash=true;
+      saveProgress();saveGame();flashText=`「${heroIceSkillName()}」を習得！`;flashTimer=2.0;return;
     }
-    if(progress.sp<cost){
-      flashText=`SPが足りない（必要 ${cost}）`;flashTimer=1.7;return;
-    }
-    progress.sp-=cost;
-    progress.heroIceSkill=lv+1;
-    progress.learned.iceSlash=true;
-    saveProgress();saveGame();
-    flashText=`「${heroIceSkillName()}」になった！`;
-    flashTimer=2.1;
-    return;
   }
-  if(menuPage==='skill' && menuCharacter==='hero' && y>=245 && y<=335 && x>=505 && x<=895){
+  if(menuPage==='skill' && menuCharacter==='hero' && y>=380 && y<=452 && x>=55 && x<=300){
     if(progress.heroIceWave){flashText='氷晶波は習得済みです';flashTimer=1.5;return;}
     if(progress.sp<2){flashText='SPが足りない（必要 2）';flashTimer=1.7;return;}
     progress.sp-=2;progress.heroIceWave=true;saveProgress();saveGame();

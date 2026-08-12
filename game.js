@@ -315,11 +315,13 @@ let dragonTrailHero={x:130,y:455,speed:210};
 let postGameHero={x:480,y:400,speed:210},postGameArea='brifo',postGameVolcanoHero={x:180,y:455,speed:210};
 let sealedCaveHero={x:220,y:455,speed:185};
 let sealedCaveMobs=[
-  {id:1101,name:'ブラックドラゴン',kind:'blackDragon',x:360,y:300,spawnX:360,spawnY:300,hp:1800,maxHP:1800,alive:true,respawn:0},
-  {id:1102,name:'ホワイトドラゴン',kind:'whiteDragon',x:520,y:410,spawnX:520,spawnY:410,hp:1800,maxHP:1800,alive:true,respawn:0},
-  {id:1103,name:'ブラックドラゴン',kind:'blackDragon',x:690,y:280,spawnX:690,spawnY:280,hp:2100,maxHP:2100,alive:true,respawn:0},
-  {id:1104,name:'ホワイトドラゴン',kind:'whiteDragon',x:830,y:410,spawnX:830,spawnY:410,hp:2100,maxHP:2100,alive:true,respawn:0}
+  {id:1101,name:'ブラックドラゴン',kind:'blackDragon',x:360,y:300,spawnX:360,spawnY:300,hp:4000,maxHP:4000,alive:true,respawn:0},
+  {id:1102,name:'ホワイトドラゴン',kind:'whiteDragon',x:520,y:410,spawnX:520,spawnY:410,hp:4000,maxHP:4000,alive:true,respawn:0},
+  {id:1103,name:'ブラックドラゴン',kind:'blackDragon',x:690,y:280,spawnX:690,spawnY:280,hp:4000,maxHP:4000,alive:true,respawn:0},
+  {id:1104,name:'ホワイトドラゴン',kind:'whiteDragon',x:830,y:410,spawnX:830,spawnY:410,hp:4000,maxHP:4000,alive:true,respawn:0}
 ];
+sealedCaveMobs.forEach(m=>{m.maxHP=4000;m.hp=4000;});
+
 
 let postGameElderTalked=false,postGameRaidUnlocked=false,postGameRaidWave=0;
 let postGameVolcanoMobs=[
@@ -1535,6 +1537,32 @@ function drawAbyssDragon(x,y,s=1,white=false){
   ellipse(-9,-5,3,3,white?'#375d78':'#e04a45');ellipse(9,-5,3,3,white?'#375d78':'#e04a45');
   ctx.fillStyle=c2;ctx.beginPath();ctx.moveTo(-22,3);ctx.lineTo(-50,-12);ctx.lineTo(-35,22);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(22,3);ctx.lineTo(50,-12);ctx.lineTo(35,22);ctx.closePath();ctx.fill();ctx.restore();
 }
+
+function drawSealedAncientDragonBattle(white=false){
+  const body=white?'#e8eef2':'#202633', chest=white?'#c7d8e2':'#3a4352';
+  const wing=white?'#c7d1d8':'#151b26', edge=white?'#8296a3':'#090d14';
+  const neck=white?'#e8eef2':'#202633', head=white?'#f2f5f7':'#252c39';
+  const muzzle=white?'#d7e2e8':'#353e4d', leg=white?'#bac8d0':'#171d27';
+  const spike=white?'#9fc4d5':'#596778', horn=white?'#d6edf5':'#aeb9c7';
+  const eye=white?'#3e79a1':'#ef3e32', label=white?'#34566d':'#dfe8f0';
+  ctx.save();ctx.translate(735,250);
+  ellipse(0,92,118,17,'rgba(0,0,0,.25)');
+  ctx.strokeStyle=body;ctx.lineWidth=24;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-55,35);ctx.bezierCurveTo(-130,55,-150,5,-185,18);ctx.stroke();
+  ellipse(-18,20,78,57,body);ellipse(8,35,43,43,chest);
+  ctx.fillStyle=wing;ctx.strokeStyle=edge;ctx.lineWidth=4;
+  ctx.beginPath();ctx.moveTo(-45,-8);ctx.lineTo(-132,-105);ctx.lineTo(-118,-22);ctx.lineTo(-175,-54);ctx.lineTo(-105,32);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.moveTo(12,-12);ctx.lineTo(65,-112);ctx.lineTo(82,-30);ctx.lineTo(137,-72);ctx.lineTo(72,28);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.strokeStyle=neck;ctx.lineWidth=34;ctx.beginPath();ctx.moveTo(35,0);ctx.lineTo(72,-50);ctx.stroke();
+  ellipse(88,-65,42,31,head);ellipse(119,-57,35,20,muzzle);
+  ctx.fillStyle=horn;ctx.beginPath();ctx.moveTo(70,-86);ctx.lineTo(55,-122);ctx.lineTo(82,-92);ctx.fill();
+  ctx.beginPath();ctx.moveTo(91,-91);ctx.lineTo(91,-128);ctx.lineTo(104,-91);ctx.fill();
+  ellipse(99,-72,5,5,eye);ellipse(132,-61,3,3,white?'#53636e':'#06080d');
+  ctx.fillStyle='#f5eee1';ctx.beginPath();ctx.moveTo(124,-43);ctx.lineTo(132,-31);ctx.lineTo(138,-44);ctx.fill();
+  for(const [x,y] of [[-58,55],[-12,62],[35,55],[65,46]]){rect(x,y,20,58,leg);for(let c=0;c<3;c++){ctx.fillStyle=horn;ctx.beginPath();ctx.moveTo(x+c*7,y+58);ctx.lineTo(x+c*7+5,y+67);ctx.lineTo(x+c*7+8,y+58);ctx.fill();}}
+  for(let x=-70;x<35;x+=24){ctx.fillStyle=spike;ctx.beginPath();ctx.moveTo(x,-28);ctx.lineTo(x+10,-51);ctx.lineTo(x+20,-25);ctx.fill();}
+  text(`${battle.enemyName} ${Math.max(0,battle.enemyHP)}/${battle.enemyMaxHP}`,0,-145,18,'center',label,900);
+  ctx.restore();
+}
 function drawYamataNoOrochi(x,y,s=1){
  ctx.save();ctx.translate(x,y);ctx.scale(s,s);ellipse(0,45,80,13,'rgba(0,0,0,.3)');
  for(let i=0;i<9;i++){const a=(i-4)*.24, hx=Math.sin(a)*70,hy=-35-Math.cos(a)*25;ctx.strokeStyle='#36594a';ctx.lineWidth=16;ctx.beginPath();ctx.moveTo(0,30);ctx.quadraticCurveTo(hx*.55,-5,hx,hy);ctx.stroke();ellipse(hx,hy,13,11,'#456d58');ellipse(hx-4,hy-2,2,2,'#f0d75a');ellipse(hx+4,hy-2,2,2,'#f0d75a');}
@@ -1626,7 +1654,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.15',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.16',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -2085,6 +2113,8 @@ function drawBattle(){
     // dorsal spikes
     for(let x=-70;x<35;x+=24){ctx.fillStyle='#d68a4c';ctx.beginPath();ctx.moveTo(x,-28);ctx.lineTo(x+10,-51);ctx.lineTo(x+20,-25);ctx.fill();}
     text(`火山の古竜 ${battle.enemyHP}/${battle.enemyMaxHP}`,0,-145,18,'center','#6b241e',900);ctx.restore();
+  }else if(battle.enemyKind==='blackDragon'||battle.enemyKind==='whiteDragon'){
+    drawSealedAncientDragonBattle(battle.enemyKind==='whiteDragon');
   }else if(battle.enemies){
     const live=livingEnemies();
     const spots=[
@@ -2388,14 +2418,18 @@ function battleAttack(mode='attack',target='hero'){
       let targetIndex=0,targetName=battle.enemyName||'敵';
       if(battle.enemies){
         const live=livingEnemies();
-        if(!live.length)break;
-        const chosen=live[Math.floor(Math.random()*live.length)];
-        targetIndex=Math.max(0,live.indexOf(chosen));
-        targetName=chosen.name;
+        if(live.length){
+          const chosen=live[Math.floor(Math.random()*live.length)];
+          targetIndex=Math.max(0,live.indexOf(chosen));
+          targetName=chosen.name;
+        }else{
+          const last=battle.enemies[battle.enemies.length-1];
+          targetIndex=Math.max(0,battle.enemies.length-1);
+          targetName=last?.name||targetName;
+        }
       }
-      const actual=damageEnemy(hit,targetIndex);
+      const actual=damageMultiHitDisplay(hit,targetIndex);
       parts.push(actual);total+=actual;targetCounts[targetName]=(targetCounts[targetName]||0)+1;
-      if(enemiesDefeated())break;
     }
     const distribution=Object.entries(targetCounts).map(([name,n])=>`${name}×${n}`).join(' / ');
     battleMessage=`${heroName}の「${skillName}」！ ${distribution}　${parts.join(' + ')} = ${total}ダメージ！`;setBattleFx('ice');
@@ -2625,10 +2659,10 @@ function yunoAction(mode,target='hero'){
     const hits=lv>=2?3:2,ratio=lv>=2?.78:.68,parts=[];
     for(let i=0;i<hits;i++){
       const d=yunoWindPower(Math.floor(ys.atk*ratio)+(lv>=2?8:5)+Math.floor(Math.random()*5));
-      parts.push(d);damageEnemy(d);if(enemiesDefeated())break;
+      parts.push(d);damageMultiHitDisplay(d);
     }
     const nm=lv>=2?'風纏三連射':'二連射';
-    battleMessage=`ユーノの「${nm}」！ ${parts.join('＋')}ダメージ！`;setBattleFx('slash');addDamagePopup(`${parts.length} HIT`,700,155,'#b8fff1');
+    battleMessage=`ユーノの「${nm}」！ ${parts.join('＋')} = ${parts.reduce((a,b)=>a+b,0)}ダメージ！`;setBattleFx('slash');addDamagePopup(`${parts.length} HIT`,700,155,'#b8fff1');
     if(enemiesDefeated()){battle.turn='win';battleCooldown=1;return;}
   }else if(mode==='mpRegenAll'){
     sfx('wind');
@@ -2950,7 +2984,7 @@ function finishBattle(){
     gainExp(2500);progress.gold+=1200;saveProgress();battle=null;scene='sealedCave';touchUI.classList.remove('hidden');saveGame();return;
   }
   if(battle && battle.monsterId===1199){
-    progress.orochiDefeated=true;progress.nineTailSoloQuest=false;gainExp(15000);progress.gold+=10000;saveProgress();battle=null;scene='sealedCave';sealedCaveHero.x=760;sealedCaveHero.y=430;touchUI.classList.remove('hidden');flashText='ヤマタノオロチを討伐した！';flashTimer=3;saveGame();return;
+    progress.orochiDefeated=true;progress.nineTailSoloQuest=true;gainExp(15000);progress.gold+=10000;saveProgress();battle=null;scene='sealedCave';sealedCaveHero.x=760;sealedCaveHero.y=430;touchUI.classList.remove('hidden');flashText='ヤマタノオロチを討伐した！';flashTimer=3;saveGame();return;
   }
   if(battle && battle.monsterId===990){
     progress.postGamePirateRaidCleared=true;progress.klausDefeated=true;postGameRaidUnlocked=false;
@@ -3582,6 +3616,35 @@ function syncPrimaryEnemy(){
     battle.enemyHP=live[0].hp;
     battle.enemyMaxHP=live[0].maxHP;
   }
+}
+
+function damageMultiHitDisplay(amount,index=0){
+  amount=Math.max(0,Math.floor(amount));
+  if(!battle.enemies){
+    if(battle.enemyHP>0){
+      battle.enemyHP=Math.max(0,battle.enemyHP-amount);
+      addDamagePopup(`${amount}`,700,175,'#ffffff');
+    }else{
+      addDamagePopup(`${amount}`,700,175,'#bfe7ff');
+    }
+    return amount;
+  }
+  let live=livingEnemies();
+  let target=live[Math.min(index,Math.max(0,live.length-1))];
+  // If the final enemy was just defeated, keep displaying the remaining hits on that final slot.
+  if(!target){
+    target=battle.enemies[battle.enemies.length-1];
+    const idx=battle.enemies.length-1,spots=[[650,235],[770,235],[610,310],[720,320],[830,310]];
+    const p=spots[Math.min(idx,spots.length-1)]||[700,245];
+    addDamagePopup(`${amount}`,p[0],p[1]-30,'#bfe7ff');
+    return amount;
+  }
+  const idx=battle.enemies.indexOf(target),spots=[[650,235],[770,235],[610,310],[720,320],[830,310]];
+  const p=spots[Math.min(idx,spots.length-1)]||[700,245];
+  target.hp=Math.max(0,target.hp-amount);
+  addDamagePopup(`${amount}`,p[0],p[1]-30,'#ffffff');
+  syncPrimaryEnemy();
+  return amount;
 }
 function damageEnemy(amount,index=0){
   if(!battle.enemies){
@@ -4757,7 +4820,14 @@ function drawSealedCave(){
    if(m.kind==='blackDragon')drawAbyssDragon(m.x,m.y,1.15,false);
    else if(m.kind==='whiteDragon')drawAbyssDragon(m.x,m.y,1.15,true);
  }
- if(!progress.orochiDefeated){drawYamataNoOrochi(885,310,.72);text('異界の門',885,205,16,'center','#e9f5ff',900);}
+ if(!progress.orochiDefeated){
+   drawYamataNoOrochi(885,310,.72);text('異界の門',885,205,16,'center','#e9f5ff',900);
+ }else{
+   outlineRect(820,235,130,105,'#d9eef5','#7bbbd3',4);
+   text('異界の門',885,264,16,'center','#27455c',900);
+   text('再封印中',885,290,14,'center','#52748a',800);
+   if(sealedCaveHero.x>790)text('A：九尾の力で再び開く',785,390,15,'center','#dff7ff',900);
+ }
  drawHeroFox(sealedCaveHero.x,sealedCaveHero.y,.9);
  outlineRect(8,455,105,45,'#d9eef5','#54758a',2);text('島へ戻る',60,478,14,'center','#263d50',900);
 }
@@ -5042,7 +5112,7 @@ function update(dt){
     let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;
     const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);sealedCaveHero.x+=dx*sealedCaveHero.speed*dt;sealedCaveHero.y+=dy*sealedCaveHero.speed*dt;}
     sealedCaveHero.x=Math.max(45,Math.min(920,sealedCaveHero.x));sealedCaveHero.y=Math.max(245,Math.min(500,sealedCaveHero.y));
-    if(sealedCaveHero.x<42){postGameHero.x=700;postGameHero.y=165;scene='postGameIsland';touchUI.classList.remove('hidden');saveGame();return;}
+    if(sealedCaveHero.x<42){postGameHero.x=700;postGameHero.y=165;if(progress.orochiDefeated)progress.nineTailSoloQuest=false;scene='postGameIsland';touchUI.classList.remove('hidden');saveProgress();saveGame();return;}
     for(const m of sealedCaveMobs){if(m.alive&&Math.hypot(sealedCaveHero.x-m.x,sealedCaveHero.y-m.y)<42){startSealedDragonBattle(m);return;}}
     if(!progress.orochiDefeated&&sealedCaveHero.x>845){startOrochiBattle();return;}
     return;
@@ -5788,8 +5858,11 @@ function pressAction(){
     scene='sealedGateIntro';dialogIndex=0;
     touchUI.classList.remove('hidden');saveProgress();saveGame();return;
   }
+  if(scene==='sealedCave'&&progress.orochiDefeated&&sealedCaveHero.x>790){
+    startOrochiBattle();return;
+  }
   if(scene==='sealedCave'&&sealedCaveHero.x<78){
-    postGameHero.x=700;postGameHero.y=165;scene='postGameIsland';touchUI.classList.remove('hidden');saveGame();return;
+    postGameHero.x=700;postGameHero.y=165;if(progress.orochiDefeated)progress.nineTailSoloQuest=false;scene='postGameIsland';touchUI.classList.remove('hidden');saveProgress();saveGame();return;
   }
   if(scene==='world' || scene==='road2' || scene==='route3' || scene==='cave' || scene==='takezoTravel' || scene==='takezoRoute' || scene==='coastSurveyField' || scene==='volcanoSurveyField' || scene==='finalBearField' || scene==='dragonTrail' || scene==='postGameIsland' || scene==='postGameVillage' || scene==='postGameVolcano' || scene==='sealedCave'){
     openFieldMenu(scene);

@@ -1453,8 +1453,8 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.94',480,121,18,'center','#eef8ff');
-  text('♪ 8bit BGM　Mキー：ON / OFF',480,145,12,'center','#d9edf5');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.0.95',480,121,18,'center','#eef8ff');
+  text('♪ 8bit BGM（物語に合わせて変化）　Mキー：ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
   if(cleared)labels.push(progress.postDragonDefeated?'ドラゴンに挑戦（再戦）':'ドラゴンに挑戦');
@@ -4430,8 +4430,12 @@ function chaseFieldMob(mon,px,py,dt,range=260,speed=52){
 // ---- 8bit BGM ------------------------------------------------------------
 let bgmCtx=null,bgmMaster=null,bgmTimer=null,bgmStep=0,bgmTrack='',bgmEnabled=true;
 const BGM={
-  village:{tempo:220,lead:[64,67,69,67,64,62,60,62,64,67,72,69,67,64,62,60],bass:[48,null,48,null,53,null,55,null]},
-  field:{tempo:185,lead:[67,69,71,74,71,69,67,null,64,67,69,71,69,67,64,null],bass:[43,null,50,null,48,null,50,null]},
+  // 序盤：オープニング～さるびえ村到着まで。明るい旅立ち感。
+  early:{tempo:225,lead:[64,67,69,72,69,67,64,62,60,64,67,69,67,64,62,60],bass:[48,null,55,null,53,null,55,null]},
+  // 中盤：さるびえ村～さるびび村滞在まで。仲間が増えて少し賑やか。
+  middle:{tempo:195,lead:[67,71,74,76,74,71,69,67,64,67,71,72,71,69,67,64],bass:[43,null,50,null,48,null,52,null]},
+  // さるびび村を出た後。海賊戦が近づく、やや緊迫感のある曲。
+  tense:{tempo:155,lead:[62,65,67,70,69,67,65,62,60,62,65,69,67,65,62,60],bass:[38,38,41,null,43,43,41,null]},
   battle:{tempo:125,lead:[64,64,67,69,71,69,67,64,67,67,71,72,74,72,71,67],bass:[40,40,43,45,47,45,43,40]},
   boss:{tempo:105,lead:[52,55,59,60,59,55,52,50,52,55,60,62,60,59,55,52],bass:[40,40,38,38,36,36,35,35]},
   dragon:{tempo:92,lead:[57,60,64,63,60,57,55,52,57,60,65,64,60,57,55,52],bass:[33,33,36,36,35,35,31,31]},
@@ -4456,12 +4460,30 @@ function bgmWanted(){
   if(scene==='battle'){
     if(battle&&battle.type==='postDragon')return 'dragon';
     if(battle&&(battle.type==='pirateCaptain'||battle.type==='viceCaptain'))return 'boss';
+    if(battle&&battle.monsterId===900)return 'boss';
+    if(battle&&battle.monsterId===950)return 'dragon';
     return 'battle';
   }
-  if(scene==='ending'||scene==='endingFinal')return 'ending';
-  if(scene==='title')return 'village';
-  if(scene&&(/Village|village|takezo|sarubibi|brifo|shop|finalPrep/i.test(scene)))return 'village';
-  return 'field';
+  if(scene==='ending'||scene==='endingFinal'||scene==='end')return 'ending';
+
+  // 第1期：ゲーム開始～さるびえ村へ到着するまで。
+  const earlyScenes=[
+    'title','cutscene','world','villageDialog','departureDialog','road2','menu'
+  ];
+  if(earlyScenes.includes(scene))return 'early';
+
+  // 第2期：さるびえ村到着～さるびび村での事件解決まで。
+  // さるびび村に滞在している間もこの曲を継続し、村を出発した時点で切り替える。
+  const middleScenes=[
+    'sarubieArrival','sarubieTown','shop','cave','sarubieRitual','route3',
+    'sarubibiArrival','sarubibiTown','sarubibiShop','nightIntro','nightTrail',
+    'tsukipopoReveal','sarubibiResolve'
+  ];
+  if(middleScenes.includes(scene))return 'middle';
+
+  // 第3期：さるびび村を出てからエンディング直前まで。
+  // たけぞ村、防衛準備、最終決戦前などは同じ少し緊迫したテーマ。
+  return 'tense';
 }
 function bgmStart(name){
   if(!bgmEnabled)return;

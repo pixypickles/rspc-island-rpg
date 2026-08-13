@@ -87,7 +87,7 @@ if(progress.hiddenSkillsUnlocked===undefined)progress.hiddenSkillsUnlocked=!!pro
 if(!progress.hiddenSkills)progress.hiddenSkills={hero:false,suzu:false,yuno:false,gyou:false};
 if(progress.fourAbyssUnlocked===undefined)progress.fourAbyssUnlocked=false;
 if(progress.ngPlusUnlocked===undefined)progress.ngPlusUnlocked=false;
-// Ver.1.34以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
+// Ver.1.35以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
 if(progress.orochiDefeated && progress.fourAbyssUnlocked)progress.ngPlusUnlocked=true;
 if(progress.heroIceSkill===undefined){
   progress.heroIceSkill=progress.learned?.iceSlash?1:0;
@@ -1809,7 +1809,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.34',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.35',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -3169,16 +3169,20 @@ function enemyTurn(){
     dragonTrailEnemyTurn();return;
   }
   if(battle&&battle.monsterId===1199){
-    const targets=battle.soloHero?['hero']:['hero','suzu','yuno','gyou'];
+    const solo=!!battle.soloHero;
+    const targets=solo?['hero']:['hero','suzu','yuno','gyou'];
+    const actionCount=solo?1:3;
     const actionLines=[];
     let totalHeroTaken=0;
-    for(let action=0;action<3;action++){
+    for(let action=0;action<actionCount;action++){
       battle.bossTurn=(battle.bossTurn||0)+1;
       const flame=(battle.bossTurn%2===0);
       const rawPerHit=flame?30:20;
       let perHit=nineTailDamageCut(rawPerHit);
       if(battle.defending)perHit=Math.max(1,Math.ceil(perHit*.5));
-      if(progress.fourAbyssUnlocked)perHit=Math.max(perHit,Math.floor(perHit*Math.max(1,progress.level/100)));
+      // 4人で異界へ来た後だけ、高レベル帯でも脅威になる補正を使う。
+      // ソロ九頭龍はLv45前後＋九尾装備で攻略可能な1回行動に固定。
+      if(!solo&&progress.fourAbyssUnlocked)perHit=Math.max(perHit,Math.floor(perHit*Math.max(1,progress.level/100)));
       const hits=9,total=perHit*hits;
       for(const t of targets){
         let d=total;
@@ -3187,11 +3191,16 @@ function enemyTurn(){
         battle[k]=Math.max(0,battle[k]-d);
         if(t==='hero')totalHeroTaken+=d;
       }
-      actionLines.push(`${action+1}回目 ${flame?'九頭灼炎':'九頭連牙'} ${perHit}×9=${total}`);
+      actionLines.push(`${flame?'九頭灼炎':'九頭連牙'} ${perHit}×9=${total}`);
     }
     battle.gyouHiddenGuard=false;battle.defending=false;
-    battleMessage=`九頭龍の3回行動！ ${actionLines.join(' / ')}${battle.soloHero?'':'（全体）'}`;
-    addDamagePopup(`3 ACTION -${totalHeroTaken}`,250,205,'#ff796e');
+    if(solo){
+      battleMessage=`九頭龍の${actionLines[0]}！`;
+      addDamagePopup(`-${totalHeroTaken}`,250,205,'#ff796e');
+    }else{
+      battleMessage=`九頭龍の3回行動！ ${actionLines.map((s,i)=>`${i+1}回目 ${s}`).join(' / ')}（全体）`;
+      addDamagePopup(`3 ACTION -${totalHeroTaken}`,250,205,'#ff796e');
+    }
     setBattleFx('hitHero',185,255);
     if(checkPartyWipe())return;battleActor='hero';battle.turn='enemyResult';battleCooldown=1.45;battleMenu='main';
     return;

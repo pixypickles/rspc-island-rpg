@@ -14,6 +14,7 @@ const nameOk = document.getElementById('nameOk');
 const W = 960, H = 540;
 let scene = 'title';
 let titleSelection=0;
+let ngPlusMode=false;
 let autosaveTimer=0;
 let lastFieldScene='world';
 
@@ -85,6 +86,7 @@ if(progress.orochiDefeated===undefined)progress.orochiDefeated=false;
 if(progress.hiddenSkillsUnlocked===undefined)progress.hiddenSkillsUnlocked=!!progress.orochiDefeated;
 if(!progress.hiddenSkills)progress.hiddenSkills={hero:false,suzu:false,yuno:false,gyou:false};
 if(progress.fourAbyssUnlocked===undefined)progress.fourAbyssUnlocked=false;
+if(progress.ngPlusUnlocked===undefined)progress.ngPlusUnlocked=false;
 if(progress.heroIceSkill===undefined){
   progress.heroIceSkill=progress.learned?.iceSlash?1:0;
 }
@@ -402,6 +404,107 @@ const prologue = [
   ['dash','……！　先に知らせなきゃ。みんなが捕まったことも、海賊が来たことも！'],
   ['narrator','ダッシュミウは船の反対側からこっそり降り、最も近いぶりふぉ村へ走り出した。']
 ];
+
+const ngPlusVillageDialog=[
+ ['dash','だ、誰かーっ！ 起きてーっ！ 海賊だよ！ サーカス団のみんなが捕まってる！'],
+ ['elder','ふむ。'],
+ ['elder','ぴくるす、ちゃちゃっと片付けてこい。'],
+ ['dash','えっ？ ちょっ、何？ どういう事！？'],
+ ['hero','わかりました。'],
+ ['dash','えっ、待って待って！ 話が早すぎるって！'],
+ ['elder','気をつけての。'],
+ ['dash','軽い！ 村長まで軽い！']
+];
+const ngPlusReturnDialog=[
+ ['narrator','ぴくるすとダッシュミウは二人で、ちぇすたぴサーカス団の拠点へ引き返した。'],
+ ['dash','すごい数だよ？ 100人以上いるよ。'],
+ ['hero','へー。'],
+ ['dash','へーじゃなくて！ しかもみんな人質になってるよ！'],
+ ['hero','問題ないです。'],
+ ['dash','……その自信、どこから来るの？']
+];
+const ngPlusOverheadDialog=[
+ ['narrator','サーカス団の拠点を上空から見下ろす。海賊の群れが、黒い点のように地面を埋め尽くしていた。'],
+ ['hero','デスブリザード。']
+];
+const ngPlusAfterBlizzardDialog=[
+ ['dash','……。'],
+ ['hero','大丈夫。ちゃんと手加減してるし、サーカス団員は外してあるよ。'],
+ ['dash','……。'],
+ ['hero','船長っぽい人いないな。まだ船の中かな？'],
+ ['dash','……う、うん。たぶん……。']
+];
+const ngPlusBossIntroDialog=[
+ ['narrator','二人が海賊船へ向かうと、甲板への入口で三人が待ち構えていた。'],
+ ['pirateCaptainDialog','……何をした？ 外が急に静かになったぞ。'],
+ ['vice','お前ひとりでやったってのか？'],
+ ['hero','たぶん。'],
+ ['dash','たぶんじゃないよ！ 全部ぴくるすだよ！'],
+ ['narrator','船長、副船長、そしてサイボーグのクラウスが武器を構えた！']
+];
+const ngPlusEndingDialog=[
+ ['narrator','船長、副船長、クラウスが倒れ、海賊たちは戦意を失った。'],
+ ['dash','……朝になる前に終わっちゃった。'],
+ ['hero','村長に終わったって言ってきます。'],
+ ['dash','いやいやいや！ ちょっと待って！ 何なの、その強さ！？'],
+ ['hero','いろいろありまして。'],
+ ['dash','絶対「いろいろ」で済む話じゃないよ！'],
+ ['narrator','こうして、海賊騒動は始まったその日のうちに終わった。'],
+ ['narrator','これはもう冒険というより、強くなりすぎた者による二周目であった――。']
+];
+
+function drawNgPlusVillage(){
+  ctx.fillStyle='#8fd47f';ctx.fillRect(0,0,W,H);rect(0,0,W,92,'#89d9e8');drawHouse(95,145);drawHouse(225,105);drawHouse(725,135);drawTree(30,300);drawTree(845,290);drawTree(720,330);
+  drawDashmiu(345,335,1.35);drawHeroFox(570,335,1.38);drawElderFox(490,350,1.2);
+  const d=ngPlusVillageDialog[Math.min(dialogIndex,ngPlusVillageDialog.length-1)];drawDialog(d[0],d[1]);
+}
+function drawNgPlusReturn(){
+  drawWorld();
+  drawHeroFox(590,330,1.15);drawDashmiu(470,330,1.15);
+  const d=ngPlusReturnDialog[Math.min(dialogIndex,ngPlusReturnDialog.length-1)];drawDialog(d[0],d[1]);
+}
+function drawNgPlusOverhead(){
+  ctx.fillStyle='#8aa1aa';ctx.fillRect(0,0,W,H);rect(0,60,W,480,'#716b59');
+  outlineRect(90,90,250,135,'#f5e7c8','#9d4b45',4);text('ちぇすたぴサーカス団',215,115,16,'center','#9b3044',900);
+  for(let i=0;i<120;i++){const x=115+(i%20)*34,y=245+Math.floor(i/20)*31;ellipse(x,y,5,5,i%3===0?'#e8782d':'#333943');}
+  drawHeroFox(785,410,.62);drawDashmiu(835,415,.62);
+  const d=ngPlusOverheadDialog[Math.min(dialogIndex,ngPlusOverheadDialog.length-1)];drawDialog(d[0],d[1]);
+}
+function drawNgPlusBlizzard(){
+  ctx.fillStyle='#f8fdff';ctx.fillRect(0,0,W,H);
+  for(let i=0;i<90;i++){const x=(i*83+dialogIndex*17)%W,y=(i*47)%H;rect(x,y,35+(i%4)*12,3,'rgba(174,220,240,.75)');}
+  text('デスブリザード',480,250,42,'center','#88bcd5',900);
+  text('――白い吹雪が拠点全体を飲み込んだ――',480,315,20,'center','#7899aa',800);
+}
+function drawNgPlusAfterBlizzard(){
+  ctx.fillStyle='#d9edf3';ctx.fillRect(0,0,W,H);rect(0,315,W,225,'#dbeaf0');
+  for(let i=0;i<70;i++){const x=70+(i%18)*48,y=330+Math.floor(i/18)*39;ellipse(x,y,7,4,'#5e6c72');}
+  drawHeroFox(650,380,1.05);drawDashmiu(500,380,1.05);
+  const d=ngPlusAfterBlizzardDialog[Math.min(dialogIndex,ngPlusAfterBlizzardDialog.length-1)];drawDialog(d[0],d[1]);
+}
+function drawNgPlusBossIntro(){
+  ctx.fillStyle='#466b82';ctx.fillRect(0,0,W,H);rect(0,315,W,225,'#8b654b');
+  drawHeroFox(235,365,1.05);drawDashmiu(340,370,1.02);
+  drawViceCaptainEnemy(625,350,1.35);drawPirateCaptainEnemy(735,350,1.35);drawCyborgKlaus(845,350,1.35);
+  const d=ngPlusBossIntroDialog[Math.min(dialogIndex,ngPlusBossIntroDialog.length-1)];drawDialog(d[0],d[1]);
+}
+function drawNgPlusEnding(){
+  ctx.fillStyle='#10213c';ctx.fillRect(0,0,W,H);
+  drawHeroFox(390,285,1.1);drawDashmiu(560,292,1.08);
+  text('NEW GAME +',480,90,42,'center','#f3dc91',900);
+  const d=ngPlusEndingDialog[Math.min(dialogIndex,ngPlusEndingDialog.length-1)];drawDialog(d[0],d[1]);
+}
+function startNgPlusBossBattle(){
+  const hs=heroStats();
+  const enemies=[
+    {name:'副船長',kind:'viceCaptain',hp:6000,maxHP:6000},
+    {name:'海賊船長',kind:'pirateCaptain',hp:8000,maxHP:8000,potions:2},
+    {name:'クラウス',kind:'cyborgKlaus',hp:18000,maxHP:18000}
+  ];
+  battle={heroHP:hs.maxHP,heroMP:hs.maxMP,enemies,enemyHP:enemies[0].hp,enemyMaxHP:enemies[0].maxHP,enemyName:enemies[0].name,enemyKind:enemies[0].kind,monsterId:1290,turn:'player',defending:false,soloHero:true};
+  damagePopups=[];battleMenu='main';battleActor='hero';battleMessage='二周目の最終決戦！';scene='battle';touchUI.classList.add('hidden');
+}
+
 
 function villageDialog(){
   return [
@@ -1697,7 +1800,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.21',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.22',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -1708,6 +1811,11 @@ function drawTitle(){
     outlineRect(280,yy,400,42,titleSelection===i?'#e8f7fb':'rgba(15,35,60,.78)',i===2&&!canContinue?'#566879':(i===3?'#d8893b':'#73b9d6'),2);
     text(lab,480,yy+21,i===2&&!canContinue?16:18,'center',i===2&&!canContinue?'#8193a2':(titleSelection===i?'#17324a':'#e8f4fa'));
   });
+  if(progress.ngPlusUnlocked){
+    const yy=startY;
+    outlineRect(690,yy+4,165,34,titleSelection===4?'#fff0c8':'rgba(74,37,72,.88)','#d29ad0',2);
+    text('はじめから＋',772,yy+21,14,'center',titleSelection===4?'#572b55':'#ffe9ff',900);
+  }
 }
 function speakerName(who){
   return ({narrator:'語り',dash:'ダッシュミウ',pirate:'海賊',elder:'ぶりふぉ村長',takezoElder:'たけぞ村長',hero:heroName,suzu:'スズマル',yuno:'ユーノ',gyou:'ジュウ',captain:'防衛隊長',pirateCaptainDialog:'船長',lover:'防衛隊長の恋人',smith:'さるびえ村の鍛冶職人',dragonVoice:'？？？'})[who]||who;
@@ -2123,7 +2231,10 @@ function heroHiddenBattleRect(){return {x:555,y:478,w:365,h:52};}
 function pointInRect(px,py,r){return px>=r.x&&px<=r.x+r.w&&py>=r.y&&py<=r.y+r.h;}
 function drawBattle(){
   const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#9cd8ef');g.addColorStop(1,'#b9dc8c');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  if(!battle.soloHero && (battle.monsterId===99||battle.monsterId>=200) && suzumaruActive){
+  if(battle.monsterId===1290){
+    const py=(window.innerHeight||540)<500?285:270;
+    drawHeroFox(170,py,1.34);drawDashmiu(285,py+5,1.18);
+  }else if(!battle.soloHero && (battle.monsterId===99||battle.monsterId>=200) && suzumaruActive){
     const py=(window.innerHeight||540)<500?285:270;
     drawHeroFox(135,py,1.20);
     drawSuzumaru(245,py+3,1.30);
@@ -3042,6 +3153,10 @@ function enemyTurn(){
   battle.turn='enemyResult';battleCooldown=1.15;
 }
 function finishBattle(){
+  if(battle && battle.monsterId===1290){
+    battle=null;scene='ngPlusEnding';dialogIndex=0;touchUI.classList.add('hidden');saveGame();return;
+  }
+
   if(battle && battle.monsterId===99){
     caveBoss.alive=false;caveBoss.hp=0;
     const expGain=35;
@@ -3098,7 +3213,11 @@ function finishBattle(){
     gainExp(2500);progress.gold+=1200;saveProgress();battle=null;scene='sealedCave';touchUI.classList.remove('hidden');saveGame();return;
   }
   if(battle && battle.monsterId===1199){
-    progress.orochiDefeated=true;progress.hiddenSkillsUnlocked=true;progress.nineTailSoloQuest=true;gainExp(15000);progress.gold+=10000;saveProgress();battle=null;scene='sealedCave';sealedCaveHero.x=760;sealedCaveHero.y=430;touchUI.classList.remove('hidden');flashText='九頭龍を討伐した！';flashTimer=3;saveGame();return;
+    const clearedWithFour=!!(progress.fourAbyssUnlocked && !battle.soloHero);
+    progress.orochiDefeated=true;progress.hiddenSkillsUnlocked=true;progress.nineTailSoloQuest=true;
+    if(clearedWithFour)progress.ngPlusUnlocked=true;
+    gainExp(15000);progress.gold+=10000;saveProgress();battle=null;scene='sealedCave';sealedCaveHero.x=760;sealedCaveHero.y=430;touchUI.classList.remove('hidden');
+    flashText=clearedWithFour?'九頭龍を討伐！「はじめから+」解禁！':'九頭龍を討伐した！';flashTimer=3;saveGame();return;
   }
   if(battle && battle.monsterId===990){
     progress.postGamePirateRaidCleared=true;progress.klausDefeated=true;postGameRaidUnlocked=false;
@@ -5151,7 +5270,7 @@ function bgmWanted(){
     if(battle&&battle.monsterId===950)return 'dragon';
     return 'battle';
   }
-  if(scene==='ending'||scene==='endingFinal'||scene==='end')return 'ending';
+  if(scene==='ending'||scene==='endingFinal'||scene==='ngPlusEnding'||scene==='end')return 'ending';
 
   // 第1期：ゲーム開始～さるびえ村へ到着するまで。
   const earlyScenes=[
@@ -5580,6 +5699,9 @@ function enterSealedCave(){
 function pressAction(){
   if(!nameOverlay.classList.contains('hidden'))return;
   if(scene==='title'){
+    if(titleSelection===4 && progress.ngPlusUnlocked){
+      ngPlusMode=true;scene='cutscene';dialogIndex=0;touchUI.classList.add('hidden');return;
+    }
     if(titleSelection===3 && progress.gameCleared){
       suzumaruActive=true;suzumaruJoined=true;yunoJoined=true;gyouJoinConfirmed=true;gyouJoined=true;
       syncStoryParty();
@@ -5594,7 +5716,37 @@ function pressAction(){
     if(titleSelection===1){startFromInitialState();return;}
     scene='cutscene';dialogIndex=0;touchUI.classList.add('hidden');return;
   }
-  if(scene==='cutscene'){dialogIndex++;if(dialogIndex>=prologue.length){scene='world';dialogIndex=0;touchUI.classList.remove('hidden');flashText='ダッシュミウをぶりふぉ村へ！';flashTimer=2.2;}return;}
+  if(scene==='cutscene'){
+    dialogIndex++;
+    if(dialogIndex>=prologue.length){
+      if(ngPlusMode){scene='ngPlusVillage';dialogIndex=0;touchUI.classList.add('hidden');}
+      else{scene='world';dialogIndex=0;touchUI.classList.remove('hidden');flashText='ダッシュミウをぶりふぉ村へ！';flashTimer=2.2;}
+    }
+    return;
+  }
+  if(scene==='ngPlusVillage'){
+    dialogIndex++;if(dialogIndex>=ngPlusVillageDialog.length){scene='ngPlusReturn';dialogIndex=0;}return;
+  }
+  if(scene==='ngPlusReturn'){
+    dialogIndex++;if(dialogIndex>=ngPlusReturnDialog.length){scene='ngPlusOverhead';dialogIndex=0;}return;
+  }
+  if(scene==='ngPlusOverhead'){
+    dialogIndex++;
+    if(dialogIndex>=ngPlusOverheadDialog.length){scene='ngPlusBlizzard';dialogIndex=0;touchUI.classList.remove('hidden');}
+    return;
+  }
+  if(scene==='ngPlusBlizzard'){scene='ngPlusAfterBlizzard';dialogIndex=0;return;}
+  if(scene==='ngPlusAfterBlizzard'){
+    dialogIndex++;if(dialogIndex>=ngPlusAfterBlizzardDialog.length){scene='ngPlusBossIntro';dialogIndex=0;}return;
+  }
+  if(scene==='ngPlusBossIntro'){
+    dialogIndex++;if(dialogIndex>=ngPlusBossIntroDialog.length){startNgPlusBossBattle();}return;
+  }
+  if(scene==='ngPlusEnding'){
+    dialogIndex++;
+    if(dialogIndex>=ngPlusEndingDialog.length){ngPlusMode=false;scene='end';dialogIndex=0;touchUI.classList.add('hidden');saveGame();}
+    return;
+  }
   if(scene==='villageDialog'){
     const vd=villageDialog();
     if(dialogIndex===8){openNameInput();return;}
@@ -6028,7 +6180,7 @@ function pressAction(){
     battleAttack('attack');return;
   }
   if(scene==='end'){
-    scene='title';titleSelection=progress.gameCleared?3:0;touchUI.classList.add('hidden');
+    scene='title';titleSelection=0;touchUI.classList.add('hidden');
     dash.x=1960;dash.y=180;hero.x=360;hero.y=300;villageEventStarted=false;
     monsters.forEach(m=>{m.alive=true;m.respawn=0;m.x=m.spawnX;m.y=m.spawnY;});
   }
@@ -6038,6 +6190,13 @@ function frame(now){
   const dt=Math.min(.033,(now-last)/1000);last=now;update(dt);ctx.clearRect(0,0,W,H);
   if(scene==='title')drawTitle();
   else if(scene==='cutscene')drawCutscene();
+  else if(scene==='ngPlusVillage')drawNgPlusVillage();
+  else if(scene==='ngPlusReturn')drawNgPlusReturn();
+  else if(scene==='ngPlusOverhead')drawNgPlusOverhead();
+  else if(scene==='ngPlusBlizzard')drawNgPlusBlizzard();
+  else if(scene==='ngPlusAfterBlizzard')drawNgPlusAfterBlizzard();
+  else if(scene==='ngPlusBossIntro')drawNgPlusBossIntro();
+  else if(scene==='ngPlusEnding')drawNgPlusEnding();
   else if(scene==='world')drawWorld();
   else if(scene==='villageDialog')drawVillageDialog();
   else if(scene==='departureDialog')drawDepartureDialog();
@@ -6125,6 +6284,8 @@ addEventListener('keydown',e=>{
   if(e.key==='n'||e.key==='N'){sfxEnabled=!sfxEnabled;flashText=`効果音 ${sfxEnabled?'ON':'OFF'}`;flashTimer=1.2;return;}
   keys[e.key]=true;
   if(scene==='title'){
+    if((e.key==='ArrowRight'||e.key==='d'||e.key==='D')&&progress.ngPlusUnlocked){titleSelection=4;e.preventDefault();return;}
+    if((e.key==='ArrowLeft'||e.key==='a'||e.key==='A')&&titleSelection===4){titleSelection=0;e.preventDefault();return;}
     if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'){titleSelection=0;e.preventDefault();return;}
     if(e.key==='ArrowDown'||e.key==='s'||e.key==='S'){titleSelection=1;e.preventDefault();return;}
   }
@@ -6187,7 +6348,10 @@ canvas.addEventListener('pointerdown',e=>{
   }
   if(scene==='title'){
     const r=canvas.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width*W;
     const y=(e.clientY-r.top)/r.height*H;
+    const titleStartY=progress.gameCleared?300:326;
+    if(progress.ngPlusUnlocked&&x>=680&&x<=870&&y>=titleStartY-2&&y<=titleStartY+46){titleSelection=4;pressAction();return;}
     if(progress.gameCleared){
       if(y>=290&&y<345){titleSelection=0;pressAction();return;}
       if(y>=345&&y<395){titleSelection=1;pressAction();return;}

@@ -87,7 +87,7 @@ if(progress.hiddenSkillsUnlocked===undefined)progress.hiddenSkillsUnlocked=!!pro
 if(!progress.hiddenSkills)progress.hiddenSkills={hero:false,suzu:false,yuno:false,gyou:false};
 if(progress.fourAbyssUnlocked===undefined)progress.fourAbyssUnlocked=false;
 if(progress.ngPlusUnlocked===undefined)progress.ngPlusUnlocked=false;
-// Ver.1.33以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
+// Ver.1.34以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
 if(progress.orochiDefeated && progress.fourAbyssUnlocked)progress.ngPlusUnlocked=true;
 if(progress.heroIceSkill===undefined){
   progress.heroIceSkill=progress.learned?.iceSlash?1:0;
@@ -1809,7 +1809,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.33',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.34',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -3332,8 +3332,10 @@ function finishBattle(){
     startPostGameRaidWave();return;
   }
   if(battle && battle.monsterId>=1101 && battle.monsterId<=1104){
-    const m=sealedCaveMobs.find(x=>x.id===battle.monsterId);if(m)m.alive=false;
-    gainExp(2500);progress.gold+=1200;saveProgress();battle=null;scene='sealedCave';touchUI.classList.remove('hidden');saveGame();return;
+    const m=sealedCaveMobs.find(x=>x.id===battle.monsterId);
+    if(m){m.alive=false;m.respawn=3.0;}
+    gainExp(2500);progress.gold+=1200;saveProgress();battle=null;scene='sealedCave';touchUI.classList.remove('hidden');
+    flashText='異界の竜を撃破！ まもなく再出現する';flashTimer=1.8;saveGame();return;
   }
   if(battle && battle.monsterId===1199){
     const clearedWithFour=!!(progress.fourAbyssUnlocked && !battle.soloHero);
@@ -4407,7 +4409,7 @@ function drawMenu(){
       const healName=hh>=4?'九尾大水癒':hh>=3?'大水癒':hh>=2?'水の大いやし':'水のいやし';
       text(healName,705,278,18,'left','#17324a',800);
       text(hh>=4?'味方全体 最大HP75%回復 / MP18':hh>=3?'味方全体 HP130回復 / MP12':hh>=2?'HP120回復 / MP8':'HP50回復 / MP5',705,302,11,'left','#3d5d73');
-      text(hh>=4?'Lv.4 最大':hh===3?'次 Lv.4　SP25':hh===2?'次 Lv.3　SP2':'次 Lv.2　SP1',900,329,11,'right','#3d6f8a',800);
+      text(hh>=4?'Lv.4 最大':hh===3?'次 Lv.4　SP25（即強化可）':hh===2?'次 Lv.3　SP2':'次 Lv.2　SP1',900,329,11,'right','#3d6f8a',800);
 
       outlineRect(690,360,225,92,hm?'#c8e2ed':'#e7f5fb',hm?'#6aaacb':'#78b9d7',2);
       text(hm>=2?'水脈の恵み':'水脈の雫',705,386,18,'left','#17324a',800);
@@ -4560,7 +4562,6 @@ function menuTap(x,y){
     if(x>=690&&x<=915&&y>=252&&y<=344){
       const lv=progress.heroHealSkill||1;
       if(lv>=4){flashText='回復ルートは最大強化です';flashTimer=1.5;return;}
-      if(lv===3&&!progress.orochiDefeated){flashText='最終強化は九頭龍撃破後に解禁';flashTimer=1.8;return;}
       const cost=lv===3?25:lv===2?2:1;
       if(progress.sp<cost){flashText=`SPが足りない（必要 ${cost}）`;flashTimer=1.6;return;}
       progress.sp-=cost;progress.heroHealSkill=lv+1;saveProgress();saveGame();
@@ -5506,6 +5507,17 @@ function update(dt){
   if(scene==='postGameVillage'){let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameHero.x+=dx*postGameHero.speed*dt;postGameHero.y+=dy*postGameHero.speed*dt;}postGameHero.x=Math.max(45,Math.min(920,postGameHero.x));postGameHero.y=Math.max(250,Math.min(500,postGameHero.y));if(postGameHero.x<175&&postGameHero.y>385){const back={sarubie:[207,430],brifo:[277,290],sarubibi:[682,430],takezo:[702,260]}[postGameArea]||[480,400];postGameHero.x=back[0];postGameHero.y=back[1];scene='postGameIsland';saveGame();}return;}
   if(scene==='postGameVolcano'){for(const m of postGameVolcanoMobs){if(!m.alive&&m.respawn>0){m.respawn-=dt;if(m.respawn<=0){m.alive=true;m.hp=m.maxHP;m.x=m.spawnX;m.y=m.spawnY;}}}let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);postGameVolcanoHero.x+=dx*postGameVolcanoHero.speed*dt;postGameVolcanoHero.y+=dy*postGameVolcanoHero.speed*dt;}postGameVolcanoHero.x=Math.max(55,Math.min(1430,postGameVolcanoHero.x));postGameVolcanoHero.y=Math.max(245,Math.min(495,postGameVolcanoHero.y));if(postGameVolcanoHero.x<165&&postGameVolcanoHero.y>385){postGameHero.x=480;postGameHero.y=300;scene='postGameIsland';saveGame();return;}for(const m of postGameVolcanoMobs){chaseFieldMob(m,postGameVolcanoHero.x,postGameVolcanoHero.y,dt,280,58);if(m.alive&&Math.hypot(postGameVolcanoHero.x-m.x,(postGameVolcanoHero.y-m.y)*1.25)<38){startPostGameVolcanoBattle(m);return;}}return;}
   if(scene==='sealedCave'){
+    // ブラック／ホワイトドラゴンは九頭龍前のレベル上げ用に短時間で復活。
+    // 旧セーブで alive=false / respawn=0 の個体も自動的に復活対象へ戻す。
+    for(const m of sealedCaveMobs){
+      if(!m.alive){
+        if(!(m.respawn>0))m.respawn=3.0;
+        m.respawn-=dt;
+        if(m.respawn<=0){
+          m.alive=true;m.hp=m.maxHP;m.x=m.spawnX;m.y=m.spawnY;m.respawn=0;
+        }
+      }
+    }
     let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;
     const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);sealedCaveHero.x+=dx*sealedCaveHero.speed*dt;sealedCaveHero.y+=dy*sealedCaveHero.speed*dt;}
     sealedCaveHero.x=Math.max(45,Math.min(920,sealedCaveHero.x));sealedCaveHero.y=Math.max(245,Math.min(500,sealedCaveHero.y));

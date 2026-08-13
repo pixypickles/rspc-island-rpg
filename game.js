@@ -87,7 +87,7 @@ if(progress.hiddenSkillsUnlocked===undefined)progress.hiddenSkillsUnlocked=!!pro
 if(!progress.hiddenSkills)progress.hiddenSkills={hero:false,suzu:false,yuno:false,gyou:false};
 if(progress.fourAbyssUnlocked===undefined)progress.fourAbyssUnlocked=false;
 if(progress.ngPlusUnlocked===undefined)progress.ngPlusUnlocked=false;
-// Ver.1.24以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
+// Ver.1.25以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
 if(progress.orochiDefeated && progress.fourAbyssUnlocked)progress.ngPlusUnlocked=true;
 if(progress.heroIceSkill===undefined){
   progress.heroIceSkill=progress.learned?.iceSlash?1:0;
@@ -1809,7 +1809,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.24',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.25',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -2236,7 +2236,10 @@ function advancePartyTurn(){
   }
   beginEnemyTurn();
 }
-function heroHiddenBattleRect(){return {x:555,y:478,w:365,h:52};}
+function heroHiddenBattleRect(){
+  if(battle&&battle.monsterId===1290)return {x:40,y:438,w:270,h:44};
+  return {x:555,y:478,w:365,h:52};
+}
 function pointInRect(px,py,r){return px>=r.x&&px<=r.x+r.w&&py>=r.y&&py<=r.y+r.h;}
 function drawBattle(){
   const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#9cd8ef');g.addColorStop(1,'#b9dc8c');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
@@ -2461,8 +2464,16 @@ function drawBattle(){
           outlineRect(620,438,145,44,'#ffe7c7','#c47b45',2);text(`高級薬 x${progress.items.highPotion||0}`,692,460,19,'center','#63371d');
           outlineRect(775,438,145,44,'#dff4fb','#71bad7',2);text('もどる',847,460,20,'center','#17324a'); if(progress.hiddenSkills?.hero){const hr=heroHiddenBattleRect();outlineRect(hr.x,hr.y,hr.w,hr.h,'#d9efff','#557fd0',3);text('デスブリザード (60)',hr.x+hr.w/2,hr.y+27,19,'center','#17324a',900);}
         }else{
-          outlineRect(330,442,210,42,'#ffe7c7','#c47b45',2);text(`高級回復薬 x${progress.items.highPotion||0}`,435,463,20,'center','#63371d');
-          outlineRect(560,442,210,42,'#dff4fb','#71bad7',2);text('もどる',665,463,19,'center','#17324a');
+          if((progress.hiddenSkills?.hero)||(battle&&battle.monsterId===1290)){
+            const hr=heroHiddenBattleRect();
+            outlineRect(hr.x,hr.y,hr.w,hr.h,'#d9efff','#557fd0',3);
+            text('デスブリザード (60)',hr.x+hr.w/2,hr.y+22,18,'center','#17324a',900);
+            outlineRect(330,442,210,42,'#ffe7c7','#c47b45',2);text(`高級回復薬 x${progress.items.highPotion||0}`,435,463,20,'center','#63371d');
+            outlineRect(560,442,210,42,'#dff4fb','#71bad7',2);text('もどる',665,463,19,'center','#17324a');
+          }else{
+            outlineRect(330,442,210,42,'#ffe7c7','#c47b45',2);text(`高級回復薬 x${progress.items.highPotion||0}`,435,463,20,'center','#63371d');
+            outlineRect(560,442,210,42,'#dff4fb','#71bad7',2);text('もどる',665,463,19,'center','#17324a');
+          }
         }
       }
       text('スキルを選択',480,497,14,'center','#c8e7f4');
@@ -2781,7 +2792,7 @@ function suzuAction(mode='attack'){
 
 
 function heroHiddenSkill(){
- if(!progress.hiddenSkills?.hero){battleMessage='デスブリザードは未習得！';return;}
+ if(!progress.hiddenSkills?.hero && !(battle&&battle.monsterId===1290)){battleMessage='デスブリザードは未習得！';return;}
  const cost=heroSkillMPCost(60);if(battle.heroMP<cost){battleMessage='MPが足りない！';return;}battle.heroMP-=cost;
  const dmg=heroMagicFlowPower(heroIceMagicPower(55+Math.floor(heroStats().atk*.75)));
  const res=damageAllEnemies(dmg);battle.vulnerableTurns=4;
@@ -6412,7 +6423,9 @@ canvas.addEventListener('pointerdown',e=>{
     const r=canvas.getBoundingClientRect();
     const x=(e.clientX-r.left)/r.width*W;
     const y=(e.clientY-r.top)/r.height*H;
-    if(battleMenu==='skill' && battleActor==='hero' && progress.hiddenSkills?.hero && pointInRect(x,y,heroHiddenBattleRect())){
+    if(battleMenu==='skill' && battleActor==='hero' &&
+       (progress.hiddenSkills?.hero || battle.monsterId===1290) &&
+       pointInRect(x,y,heroHiddenBattleRect())){
       heroHiddenSkill();return;
     }
     if(battleMenu==='target'){

@@ -1697,7 +1697,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.20',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.21',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -2309,7 +2309,7 @@ function drawBattle(){
         outlineRect(770,385,140,54,'#dff4fb','#71bad7',2);text('もどる',840,412,19,'center','#17324a');
         const suzuCounterLearned=(progress.suzuSkills?.counter||0)>=1;
         outlineRect(315,445,245,44,suzuCounterLearned?'#ffe0d6':'#626d78',suzuCounterLearned?'#c95f48':'#8d969e',2);
-        text(suzuCounterLearned?'炎返し (7)':'炎返し（未習得）',437,467,suzuCounterLearned?18:15,'center',suzuCounterLearned?'#6b231d':'#ffffff',800); if(progress.hiddenSkills?.suzu){outlineRect(575,445,335,44,'#ffe0d6','#c95f48',2);text('紅蓮三段撃 (55)',742,467,18,'center','#6b231d',900);}
+        text(suzuCounterLearned?'炎返し (7)':'炎返し（未習得）',437,467,suzuCounterLearned?18:15,'center',suzuCounterLearned?'#6b231d':'#ffffff',800); if(progress.hiddenSkills?.suzu){outlineRect(575,445,335,44,'#ffe0d6','#c95f48',2);text('紅蓮爆砕 (55)',742,467,18,'center','#6b231d',900);}
       }else{
         outlineRect(40,378,170,52,'#dff4fb','#71bad7',2);
         {const hl=progress.heroHealSkill||1,hname=hl>=4?'九尾大水癒':hl>=3?'大水癒':hl>=2?'水の大いやし':'水のいやし',hcost=hl>=4?18:hl>=3?12:hl>=2?8:5;
@@ -2587,6 +2587,7 @@ function suzuAction(mode='attack'){
   const ss={...suzumaruStats()};
   if(progress.shopBought?.suzuGloves)ss.atk+=(battle.suzuGloveStacks||0)*2;
   ss.atk+=suzuFightingFlameBonus(suzumaruStats().atk);
+  ss.atk=Math.floor(ss.atk*(battle?.suzuHiddenAtkMultiplier||1));
   if(!battle || battle.turn!=='player' || battleActor!=='suzu')return;
   let dmg=0;
   if(mode==='counter'){
@@ -2668,9 +2669,20 @@ function heroHiddenSkill(){
  if(enemiesDefeated()){battle.turn='win';battleCooldown=1;return;}advancePartyTurn();
 }
 function suzuHiddenSkill(){
- if(!progress.hiddenSkills?.suzu){battleMessage='紅蓮三段撃は未習得！';return;}const cost=suzuSkillMPCost(55);if(battle.suzuMP<cost){battleMessage='MPが足りない！';return;}battle.suzuMP-=cost;
- battle.suzuFightingFlameStacks=(battle.suzuFightingFlameStacks||0)+10;const ss=suzumaruStats(),base=suzuFirePower(Math.floor(ss.atk*1.05)+30),parts=[base,base*2,base*3];parts.forEach(d=>damageMultiHitDisplay(d));
- battleMessage=`スズマルの「紅蓮三段撃」！ ${parts.join('＋')} = ${parts.reduce((a,b)=>a+b,0)}ダメージ！ 闘炎10ターン分上昇！`;setBattleFx('fire');if(enemiesDefeated()){battle.turn='win';battleCooldown=1;return;}advancePartyTurn();
+ if(!progress.hiddenSkills?.suzu){battleMessage='紅蓮爆砕は未習得！';return;}
+ const cost=suzuSkillMPCost(55);if(battle.suzuMP<cost){battleMessage='MPが足りない！';return;}battle.suzuMP-=cost;
+ const baseStats=suzumaruStats();
+ let atk=baseStats.atk;
+ if(progress.shopBought?.suzuGloves)atk+=(battle.suzuGloveStacks||0)*2;
+ atk+=suzuFightingFlameBonus(baseStats.atk);
+ atk=Math.floor(atk*(battle.suzuHiddenAtkMultiplier||1));
+ const dmg=suzuFirePower(Math.floor(atk*8)+80+Math.floor(Math.random()*21));
+ damageMultiHitDisplay(dmg);
+ const first=!(battle.suzuHiddenAtkMultiplier>1);
+ battle.suzuHiddenAtkMultiplier=first?2:battle.suzuHiddenAtkMultiplier*1.2;
+ battleMessage=`スズマルの「紅蓮爆砕」！ ${dmg}ダメージ！ 攻撃力が${first?'2倍':'さらに1.2倍'}！（現在×${battle.suzuHiddenAtkMultiplier.toFixed(2)}）`;
+ setBattleFx('fire');addDamagePopup('紅蓮爆砕',700,155,'#ff8a62');
+ if(enemiesDefeated()){battle.turn='win';battleCooldown=1;return;}advancePartyTurn();
 }
 function yunoHiddenSkill(){
  if(!progress.hiddenSkills?.yuno){battleMessage='天風の祝福は未習得！';return;}
@@ -4096,7 +4108,7 @@ function drawMenu(){
       }
       text(`現在：Lv.${progress.suzuSkills?.all||0}`,855,285,15,'right','#703525');
 
-      text('火炎斬りはLv2から二連斬。Lv3・Lv4は回数を増やさず一撃ずつ強化。',480,350,14,'center','#ffd5c6'); if(progress.hiddenSkillsUnlocked){outlineRect(710,455,180,55,progress.hiddenSkills?.suzu?'#ffe0d6':'#3b4653','#c95f48',2);text('紅蓮三段撃',800,477,15,'center',progress.hiddenSkills?.suzu?'#6b231d':'#fff',900);text(progress.hiddenSkills?.suzu?'習得済み':'SP100',800,499,12,'center','#ffe7a5');}
+      text('火炎斬りはLv2から二連斬。Lv3・Lv4は回数を増やさず一撃ずつ強化。',480,350,14,'center','#ffd5c6'); if(progress.hiddenSkillsUnlocked){outlineRect(710,455,180,55,progress.hiddenSkills?.suzu?'#ffe0d6':'#3b4653','#c95f48',2);text('紅蓮爆砕',800,477,15,'center',progress.hiddenSkills?.suzu?'#6b231d':'#fff',900);text(progress.hiddenSkills?.suzu?'習得済み':'SP100',800,499,12,'center','#ffe7a5');}
       outlineRect(70,365,390,70,(progress.suzuSkills?.counter||0)>=1?'#ffe0d6':'#3b4653',(progress.suzuSkills?.counter||0)>=1?'#c95f48':'#7c8790',2);
       text('炎返し',95,390,19,'left',(progress.suzuSkills?.counter||0)>=1?'#6b231d':'#d9dde0',800);
       text('攻撃を受けた時に剣で反撃',95,414,13,'left',(progress.suzuSkills?.counter||0)>=1?'#8d4a3b':'#aab0b5');

@@ -87,7 +87,7 @@ if(progress.hiddenSkillsUnlocked===undefined)progress.hiddenSkillsUnlocked=!!pro
 if(!progress.hiddenSkills)progress.hiddenSkills={hero:false,suzu:false,yuno:false,gyou:false};
 if(progress.fourAbyssUnlocked===undefined)progress.fourAbyssUnlocked=false;
 if(progress.ngPlusUnlocked===undefined)progress.ngPlusUnlocked=false;
-// Ver.1.28以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
+// Ver.1.29以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
 if(progress.orochiDefeated && progress.fourAbyssUnlocked)progress.ngPlusUnlocked=true;
 if(progress.heroIceSkill===undefined){
   progress.heroIceSkill=progress.learned?.iceSlash?1:0;
@@ -1809,7 +1809,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.28',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.29',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -2054,11 +2054,13 @@ function startFinalBearBattle(){
 
 function startPirateCaptainBattle(){
   const over=Math.max(0,(progress.level||1)-10);
-  const hp=650+Math.min(440,over*35);
-  battle={heroHP:progress.maxHP,heroMP:progress.maxMP,enemyHP:hp,enemyMaxHP:hp,
+  // 本編ラスボスを少し強化。クリア後・はじめから＋の船長戦には影響しない。
+  const hp=800+Math.min(520,over*42);
+  const viceHP=Math.floor(hp*.78);
+  battle={heroHP:progress.maxHP,heroMP:progress.maxMP,enemyHP:viceHP,enemyMaxHP:viceHP,
     enemyName:'副船長',enemyKind:'viceCaptain',monsterId:900,turn:'player',defending:false,bossPhase:1,bossTurn:0,
     enemies:[
-      {name:'副船長',kind:'viceCaptain',hp:Math.floor(hp*.68),maxHP:Math.floor(hp*.68)},
+      {name:'副船長',kind:'viceCaptain',hp:viceHP,maxHP:viceHP},
       {name:'海賊船長',kind:'pirateCaptain',hp:hp,maxHP:hp,potions:2}
     ]};
   const ss=suzumaruStats(),ys=yunoStats(),gs=gyouStats();
@@ -2997,7 +2999,7 @@ function pirateCaptainTurn(){
   // 副船長は生存中、2ターンに1回割り込んで大斧を振るう。
   if(vice.hp>0 && (battle.bossTurn%2===0 || cap.hp<=0))attacker='vice';
   const isVice=attacker==='vice';
-  const base=(isVice?39:(battle.bossPhase===2?30:22))+Math.floor(Math.random()*8);
+  const base=(isVice?46:(battle.bossPhase===2?36:27))+Math.floor(Math.random()*9);
   let targets=[];
   if(battle.gyouGrandGuard)targets=['gyou'];
   else if(!isVice && battle.bossTurn%3===0)targets=['hero','suzu','yuno','gyou'];

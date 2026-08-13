@@ -1697,7 +1697,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.19',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.20',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -2119,6 +2119,8 @@ function advancePartyTurn(){
   }
   beginEnemyTurn();
 }
+function heroHiddenBattleRect(){return {x:555,y:478,w:365,h:52};}
+function pointInRect(px,py,r){return px>=r.x&&px<=r.x+r.w&&py>=r.y&&py<=r.y+r.h;}
 function drawBattle(){
   const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#9cd8ef');g.addColorStop(1,'#b9dc8c');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
   if(!battle.soloHero && (battle.monsterId===99||battle.monsterId>=200) && suzumaruActive){
@@ -2337,7 +2339,7 @@ function drawBattle(){
           outlineRect(40,438,250,44,'#d8f2ed','#59aaa6',2);text('合体：蒼風大癒 (24)',165,460,20,'center','#174c4b');
           outlineRect(305,438,300,44,'#d8eef7','#5d9fbd',2);text('合体：氷嵐大旋風 (24)',455,460,20,'center','#173f57');
           outlineRect(620,438,145,44,'#ffe7c7','#c47b45',2);text(`高級薬 x${progress.items.highPotion||0}`,692,460,19,'center','#63371d');
-          outlineRect(775,438,145,44,'#dff4fb','#71bad7',2);text('もどる',847,460,20,'center','#17324a'); if(progress.hiddenSkills?.hero){outlineRect(555,482,365,48,'#d9efff','#557fd0',3);text('デスブリザード (60)',737,507,19,'center','#17324a',900);}
+          outlineRect(775,438,145,44,'#dff4fb','#71bad7',2);text('もどる',847,460,20,'center','#17324a'); if(progress.hiddenSkills?.hero){const hr=heroHiddenBattleRect();outlineRect(hr.x,hr.y,hr.w,hr.h,'#d9efff','#557fd0',3);text('デスブリザード (60)',hr.x+hr.w/2,hr.y+27,19,'center','#17324a',900);}
         }else{
           outlineRect(330,442,210,42,'#ffe7c7','#c47b45',2);text(`高級回復薬 x${progress.items.highPotion||0}`,435,463,20,'center','#63371d');
           outlineRect(560,442,210,42,'#dff4fb','#71bad7',2);text('もどる',665,463,19,'center','#17324a');
@@ -5070,7 +5072,7 @@ function chaseFieldMob(mon,px,py,dt,range=260,speed=52){
 }
 
 // ---- 8bit BGM ------------------------------------------------------------
-let bgmCtx=null,bgmMaster=null,bgmTimer=null,bgmStep=0,bgmTrack='',bgmEnabled=true;
+let bgmCtx=null,bgmMaster=null,bgmTimer=null,bgmStep=0,bgmTrack='',bgmEnabled=true,gameAudioActive=!document.hidden;
 const BGM={
   // 序盤：オープニング～さるびえ村到着まで。明るい旅立ち感。
   early:{tempo:225,lead:[64,67,69,72,69,67,64,62,60,64,67,69,67,64,62,60],bass:[48,null,55,null,53,null,55,null]},
@@ -5091,7 +5093,7 @@ function bgmInit(){
   }catch(e){bgmEnabled=false;}
 }
 function bgmTone(note,dur,type='square',vol=1){
-  if(!bgmCtx||note==null)return;
+  if(!gameAudioActive||!bgmCtx||note==null)return;
   const t=bgmCtx.currentTime,o=bgmCtx.createOscillator(),v=bgmCtx.createGain();
   o.type=type;o.frequency.value=440*Math.pow(2,(note-69)/12);
   v.gain.setValueAtTime(.0001,t);v.gain.exponentialRampToValueAtTime(Math.max(.0002,.11*vol),t+.008);
@@ -5101,7 +5103,7 @@ function bgmTone(note,dur,type='square',vol=1){
 
 let sfxEnabled=true;
 function sfxTone(freq,dur=.08,type='square',vol=.5,endFreq=null){
-  bgmInit();if(!bgmCtx||!sfxEnabled)return;
+  if(!gameAudioActive)return;bgmInit();if(!bgmCtx||!sfxEnabled)return;
   if(bgmCtx.state==='suspended')bgmCtx.resume();
   const t=bgmCtx.currentTime,o=bgmCtx.createOscillator(),v=bgmCtx.createGain();
   o.type=type;o.frequency.setValueAtTime(freq,t);
@@ -5159,7 +5161,7 @@ function bgmWanted(){
   return 'tense';
 }
 function bgmStart(name){
-  if(!bgmEnabled)return;
+  if(!bgmEnabled||!gameAudioActive)return;
   bgmInit();if(!bgmCtx)return;
   if(bgmCtx.state==='suspended')bgmCtx.resume();
   if(bgmTrack===name&&bgmTimer)return;
@@ -5173,15 +5175,38 @@ function bgmStart(name){
   };
   tick();bgmTimer=setInterval(tick,tr.tempo);
 }
-function bgmSync(){const wanted=bgmWanted();if(wanted!==bgmTrack)bgmStart(wanted);}
+function bgmSync(){if(!bgmEnabled||!gameAudioActive)return;const wanted=bgmWanted();if(wanted!==bgmTrack||!bgmTimer)bgmStart(wanted);}
 function bgmToggle(){
   bgmEnabled=!bgmEnabled;
   if(!bgmEnabled){if(bgmTimer)clearInterval(bgmTimer);bgmTimer=null;bgmTrack='';}
-  else bgmStart(bgmWanted());
+  else if(gameAudioActive)bgmStart(bgmWanted());
   flashText=`BGM ${bgmEnabled?'ON':'OFF'}`;flashTimer=1.2;
 }
+
+function pauseGameAudio(){
+  gameAudioActive=false;
+  if(bgmTimer){clearInterval(bgmTimer);bgmTimer=null;}
+  if(bgmCtx&&bgmCtx.state==='running'){try{bgmCtx.suspend();}catch(e){}}
+}
+function resumeGameAudio(){
+  if(document.hidden)return;
+  gameAudioActive=true;
+  if(!bgmEnabled)return;
+  bgmInit();
+  if(!bgmCtx)return;
+  const resume=()=>{bgmSync();};
+  if(bgmCtx.state==='suspended'){
+    try{const p=bgmCtx.resume();if(p&&p.then)p.then(resume).catch(()=>{});else resume();}catch(e){}
+  }else resume();
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseGameAudio();else resumeGameAudio();});
+window.addEventListener('pagehide',pauseGameAudio);
+window.addEventListener('pageshow',()=>{if(!document.hidden)resumeGameAudio();});
+window.addEventListener('blur',pauseGameAudio);
+window.addEventListener('focus',()=>{if(!document.hidden)resumeGameAudio();});
+
 ['pointerdown','keydown','touchstart'].forEach(ev=>window.addEventListener(ev,()=>{
-  if(bgmEnabled){bgmInit();if(bgmCtx&&bgmCtx.state==='suspended')bgmCtx.resume();bgmSync();}
+  if(bgmEnabled&&gameAudioActive){bgmInit();if(bgmCtx&&bgmCtx.state==='suspended')bgmCtx.resume();bgmSync();}
 },{once:true,passive:true}));
 
 function update(dt){
@@ -5212,7 +5237,7 @@ function update(dt){
     scene='postGameCircusTalk';dialogIndex=0;touchUI.classList.remove('hidden');
     return;
   }
-  if(bgmCtx&&bgmEnabled)bgmSync();
+  if(bgmCtx&&bgmEnabled&&gameAudioActive)bgmSync();
   if(scene==='dragonSummit' || scene==='dragonConfirm'){
     startPostDragonBattle();
     return;
@@ -6202,6 +6227,9 @@ canvas.addEventListener('pointerdown',e=>{
     const r=canvas.getBoundingClientRect();
     const x=(e.clientX-r.left)/r.width*W;
     const y=(e.clientY-r.top)/r.height*H;
+    if(battleMenu==='skill' && battleActor==='hero' && progress.hiddenSkills?.hero && pointInRect(x,y,heroHiddenBattleRect())){
+      heroHiddenSkill();return;
+    }
     if(battleMenu==='target'){
       if(y>=455&&y<=505){cancelPartyTarget();return;}
       if(y>=385&&y<=455){
@@ -6265,7 +6293,7 @@ canvas.addEventListener('pointerdown',e=>{
             else if(x<575)battleAttack('iceSlash');
             else if(x<755)battleAttack('iceWave');
             else {if(progress.heroManaSkill||0){openPartyTarget('hero','manaHeal','水脈の雫');return;} battleMessage='水脈の雫は未習得！';return;}
-          }else if(progress.hiddenSkills?.hero&&x>=535&&x<=935&&y>=472&&y<=538){heroHiddenSkill();return;}else if(yunoJoined && progress.heroYunoComboUnlocked && battle.monsterId>=400 && y>=435&&y<=485){
+          }else if(yunoJoined && progress.heroYunoComboUnlocked && battle.monsterId>=400 && y>=435&&y<=485){
             if(x<300)heroYunoCombo('grandHeal');
             else if(x<615)heroYunoCombo('grandDamage');
             else if(x<770)useHighPotion('hero');

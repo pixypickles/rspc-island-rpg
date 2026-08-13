@@ -87,7 +87,7 @@ if(progress.hiddenSkillsUnlocked===undefined)progress.hiddenSkillsUnlocked=!!pro
 if(!progress.hiddenSkills)progress.hiddenSkills={hero:false,suzu:false,yuno:false,gyou:false};
 if(progress.fourAbyssUnlocked===undefined)progress.fourAbyssUnlocked=false;
 if(progress.ngPlusUnlocked===undefined)progress.ngPlusUnlocked=false;
-// Ver.1.31以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
+// Ver.1.32以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
 if(progress.orochiDefeated && progress.fourAbyssUnlocked)progress.ngPlusUnlocked=true;
 if(progress.heroIceSkill===undefined){
   progress.heroIceSkill=progress.learned?.iceSlash?1:0;
@@ -1809,7 +1809,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.31',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.32',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -2199,7 +2199,15 @@ function partyActorHP(actor){
   return actor==='hero'?battle.heroHP:actor==='suzu'?battle.suzuHP:actor==='yuno'?battle.yunoHP:battle.gyouHP;
 }
 function isPartyActorConscious(actor){return (partyActorHP(actor)||0)>0;}
-function activePartyKeys(){return partyMembers().map(m=>m.key);}
+function activePartyKeys(){
+  if(!battle)return [];
+  const a=['hero'];
+  if(battle.soloHero)return a;
+  if(suzumaruActive && battle.suzuHP!==undefined)a.push('suzu');
+  if(yunoJoined && battle.yunoHP!==undefined)a.push('yuno');
+  if(gyouJoinConfirmed && battle.gyouHP!==undefined)a.push('gyou');
+  return a;
+}
 function partyWipedOut(){const a=activePartyKeys();return a.length>0&&a.every(k=>!isPartyActorConscious(k));}
 function checkPartyWipe(){
   if(!battle||!partyWipedOut())return false;
@@ -2752,8 +2760,10 @@ function dragonTrailEnemyTurn(){
   if((battle.gyouTauntTurns||0)>0)battle.gyouTauntTurns--;
   battleMessage=lines.length?`敵の攻撃！ ${lines.join(' / ')}`:'敵は動けない！';
   battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
-  if(partyWipedOut()){battle.turn='lose';battleCooldown=1.6;battleMessage='全員が気絶した……。';return;}
-  battle.turn='enemyResult';battleCooldown=1.05;
+  if(partyWipedOut()){
+    battle.turn='lose';battleCooldown=1.6;battleMessage='全員が気絶した……。';return;
+  }
+  battle.turn='enemyResult';battleCooldown=.9;
 }
 function beginEnemyTurn(){
   if(!battle)return;

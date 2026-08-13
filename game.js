@@ -87,7 +87,7 @@ if(progress.hiddenSkillsUnlocked===undefined)progress.hiddenSkillsUnlocked=!!pro
 if(!progress.hiddenSkills)progress.hiddenSkills={hero:false,suzu:false,yuno:false,gyou:false};
 if(progress.fourAbyssUnlocked===undefined)progress.fourAbyssUnlocked=false;
 if(progress.ngPlusUnlocked===undefined)progress.ngPlusUnlocked=false;
-// Ver.1.23以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
+// Ver.1.24以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
 if(progress.orochiDefeated && progress.fourAbyssUnlocked)progress.ngPlusUnlocked=true;
 if(progress.heroIceSkill===undefined){
   progress.heroIceSkill=progress.learned?.iceSlash?1:0;
@@ -461,7 +461,10 @@ function drawNgPlusVillage(){
   const d=ngPlusVillageDialog[Math.min(dialogIndex,ngPlusVillageDialog.length-1)];drawDialog(d[0],d[1]);
 }
 function drawNgPlusReturn(){
-  drawWorld();
+  // drawWorld() normally draws Dashmiu, so temporarily move that sprite off-screen
+  // and place the NG+ cutscene pair ourselves to avoid a duplicate Dashmiu.
+  const oldDashX=dash.x,oldDashY=dash.y;
+  dash.x=-9999;dash.y=-9999;drawWorld();dash.x=oldDashX;dash.y=oldDashY;
   drawHeroFox(590,330,1.15);drawDashmiu(470,330,1.15);
   const d=ngPlusReturnDialog[Math.min(dialogIndex,ngPlusReturnDialog.length-1)];drawDialog(d[0],d[1]);
 }
@@ -497,6 +500,10 @@ function drawNgPlusEnding(){
   const d=ngPlusEndingDialog[Math.min(dialogIndex,ngPlusEndingDialog.length-1)];drawDialog(d[0],d[1]);
 }
 function startNgPlusBossBattle(){
+  // はじめから＋では直前のイベントでデスブリザードを使用しているため、戦闘でも必ず使用可能にする。
+  progress.hiddenSkillsUnlocked=true;
+  if(!progress.hiddenSkills)progress.hiddenSkills={hero:false,suzu:false,yuno:false,gyou:false};
+  progress.hiddenSkills.hero=true;
   const hs=heroStats();
   const enemies=[
     {name:'副船長',kind:'viceCaptain',hp:6000,maxHP:6000},
@@ -1802,7 +1809,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.23',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.24',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];

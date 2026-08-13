@@ -87,7 +87,7 @@ if(progress.hiddenSkillsUnlocked===undefined)progress.hiddenSkillsUnlocked=!!pro
 if(!progress.hiddenSkills)progress.hiddenSkills={hero:false,suzu:false,yuno:false,gyou:false};
 if(progress.fourAbyssUnlocked===undefined)progress.fourAbyssUnlocked=false;
 if(progress.ngPlusUnlocked===undefined)progress.ngPlusUnlocked=false;
-// Ver.1.27以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
+// Ver.1.28以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
 if(progress.orochiDefeated && progress.fourAbyssUnlocked)progress.ngPlusUnlocked=true;
 if(progress.heroIceSkill===undefined){
   progress.heroIceSkill=progress.learned?.iceSlash?1:0;
@@ -1809,7 +1809,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.27',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.28',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -2192,6 +2192,18 @@ function isPartyBattle(){
 }
 function isSuzumaruTurn(){ return !!(isPartyBattle() && battleActor==='suzu'); }
 function isYunoTurn(){ return !!(battle && !battle.soloHero && yunoJoined && battle.monsterId>=400 && battleActor==='yuno'); }
+function partyActorHP(actor){
+  if(!battle)return 0;
+  return actor==='hero'?battle.heroHP:actor==='suzu'?battle.suzuHP:actor==='yuno'?battle.yunoHP:battle.gyouHP;
+}
+function isPartyActorConscious(actor){return (partyActorHP(actor)||0)>0;}
+function activePartyKeys(){return partyMembers().map(m=>m.key);}
+function partyWipedOut(){const a=activePartyKeys();return a.length>0&&a.every(k=>!isPartyActorConscious(k));}
+function checkPartyWipe(){
+  if(!battle||!partyWipedOut())return false;
+  battle.turn='lose';battleCooldown=1.6;battleMenu='main';battleMessage='全員が気絶した……。';return true;
+}
+function reviveNote(name,before,after){return before<=0&&after>0?` ${name}は立ち上がった！`:'';}
 function advancePartyTurn(){
   battleMenu='main';
   if(battle&&battle.soloHero){
@@ -2214,6 +2226,7 @@ function advancePartyTurn(){
   }
   if(battleActor==='hero' && suzumaruActive){
     battleActor='suzu';
+    if(!isPartyActorConscious('suzu'))return advancePartyTurn();
     if(progress.shopBought?.suzuGloves)battle.suzuGloveStacks=(battle.suzuGloveStacks||0)+1;
     if((progress.suzuSkills?.fightingFlame||0)>0)battle.suzuFightingFlameStacks=(battle.suzuFightingFlameStacks||0)+1;
     return;
@@ -2221,16 +2234,18 @@ function advancePartyTurn(){
   if(battleActor==='suzu' && yunoJoined && battle.monsterId>=400){
     if(battle.skipYunoThisRound){
       battle.skipYunoThisRound=false;
-      if(gyouJoinConfirmed){ensureGyouBattle();battleActor='gyou';{const r=gyouPassiveHP();if(r>0)battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+r);}return;}
+      if(gyouJoinConfirmed){ensureGyouBattle();battleActor='gyou';if(!isPartyActorConscious('gyou')){beginEnemyTurn();return;}{const r=gyouPassiveHP();if(r>0)battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+r);}return;}
       beginEnemyTurn();return;
     }
     battleActor='yuno';
+    if(!isPartyActorConscious('yuno'))return advancePartyTurn();
     battle.yunoHiddenUsedThisTurn=false;
-    {const r=yunoPassiveMP();if(r>0)battle.yunoMP=Math.min(battle.yunoMaxMP,battle.yunoMP+r);}
+    {const r=yunoPassiveMP();if(r>0){const before=battle.yunoMP;battle.yunoMP=Math.min(battle.yunoMaxMP,battle.yunoMP+r);const got=battle.yunoMP-before;if(got>0)battleMessage+=`　風脈の息吹 MP+${got}`;}}
     return;
   }
   if(battleActor==='yuno' && gyouJoinConfirmed && battle.monsterId>=400){
     ensureGyouBattle();battleActor='gyou';
+    if(!isPartyActorConscious('gyou')){beginEnemyTurn();return;}
     {const r=gyouPassiveHP();if(r>0)battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+r);}
     return;
   }
@@ -2334,7 +2349,7 @@ function drawBattle(){
   partyRows.forEach((m,i)=>{
     const y=rosterY+20+i*rowH;
     text(m.name,rosterX+14,y,18,'left','#ffffff',900);
-    text(`HP ${m.hp}/${m.maxHP}`,rosterX+122,y,16,'left','#ffffff',800);
+    text(`HP ${m.hp}/${m.maxHP}${m.hp<=0?'  気絶':''}`,rosterX+122,y,16,'left',m.hp<=0?'#ffb1b1':'#ffffff',800);
     text(`MP ${m.mp}/${m.maxMP}`,rosterX+252,y,16,'left','#ffffff',800);
   });
 
@@ -2346,7 +2361,9 @@ function drawBattle(){
     text(`HP ${Math.max(0,battle.enemyHP)}/${battle.enemyMaxHP}`,670,bt+55,17,'left','#52606f',800);
   }
   // battle phase
-  if(battle.turn==='enemy'){
+  if(battle.turn==='lose'){
+    text('全員が気絶した……',480,300,22,'center','#ffb1a4',900);
+  }else if(battle.turn==='enemy'){
     text('敵が攻撃してくる！',480,300,20,'center','#ffb1a4');
   }else if(battle.turn==='enemyResult'){
     text('敵の攻撃',480,300,20,'center','#ff9d91');
@@ -2653,17 +2670,17 @@ function useHighPotion(target){
   progress.items.highPotion--;saveProgress();
   const heal=70;
   if(target==='suzu'){
-    battle.suzuHP=Math.min(battle.suzuMaxHP,battle.suzuHP+heal);
-    battleMessage=`スズマルは高級回復薬を使った！ HPが${heal}回復！`;battleChoiceText.suzu='高級回復薬';
+    const before=battle.suzuHP;battle.suzuHP=Math.min(battle.suzuMaxHP,battle.suzuHP+heal);
+    battleMessage=`スズマルは高級回復薬を使った！ HPが${heal}回復！${reviveNote('スズマル',before,battle.suzuHP)}`;battleChoiceText.suzu='高級回復薬';
   }else if(target==='yuno'){
-    battle.yunoHP=Math.min(battle.yunoMaxHP,battle.yunoHP+heal);
-    battleMessage=`ユーノは高級回復薬を使った！ HPが${heal}回復！`;battleChoiceText.yuno='高級回復薬';
+    const before=battle.yunoHP;battle.yunoHP=Math.min(battle.yunoMaxHP,battle.yunoHP+heal);
+    battleMessage=`ユーノは高級回復薬を使った！ HPが${heal}回復！${reviveNote('ユーノ',before,battle.yunoHP)}`;battleChoiceText.yuno='高級回復薬';
   }else if(target==='gyou'){
-    ensureGyouBattle();battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+heal);
-    battleMessage=`ジュウは高級回復薬を使った！ HPが${heal}回復！`;battleChoiceText.gyou='高級回復薬';
+    ensureGyouBattle();const before=battle.gyouHP;battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+heal);
+    battleMessage=`ジュウは高級回復薬を使った！ HPが${heal}回復！${reviveNote('ジュウ',before,battle.gyouHP)}`;battleChoiceText.gyou='高級回復薬';
   }else{
-    battle.heroHP=Math.min(heroStats().maxHP,battle.heroHP+heal);
-    battleMessage=`${heroName}は高級回復薬を使った！ HPが${heal}回復！`;battleChoiceText.hero='高級回復薬';
+    const before=battle.heroHP;battle.heroHP=Math.min(heroStats().maxHP,battle.heroHP+heal);
+    battleMessage=`${heroName}は高級回復薬を使った！ HPが${heal}回復！${reviveNote(heroName,before,battle.heroHP)}`;battleChoiceText.hero='高級回復薬';
   }
   setBattleFx('heal',360,255);
   if(isPartyBattle())advancePartyTurn();else{battle.turn='enemy';battleCooldown=.8;battleMenu='main';}
@@ -2870,9 +2887,10 @@ function yunoAction(mode,target='hero'){
   battle.yunoMP-=cost;
   if(mode==='healAll'){
     const heal=14+Math.floor(ys.atk/3)+(lv-1)*10;
+    const wasDown=partyMembers().filter(m=>(battle[partyHPKey(m.key)]||0)<=0).map(m=>m.name);
     battle.heroHP=Math.min(progress.maxHP,battle.heroHP+heal);battle.suzuHP=Math.min(battle.suzuMaxHP,battle.suzuHP+heal);
     battle.yunoHP=Math.min(battle.yunoMaxHP,battle.yunoHP+heal);if(battle.gyouHP!==undefined)battle.gyouHP=Math.min(battle.gyouMaxHP,battle.gyouHP+heal);
-    battleMessage=`ユーノの「風の癒し Lv.${lv}」！ 味方全体のHPが${heal}回復！`;setBattleFx('heal',360,255);
+    battleMessage=`ユーノの「風の癒し Lv.${lv}」！ 味方全体のHPが${heal}回復！${wasDown.length?` ${wasDown.join('・')}は立ち上がった！`:''}`;setBattleFx('heal',360,255);
   }else if(mode==='regen'){
     battle.regenTurns=3+(lv>=3?1:0)+(progress.shopBought?.yunoBracelet?1:0);battle.regenPower=7+(lv-1)*5;
     battleMessage=`ユーノの「そよぎの輪 Lv.${lv}」！ ${battle.regenTurns}ターン、毎ターンHP${battle.regenPower}回復！`;setBattleFx('heal',360,255);
@@ -2991,12 +3009,12 @@ function pirateCaptainTurn(){
     const evade=(battle.evadeAllTurns>0?(battle.evadeAllBonus||.30):0)+((battle.evadeTarget===target&&battle.evadeTurns>0)?(battle.evadeSingleBonus||.25):0);
     if(target!=='gyou'&&Math.random()<evade){lines.push(`${target==='hero'?heroName:target==='suzu'?'スズマル':target==='yuno'?'ユーノ':'ジュウ'} 回避！`);continue;}
     let dmg=base;
-    if(target==='hero'){dmg=Math.max(1,(battle.defending?Math.floor(dmg/2):dmg)-Math.floor(progress.def/4));battle.heroHP=Math.max(1,battle.heroHP-dmg);}
-    else if(target==='suzu'){dmg=Math.max(1,dmg-Math.floor(suzumaruStats().def/4));battle.suzuHP=Math.max(1,battle.suzuHP-dmg);}
-    else if(target==='yuno'){dmg=Math.max(1,dmg-Math.floor(yunoStats().def/4));battle.yunoHP=Math.max(1,battle.yunoHP-dmg);}
+    if(target==='hero'){dmg=Math.max(1,(battle.defending?Math.floor(dmg/2):dmg)-Math.floor(progress.def/4));battle.heroHP=Math.max(0,battle.heroHP-dmg);}
+    else if(target==='suzu'){dmg=Math.max(1,dmg-Math.floor(suzumaruStats().def/4));battle.suzuHP=Math.max(0,battle.suzuHP-dmg);}
+    else if(target==='yuno'){dmg=Math.max(1,dmg-Math.floor(yunoStats().def/4));battle.yunoHP=Math.max(0,battle.yunoHP-dmg);}
     else {
       dmg=Math.max(1,dmg-Math.floor((gyouStats().def+(battle.gyouDefTurns>0?10:0))/4));dmg=gyouShieldReduce(dmg);
-      battle.gyouHP=Math.max(1,battle.gyouHP-dmg);
+      battle.gyouHP=Math.max(0,battle.gyouHP-dmg);
       const shieldMP=gyouShieldRecover(dmg);
       let skillMP=0;
       if(battle.gyouManaGuard){
@@ -3014,6 +3032,7 @@ function pirateCaptainTurn(){
   if(battle.regenTurns>0){const h=battle.regenPower||7;for(const [k,m] of [['heroHP',progress.maxHP],['suzuHP',battle.suzuMaxHP],['yunoHP',battle.yunoMaxHP],['gyouHP',battle.gyouMaxHP]])battle[k]=Math.min(m,battle[k]+h);battle.regenTurns--;battleMessage+=` / そよぎの輪 +${h}`;} battleMessage+=applyPartyMPRegen();
   if(battle.evadeAllTurns>0)battle.evadeAllTurns--;if(battle.evadeTurns>0)battle.evadeTurns--;if(battle.gyouDefTurns>0)battle.gyouDefTurns--;if(battle.gyouTauntTurns>0)battle.gyouTauntTurns--;
   battle.gyouCover=null;battle.gyouCounter=false;battle.gyouGrandGuard=false;battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
+  if(checkPartyWipe())return;
   battle.turn='enemyResult';battleCooldown=1.3;
 }
 function applyPartyMPRegen(){
@@ -3050,16 +3069,16 @@ function postGameRaidBossTurn(){
  if(klaus&&battle.bossTurn%2===1){
    for(const t of ['hero','suzu','yuno','gyou']){
      let d=34+Math.floor(Math.random()*15);
-     if(t==='hero')battle.heroHP=Math.max(1,battle.heroHP-d);
-     else if(t==='suzu')battle.suzuHP=Math.max(1,battle.suzuHP-d);
-     else if(t==='yuno')battle.yunoHP=Math.max(1,battle.yunoHP-d);
-     else {d=gyouShieldReduce(d);battle.gyouHP=Math.max(1,battle.gyouHP-d);gyouShieldRecover(d);}
+     if(t==='hero')battle.heroHP=Math.max(0,battle.heroHP-d);
+     else if(t==='suzu')battle.suzuHP=Math.max(0,battle.suzuHP-d);
+     else if(t==='yuno')battle.yunoHP=Math.max(0,battle.yunoHP-d);
+     else {d=gyouShieldReduce(d);battle.gyouHP=Math.max(0,battle.gyouHP-d);gyouShieldRecover(d);}
      lines.push(`${t==='hero'?heroName:t==='suzu'?'スズマル':t==='yuno'?'ユーノ':'ジュウ'} -${d}`);
    }
    battleMessage=`クラウスのマシンガン掃射！ ${lines.join(' / ')}`;
  }else{
    const foe=live[Math.floor(Math.random()*live.length)],t=['hero','suzu','yuno','gyou'][Math.floor(Math.random()*4)],d=58+Math.floor(Math.random()*22);
-   if(t==='hero')battle.heroHP=Math.max(1,battle.heroHP-d);else if(t==='suzu')battle.suzuHP=Math.max(1,battle.suzuHP-d);else if(t==='yuno')battle.yunoHP=Math.max(1,battle.yunoHP-d);else battle.gyouHP=Math.max(1,battle.gyouHP-gyouShieldReduce(d));
+   if(t==='hero')battle.heroHP=Math.max(0,battle.heroHP-d);else if(t==='suzu')battle.suzuHP=Math.max(0,battle.suzuHP-d);else if(t==='yuno')battle.yunoHP=Math.max(0,battle.yunoHP-d);else battle.gyouHP=Math.max(0,battle.gyouHP-gyouShieldReduce(d));
    battleMessage=`${foe.name}の強烈な攻撃！ ${t==='hero'?heroName:t==='suzu'?'スズマル':t==='yuno'?'ユーノ':'ジュウ'} -${d}`;
  }
  battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};battle.turn='enemyResult';battleCooldown=1.15;
@@ -3082,7 +3101,7 @@ function enemyTurn(){
         let d=total;
         if(t==='gyou'&&battle.gyouHiddenGuard)d=Math.ceil(d*.25);
         const k=t==='hero'?'heroHP':t==='suzu'?'suzuHP':t==='yuno'?'yunoHP':'gyouHP';
-        battle[k]=Math.max(1,battle[k]-d);
+        battle[k]=Math.max(0,battle[k]-d);
         if(t==='hero')totalHeroTaken+=d;
       }
       actionLines.push(`${action+1}回目 ${flame?'九頭灼炎':'九頭連牙'} ${perHit}×9=${total}`);
@@ -3091,7 +3110,7 @@ function enemyTurn(){
     battleMessage=`九頭龍の3回行動！ ${actionLines.join(' / ')}${battle.soloHero?'':'（全体）'}`;
     addDamagePopup(`3 ACTION -${totalHeroTaken}`,250,205,'#ff796e');
     setBattleFx('hitHero',185,255);
-    battleActor='hero';battle.turn='enemyResult';battleCooldown=1.45;battleMenu='main';
+    if(checkPartyWipe())return;battleActor='hero';battle.turn='enemyResult';battleCooldown=1.45;battleMenu='main';
     return;
   }
   if(battle&&battle.monsterId===990){postGameRaidBossTurn();return;}
@@ -3107,16 +3126,16 @@ function enemyTurn(){
     for(const t0 of targets){
       const t=(battle.gyouGrandGuard||battle.gyouCover===t0)?'gyou':t0;
       let d=base+(phase>=3?18:0)+Math.floor(Math.random()*13);
-      if(t==='hero'){d=Math.max(1,d-Math.floor(progress.def/5));battle.heroHP=Math.max(1,battle.heroHP-d);}
-      else if(t==='suzu'){d=Math.max(1,d-Math.floor(suzumaruStats().def/5));battle.suzuHP=Math.max(1,battle.suzuHP-d);}
-      else if(t==='yuno'){d=Math.max(1,d-Math.floor(yunoStats().def/5));battle.yunoHP=Math.max(1,battle.yunoHP-d);}
+      if(t==='hero'){d=Math.max(1,d-Math.floor(progress.def/5));battle.heroHP=Math.max(0,battle.heroHP-d);}
+      else if(t==='suzu'){d=Math.max(1,d-Math.floor(suzumaruStats().def/5));battle.suzuHP=Math.max(0,battle.suzuHP-d);}
+      else if(t==='yuno'){d=Math.max(1,d-Math.floor(yunoStats().def/5));battle.yunoHP=Math.max(0,battle.yunoHP-d);}
       else {
-        d=Math.max(1,d-Math.floor(gyouStats().def/5));d=gyouShieldReduce(d);battle.gyouHP=Math.max(1,battle.gyouHP-d);
+        d=Math.max(1,d-Math.floor(gyouStats().def/5));d=gyouShieldReduce(d);battle.gyouHP=Math.max(0,battle.gyouHP-d);
         const shieldMP=gyouShieldRecover(d);if(shieldMP>0)lines.push(`地脈の大盾 MP+${shieldMP}`);
       }
       lines.push(`${t==='hero'?heroName:t==='suzu'?'スズマル':t==='yuno'?'ユーノ':'ジュウ'} -${d}`);}
     battleMessage=`火山の古竜${phase>=3?'・激昂':phase>=2?'・覚醒':''}の${all?'「灼熱大咆哮」':'竜爪撃'}！ ${lines.join(' / ')}`;
-    battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};battle.turn='enemyResult';battleCooldown=1.3;return;
+    if(checkPartyWipe())return;battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};battle.turn='enemyResult';battleCooldown=1.3;return;
   }
   if(battle&&battle.monsterId===900){pirateCaptainTurn();return;}
   const ss=suzumaruStats(),ys=yunoStats(),gs=gyouStats();ensureGyouBattle();
@@ -3143,7 +3162,7 @@ function enemyTurn(){
     let dmg=baseDmg;
     if(target==='gyou'){
       let def=gs.def+(battle.gyouDefTurns>0?10:0);dmg=Math.max(1,baseDmg-Math.floor(def/4));dmg=gyouShieldReduce(dmg);
-      battle.gyouHP=Math.max(1,battle.gyouHP-dmg);totalGyou+=dmg;
+      battle.gyouHP=Math.max(0,battle.gyouHP-dmg);totalGyou+=dmg;
       const shieldMP=gyouShieldRecover(dmg);
       if(battle.gyouManaGuard){
         const before=battle.gyouMP,mp=Math.max(1,Math.ceil(dmg/2));battle.gyouMP=Math.min(battle.gyouMaxMP,battle.gyouMP+mp);
@@ -3151,12 +3170,12 @@ function enemyTurn(){
         attackLines.push(`${foe.name} → ジュウ ${dmg} / 土脈+${skillMP}${shieldMP?` / 盾+${shieldMP}`:''}`);
       }else attackLines.push(`${foe.name} → ジュウ ${dmg}${shieldMP?` / 盾MP+${shieldMP}`:''}`);
       if(battle.gyouCounter){const cd=Math.max(5,Math.floor(gs.atk*.8));damageEnemy(cd);attackLines.push(`迎撃 ${cd}`);}
-    }else if(target==='yuno'){dmg=Math.max(1,baseDmg-Math.floor(ys.def/4));battle.yunoHP=Math.max(1,battle.yunoHP-dmg);totalYuno+=dmg;attackLines.push(`${foe.name} → ユーノ ${dmg}`);}
-    else if(target==='suzu'){dmg=Math.max(1,baseDmg-Math.floor(ss.def/4));battle.suzuHP=Math.max(1,battle.suzuHP-dmg);totalSuzu+=dmg;attackLines.push(`${foe.name} → スズマル ${dmg}`);if(battle.suzuCounter){const cd=suzuFirePower(Math.max(7,Math.floor(ss.atk*.9)+6));damageEnemy(cd);attackLines.push(`炎返し ${cd}`);setBattleFx('fire');}}
+    }else if(target==='yuno'){dmg=Math.max(1,baseDmg-Math.floor(ys.def/4));battle.yunoHP=Math.max(0,battle.yunoHP-dmg);totalYuno+=dmg;attackLines.push(`${foe.name} → ユーノ ${dmg}`);}
+    else if(target==='suzu'){dmg=Math.max(1,baseDmg-Math.floor(ss.def/4));battle.suzuHP=Math.max(0,battle.suzuHP-dmg);totalSuzu+=dmg;attackLines.push(`${foe.name} → スズマル ${dmg}`);if(battle.suzuCounter){const cd=suzuFirePower(Math.max(7,Math.floor(ss.atk*.9)+6));damageEnemy(cd);attackLines.push(`炎返し ${cd}`);setBattleFx('fire');}}
     else{
       dmg=Math.max(1,(battle.defending?Math.floor(baseDmg/2):baseDmg)-Math.floor(progress.def/4));
       dmg=nineTailDamageCut(dmg);
-      battle.heroHP=Math.max(1,battle.heroHP-dmg);totalHero+=dmg;attackLines.push(`${foe.name} → ${heroName} ${dmg}`);
+      battle.heroHP=Math.max(0,battle.heroHP-dmg);totalHero+=dmg;attackLines.push(`${foe.name} → ${heroName} ${dmg}`);
     }
   });
   battle.defending=false;
@@ -3170,6 +3189,7 @@ function enemyTurn(){
   if(battle.gyouDefTurns>0)battle.gyouDefTurns--;if(battle.gyouTauntTurns>0)battle.gyouTauntTurns--;
   battle.gyouCover=null;battle.gyouCounter=false;battle.gyouGrandGuard=false;battle.suzuCounter=false;
   if(isPartyBattle())battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
+  if(checkPartyWipe())return;
   battle.turn='enemyResult';battleCooldown=1.15;
 }
 function finishBattle(){
@@ -5649,10 +5669,15 @@ function update(dt){
       if(battleCooldown<=0){
         if(battle.turn==='enemy')enemyTurn();
         else if(battle.turn==='enemyResult'){
+          if(checkPartyWipe())return;
           battle.turn='player';
           battleActor='hero';
           battleMenu='main';
           battleCooldown=0;
+          if(!isPartyActorConscious('hero')&&isPartyBattle())advancePartyTurn();
+        }
+        else if(battle.turn==='lose'){
+          battle=null;scene='title';titleSelection=0;touchUI.classList.add('hidden');
         }
         else if(battle.turn==='win')finishBattle();
         else if(battle.turn==='run'){

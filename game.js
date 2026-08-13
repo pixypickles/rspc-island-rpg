@@ -87,7 +87,7 @@ if(progress.hiddenSkillsUnlocked===undefined)progress.hiddenSkillsUnlocked=!!pro
 if(!progress.hiddenSkills)progress.hiddenSkills={hero:false,suzu:false,yuno:false,gyou:false};
 if(progress.fourAbyssUnlocked===undefined)progress.fourAbyssUnlocked=false;
 if(progress.ngPlusUnlocked===undefined)progress.ngPlusUnlocked=false;
-// Ver.1.29以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
+// Ver.1.30以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
 if(progress.orochiDefeated && progress.fourAbyssUnlocked)progress.ngPlusUnlocked=true;
 if(progress.heroIceSkill===undefined){
   progress.heroIceSkill=progress.learned?.iceSlash?1:0;
@@ -1809,7 +1809,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.29',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.30',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -3087,6 +3087,30 @@ function postGameRaidBossTurn(){
 }
 function enemyTurn(){
   if(battle&&battle.vulnerableTurns>0)battle.vulnerableTurns--;
+  // ドラゴン登山道の雑魚戦は専用の安全な敵ターン処理を使う。
+  // 複数敵戦で行動後に enemy 状態のまま止まるケースを防ぐ。
+  if(battle&&battle.monsterId>=960&&battle.monsterId<=963){
+    const ss=suzumaruStats(),ys=yunoStats(),gs=gyouStats();ensureGyouBattle();
+    const attackers=livingEnemies();const lines=[];
+    for(const foe of attackers){
+      let target='hero';
+      if(battle.gyouGrandGuard||battle.gyouTauntTurns>0)target='gyou';
+      else {const r=Math.random();target=r<.24?'hero':r<.46?'suzu':r<.68?'yuno':'gyou';}
+      if(battle.gyouCover===target)target='gyou';
+      let dmg=14+Math.floor(Math.random()*9);
+      if(target==='hero'){dmg=Math.max(1,(battle.defending?Math.floor(dmg/2):dmg)-Math.floor(progress.def/4));battle.heroHP=Math.max(0,battle.heroHP-dmg);}
+      else if(target==='suzu'){dmg=Math.max(1,dmg-Math.floor(ss.def/4));battle.suzuHP=Math.max(0,battle.suzuHP-dmg);}
+      else if(target==='yuno'){dmg=Math.max(1,dmg-Math.floor(ys.def/4));battle.yunoHP=Math.max(0,battle.yunoHP-dmg);}
+      else {dmg=Math.max(1,dmg-Math.floor((gs.def+(battle.gyouDefTurns>0?10:0))/4));dmg=gyouShieldReduce(dmg);battle.gyouHP=Math.max(0,battle.gyouHP-dmg);gyouShieldRecover(dmg);}
+      lines.push(`${foe.name} → ${target==='hero'?heroName:target==='suzu'?'スズマル':target==='yuno'?'ユーノ':'ジュウ'} ${dmg}`);
+    }
+    battle.defending=false;battle.gyouCover=null;battle.gyouCounter=false;battle.gyouGrandGuard=false;battle.suzuCounter=false;
+    if(battle.gyouDefTurns>0)battle.gyouDefTurns--;if(battle.gyouTauntTurns>0)battle.gyouTauntTurns--;
+    battleMessage=`敵の攻撃！ ${lines.join(' / ')}`+applyPartyMPRegen();
+    battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
+    if(checkPartyWipe())return;
+    battle.turn='enemyResult';battleCooldown=1.15;return;
+  }
   if(battle&&battle.monsterId===1199){
     const targets=battle.soloHero?['hero']:['hero','suzu','yuno','gyou'];
     const actionLines=[];

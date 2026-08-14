@@ -14,6 +14,9 @@ const nameOk = document.getElementById('nameOk');
 const W = 960, H = 540;
 let scene = 'title';
 let titleSelection=0;
+let resetConfirm=false;
+let resetConfirmSelection=1; // 0=はい / 1=いいえ
+
 let ngPlusMode=false;
 let autosaveTimer=0;
 let lastFieldScene='world';
@@ -87,7 +90,7 @@ if(progress.hiddenSkillsUnlocked===undefined)progress.hiddenSkillsUnlocked=!!pro
 if(!progress.hiddenSkills)progress.hiddenSkills={hero:false,suzu:false,yuno:false,gyou:false};
 if(progress.fourAbyssUnlocked===undefined)progress.fourAbyssUnlocked=false;
 if(progress.ngPlusUnlocked===undefined)progress.ngPlusUnlocked=false;
-// Ver.1.35以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
+// Ver.1.36以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
 if(progress.orochiDefeated && progress.fourAbyssUnlocked)progress.ngPlusUnlocked=true;
 if(progress.heroIceSkill===undefined){
   progress.heroIceSkill=progress.learned?.iceSlash?1:0;
@@ -1809,21 +1812,31 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.35',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.36',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
-  const labels=['はじめから','初期状態からスタート',canContinue?'つづきから':'つづきから（セーブなし）'];
+  const labels=['はじめから','初期状態へリセット',canContinue?'つづきから':'つづきから（セーブなし）'];
   if(cleared)labels.push(progress.postDragonDefeated?'ドラゴンに挑戦（再戦）':'ドラゴンに挑戦');
   const gap=50,startY=cleared?300:326;
   labels.forEach((lab,i)=>{
     const yy=startY+i*gap;
     outlineRect(280,yy,400,42,titleSelection===i?'#e8f7fb':'rgba(15,35,60,.78)',i===2&&!canContinue?'#566879':(i===3?'#d8893b':'#73b9d6'),2);
-    text(lab,480,yy+21,i===2&&!canContinue?16:18,'center',i===2&&!canContinue?'#8193a2':(titleSelection===i?'#17324a':'#e8f4fa'));
+    text(lab,480,yy+21,i===1?13:(i===2&&!canContinue?16:18),'center',i===2&&!canContinue?'#8193a2':(titleSelection===i?'#17324a':'#e8f4fa'));
   });
   if(progress.ngPlusUnlocked){
     const yy=startY;
     outlineRect(690,yy+4,165,34,titleSelection===4?'#fff0c8':'rgba(74,37,72,.88)','#d29ad0',2);
     text('はじめから＋',772,yy+21,14,'center',titleSelection===4?'#572b55':'#ffe9ff',900);
+  }
+  if(resetConfirm){
+    ctx.fillStyle='rgba(4,13,28,.72)';ctx.fillRect(0,0,W,H);
+    outlineRect(245,205,470,170,'rgba(12,32,53,.97)','#b9dce9',3);
+    text('本当に実行しますか？',480,248,23,'center','#f4fbff',900);
+    text('セーブ・進行状況を初期状態へ戻します',480,278,13,'center','#d2e5ed');
+    outlineRect(300,305,150,44,resetConfirmSelection===0?'#e8f7fb':'rgba(35,58,78,.95)','#73b9d6',2);
+    outlineRect(510,305,150,44,resetConfirmSelection===1?'#e8f7fb':'rgba(35,58,78,.95)','#73b9d6',2);
+    text('はい',375,327,18,'center',resetConfirmSelection===0?'#17324a':'#e8f4fa',900);
+    text('いいえ',585,327,18,'center',resetConfirmSelection===1?'#17324a':'#e8f4fa',900);
   }
 }
 function speakerName(who){
@@ -5851,6 +5864,16 @@ function enterSealedCave(){
 function pressAction(){
   if(!nameOverlay.classList.contains('hidden'))return;
   if(scene==='title'){
+    if(resetConfirm){
+      if(resetConfirmSelection===0){
+        resetConfirm=false;
+        startFromInitialState();
+      }else{
+        resetConfirm=false;
+        flashText='リセットをキャンセルしました';flashTimer=1.2;
+      }
+      return;
+    }
     if(titleSelection===4 && progress.ngPlusUnlocked){
       ngPlusMode=true;scene='cutscene';dialogIndex=0;touchUI.classList.add('hidden');return;
     }
@@ -5865,7 +5888,7 @@ function pressAction(){
       if(hasSaveGame()){if(loadGame())return;}
       flashText='つづきから遊べるデータがありません';flashTimer=1.8;return;
     }
-    if(titleSelection===1){startFromInitialState();return;}
+    if(titleSelection===1){resetConfirm=true;resetConfirmSelection=1;return;}
     scene='cutscene';dialogIndex=0;touchUI.classList.add('hidden');return;
   }
   if(scene==='cutscene'){
@@ -6436,6 +6459,13 @@ addEventListener('keydown',e=>{
   if(e.key==='n'||e.key==='N'){sfxEnabled=!sfxEnabled;flashText=`効果音 ${sfxEnabled?'ON':'OFF'}`;flashTimer=1.2;return;}
   keys[e.key]=true;
   if(scene==='title'){
+    if(resetConfirm){
+      if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A'){resetConfirmSelection=0;e.preventDefault();return;}
+      if(e.key==='ArrowRight'||e.key==='d'||e.key==='D'){resetConfirmSelection=1;e.preventDefault();return;}
+      if(e.key==='Escape'||e.key==='x'||e.key==='X'){resetConfirm=false;e.preventDefault();return;}
+      if(['Enter',' ','z','Z'].includes(e.key)){e.preventDefault();pressAction();return;}
+      return;
+    }
     if((e.key==='ArrowRight'||e.key==='d'||e.key==='D')&&progress.ngPlusUnlocked){titleSelection=4;e.preventDefault();return;}
     if((e.key==='ArrowLeft'||e.key==='a'||e.key==='A')&&titleSelection===4){titleSelection=0;e.preventDefault();return;}
     if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'){titleSelection=0;e.preventDefault();return;}
@@ -6502,6 +6532,11 @@ canvas.addEventListener('pointerdown',e=>{
     const r=canvas.getBoundingClientRect();
     const x=(e.clientX-r.left)/r.width*W;
     const y=(e.clientY-r.top)/r.height*H;
+    if(resetConfirm){
+      if(y>=295&&y<=360&&x>=285&&x<=465){resetConfirmSelection=0;pressAction();return;}
+      if(y>=295&&y<=360&&x>=495&&x<=675){resetConfirmSelection=1;pressAction();return;}
+      return;
+    }
     const titleStartY=progress.gameCleared?300:326;
     if(progress.ngPlusUnlocked&&x>=680&&x<=870&&y>=titleStartY-2&&y<=titleStartY+46){titleSelection=4;pressAction();return;}
     if(progress.gameCleared){

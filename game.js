@@ -90,7 +90,7 @@ if(progress.hiddenSkillsUnlocked===undefined)progress.hiddenSkillsUnlocked=!!pro
 if(!progress.hiddenSkills)progress.hiddenSkills={hero:false,suzu:false,yuno:false,gyou:false};
 if(progress.fourAbyssUnlocked===undefined)progress.fourAbyssUnlocked=false;
 if(progress.ngPlusUnlocked===undefined)progress.ngPlusUnlocked=false;
-// Ver.1.36以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
+// Ver.1.37以前に4人異界で九頭龍を倒していた既存セーブも「はじめから＋」解禁扱いにする。
 if(progress.orochiDefeated && progress.fourAbyssUnlocked)progress.ngPlusUnlocked=true;
 if(progress.heroIceSkill===undefined){
   progress.heroIceSkill=progress.learned?.iceSlash?1:0;
@@ -317,8 +317,13 @@ let secondWaveStage=0;
 let secondWaveHero={x:160,y:450,speed:205};
 
 let finalBear={id:472,x:1050,y:330,alive:true,name:'大ドリアングマ',kind:'durianBear',hp:165,maxHP:165};
+let finalBearSpots=[
+  {x:930,y:315,name:'大ドリアングマ1',hp:165},
+  {x:1050,y:385,name:'大ドリアングマ2',hp:175},
+  {x:1160,y:300,name:'大ドリアングマ3',hp:185}
+];
 let finalBearHero={x:150,y:430,speed:205};
-let finalBearWave=0;
+let finalBearWave=0; // 倒したクマの数（0～3）
 
 
 let dragonTrailHero={x:130,y:455,speed:210};
@@ -1812,7 +1817,7 @@ function drawTitle(){
   [['🎪',480,138],['💧',270,270],['🔥',350,410],['🌪️',612,410],['🪨',690,270]].forEach(([a,x,y])=>text(a,x,y,30,'center'));
   ctx.strokeStyle='rgba(255,255,255,.72)';ctx.lineWidth=3;ctx.setLineDash([7,6]);
   ctx.beginPath();ctx.moveTo(455,160);ctx.lineTo(300,245);ctx.lineTo(340,370);ctx.stroke();ctx.setLineDash([]);
-  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.36',480,121,18,'center','#eef8ff');
+  text('りすぺく島RPG',480,75,53,'center','#fff',800);text('Ver.1.37',480,121,18,'center','#eef8ff');
   text('♪ BGM：Mキー　効果音：Nキー　ON / OFF',480,145,12,'center','#d9edf5');
   const canContinue=hasSaveGame(),cleared=!!progress.gameCleared;
   const labels=['はじめから','初期状態へリセット',canContinue?'つづきから':'つづきから（セーブなし）'];
@@ -2037,9 +2042,10 @@ for(const mon of monsters) drawWildMonster(mon);
   text('目的：南南東のさるびえ村へ　→ 村門を目指す',35,ht+23,17);
 }
 
-function startFinalBearBattle(){
+function startFinalBearBattle(index=finalBearWave){
   syncStoryParty();
   const ss=suzumaruStats(),ys=yunoStats(),gs=gyouStats();
+  const bear=finalBearSpots[Math.max(0,Math.min(2,index))];
   battle={
     heroHP:progress.maxHP,heroMP:progress.maxMP,
     suzuHP:ss.maxHP,suzuMaxHP:ss.maxHP,suzuMP:ss.maxMP,suzuMaxMP:ss.maxMP,
@@ -2050,18 +2056,15 @@ function startFinalBearBattle(){
     gyouDefTurns:0,gyouTauntTurns:0,gyouCover:null,
     gyouManaGuard:false,gyouCounter:false,gyouGrandGuard:false,
     skipYunoThisRound:false,
-    enemyHP:130,enemyMaxHP:130,
-    enemyName:'大ドリアングマA',enemyKind:finalBear.kind,
+    enemyHP:bear.hp,enemyMaxHP:bear.hp,
+    enemyName:bear.name,enemyKind:'durianBear',
     monsterId:finalBear.id,turn:'player',defending:false,
-    enemies:[
-      {name:`大ドリアングマ${finalBearWave*3+1}`,kind:'durianBear',hp:145,maxHP:145},
-      {name:`大ドリアングマ${finalBearWave*3+2}`,kind:'durianBear',hp:140,maxHP:140},
-      {name:`大ドリアングマ${finalBearWave*3+3}`,kind:'durianBear',hp:150,maxHP:150}
-    ]
+    finalBearIndex:index,
+    enemies:[{name:bear.name,kind:'durianBear',hp:bear.hp,maxHP:bear.hp}]
   };
   damagePopups=[];battleMenu='main';battleActor='hero';
   battleChoiceText={hero:'未選択',suzu:'未選択',yuno:'未選択',gyou:'未選択'};
-  battleMessage=`大ドリアングマ3体が襲来！ 第${finalBearWave+1}波！`;
+  battleMessage=`${bear.name}が襲ってきた！ 残り${3-index}体`;
   scene='battle';touchUI.classList.add('hidden');
 }
 
@@ -3338,13 +3341,15 @@ function finishBattle(){
 
   if(battle && battle.monsterId===472){
     progress.gold+=42;const leveled=gainExp(58);saveProgress();
-    finalBearWave++;
+    finalBearWave=Math.min(3,finalBearWave+1);
     if(finalBearWave<3){
       battle=null;scene='finalBearField';touchUI.classList.remove('hidden');
-      finalBearHero.x=Math.max(150,finalBear.x-230);
-      flashText=`第${finalBearWave}波を撃破！ 次の3体が現れた！`;flashTimer=2.2;saveGame();return;
+      const next=finalBearSpots[finalBearWave];
+      finalBearHero.x=Math.max(150,(next?.x||1050)-190);
+      finalBearHero.y=Math.min(470,(next?.y||350)+90);
+      flashText=`大ドリアングマを1体撃破！ 残り${3-finalBearWave}体`;flashTimer=2.2;saveGame();return;
     }
-    finalBear.alive=false;finalBearWave=0;
+    finalBear.alive=false;
     battle=null;scene='volcanoBearAfter';dialogIndex=0;touchUI.classList.add('hidden');saveGame();return;
   }
 
@@ -4938,8 +4943,9 @@ function drawFinalBearField(){
   rect(0,330,1250,210,'#778d62');
   ctx.fillStyle='#666258';ctx.beginPath();ctx.moveTo(600,330);ctx.lineTo(1080,80);ctx.lineTo(1250,330);ctx.closePath();ctx.fill();
   if(finalBear.alive){
-    const bearSpots=[[990,295],[1070,340],[1140,280],[1190,365],[1025,400]];
-    bearSpots.forEach((p,i)=>drawSurveyMonster({x:p[0],y:p[1],alive:true,kind:'durianBear',name:`大ドリアングマ${i+1}`}));
+    finalBearSpots.forEach((b,i)=>{
+      if(i>=finalBearWave)drawSurveyMonster({x:b.x,y:b.y,alive:true,kind:'durianBear',name:b.name});
+    });
   }
   drawHeroFox(finalBearHero.x,finalBearHero.y,.92);drawYuno(finalBearHero.x-50,finalBearHero.y+15,.96);drawSuzumaru(finalBearHero.x-95,finalBearHero.y+22,.92);drawDashmiu(finalBearHero.x-135,finalBearHero.y+28,.82);drawGyou(finalBearHero.x-178,finalBearHero.y+28,.9);
   ctx.restore();
@@ -5565,7 +5571,10 @@ function update(dt){
     let dx=0,dy=0;if(keys.ArrowLeft||keys.a)dx--;if(keys.ArrowRight||keys.d)dx++;if(keys.ArrowUp||keys.w)dy--;if(keys.ArrowDown||keys.s)dy++;dx+=touchVector.x;dy+=touchVector.y;
     const l=Math.hypot(dx,dy);if(l>.05){dx/=Math.max(1,l);dy/=Math.max(1,l);finalBearHero.x+=dx*finalBearHero.speed*dt;finalBearHero.y+=dy*finalBearHero.speed*dt;}
     finalBearHero.x=Math.max(60,Math.min(1190,finalBearHero.x));finalBearHero.y=Math.max(260,Math.min(500,finalBearHero.y));
-    if(finalBear.alive&&Math.hypot(finalBearHero.x-finalBear.x,finalBearHero.y-finalBear.y)<95){startFinalBearBattle();}
+    if(finalBear.alive&&finalBearWave<3){
+      const b=finalBearSpots[finalBearWave];
+      if(b&&Math.hypot(finalBearHero.x-b.x,finalBearHero.y-b.y)<72){startFinalBearBattle(finalBearWave);}
+    }
   } else if(scene==='world'){
     let dx=0,dy=0;
     if(keys.ArrowLeft||keys.a)dx--;
